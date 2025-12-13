@@ -1,4 +1,4 @@
-import { Music, Users, Repeat, MessageSquare, Layers, Sparkles } from 'lucide-react'
+import { Music, Users, Repeat, MessageSquare, Layers, Sparkles, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -203,11 +203,11 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             {/* Feature 6 */}
             <Card className="p-6 hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Music className="h-6 w-6 text-primary" />
+                <Building2 className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Bilingual</h3>
+              <h3 className="text-xl font-semibold mb-2">Project Studios</h3>
               <p className="text-muted-foreground">
-                Full support for English and French will be available. More languages will be added.
+                Each project has its own Studio - a dedicated space with Discord-style chat, timeline, and collaboration tools.
               </p>
             </Card>
           </div>
