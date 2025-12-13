@@ -332,12 +332,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               <span className="font-semibold text-lg">AudioCollab</span>
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground">
-              <Link href={`/${locale}/privacy`} className="hover:text-foreground transition-colors">
-                Privacy
-              </Link>
-              <Link href={`/${locale}/terms`} className="hover:text-foreground transition-colors">
-                Terms
-              </Link>
               <a href="mailto:hello@audiocollab.app" className="hover:text-foreground transition-colors">
                 Contact
               </a>
