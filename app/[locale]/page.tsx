@@ -48,7 +48,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
             {/* Subtitle */}
             <p className="max-w-2xl mx-auto text-xl text-muted-foreground">
-              Upload stems, join clubs, remix tracks, and build music together.
+              Upload individual tracks, join clubs, remix projects, and build music together.
               Your online music studio.
             </p>
 
@@ -78,7 +78,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                 <div className="flex items-start gap-3">
                   <div className="mt-1 text-destructive">❌</div>
                   <div>
-                    <p className="font-medium text-foreground">Emailing stems back and forth</p>
+                    <p className="font-medium text-foreground">Emailing tracks back and forth</p>
                     <p className="text-sm text-muted-foreground">Losing files in endless email threads</p>
                   </div>
                 </div>
@@ -108,7 +108,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                 <div className="flex items-start gap-3">
                   <div className="mt-1 text-primary">✅</div>
                   <div>
-                    <p className="font-medium text-foreground">Upload & organize stems</p>
+                    <p className="font-medium text-foreground">Upload & organize tracks</p>
                     <p className="text-sm text-muted-foreground">Vocals, drums, bass - all in one place</p>
                   </div>
                 </div>
@@ -150,7 +150,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                 <Layers className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Multi-stem Projects</h3>
+              <h3 className="text-xl font-semibold mb-2">Multi-track Projects</h3>
               <p className="text-muted-foreground">
                 Upload vocals, drums, bass separately. Solo/mute each track.
               </p>
@@ -174,7 +174,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               </div>
               <h3 className="text-xl font-semibold mb-2">Remix Anything</h3>
               <p className="text-muted-foreground">
-                Download stems and create your own version. Track remix chains.
+                Download tracks and create your own version. Track remix chains.
               </p>
             </Card>
 
@@ -267,7 +267,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                   Professional multitrack features
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">Multi-stem upload</Badge>
+                  <Badge variant="secondary">Multi-track upload</Badge>
                   <Badge variant="secondary">Waveforms</Badge>
                   <Badge variant="secondary">Basic mixing</Badge>
                   <Badge variant="secondary">Solo/mute</Badge>
