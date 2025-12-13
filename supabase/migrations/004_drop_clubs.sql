@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS club_thread_replies CASCADE;
+DROP TABLE IF EXISTS club_threads CASCADE;
+DROP TABLE IF EXISTS club_challenge_entries CASCADE;
+DROP TABLE IF EXISTS club_challenges CASCADE;
+DROP TABLE IF EXISTS club_projects CASCADE;
+DROP TABLE IF EXISTS club_members CASCADE;
+DROP TABLE IF EXISTS clubs CASCADE;
+
+DROP FUNCTION IF EXISTS add_owner_as_member();
+DROP FUNCTION IF EXISTS update_updated_at();

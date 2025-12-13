@@ -1,0 +1,233 @@
+{
+  "common": {
+    "appName": "AudioCollab",
+    "tagline": "Studio Musical Collaboratif"
+  },
+  "nav": {
+    "projects": "Projets",
+    "clubs": "Clubs",
+    "profile": "Profil",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "signup": "S'inscrire"
+  },
+  "home": {
+    "title": "AudioCollab",
+    "subtitle": "Studio Musical Collaboratif",
+    "description": "Créez, collaborez et remixez de la musique avec des musiciens du monde entier"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion à AudioCollab",
+      "email": "Email",
+      "password": "Mot de passe",
+      "submit": "Se connecter",
+      "noAccount": "Pas encore de compte ?",
+      "signupLink": "S'inscrire"
+    },
+    "signup": {
+      "title": "Créer votre compte",
+      "displayName": "Nom d'affichage",
+      "displayNamePlaceholder": "Optionnel",
+      "displayNameHint": "Laissez vide pour utiliser votre email",
+      "email": "Email",
+      "password": "Mot de passe",
+      "submit": "Créer un compte",
+      "hasAccount": "Vous avez déjà un compte ?",
+      "loginLink": "Se connecter"
+    }
+  },
+  "projects": {
+    "title": "Projets",
+    "myProjects": "Mes Projets",
+    "noProjects": "Aucun projet pour le moment. Commencez à créer !",
+    "newProject": "Nouveau Projet",
+    "create": {
+      "title": "Créer un Nouveau Projet",
+      "projectTitle": "Titre du Projet",
+      "description": "Description",
+      "bpm": "BPM",
+      "key": "Tonalité",
+      "tags": "Tags",
+      "tagsPlaceholder": "Ajouter des tags (séparés par des virgules)",
+      "mode": "Visibilité",
+      "modePrivate": "Privé",
+      "modePublic": "Public",
+      "modeRemixable": "Remixable",
+      "submit": "Créer le Projet",
+      "cancel": "Annuler"
+    },
+    "edit": {
+      "title": "Modifier le Projet",
+      "submit": "Enregistrer"
+    },
+    "delete": {
+      "confirm": "Êtes-vous sûr de vouloir supprimer ce projet ?",
+      "button": "Supprimer le Projet"
+    },
+    "details": {
+      "owner": "Propriétaire",
+      "createdAt": "Créé",
+      "updatedAt": "Mis à jour",
+      "stems": "Pistes",
+      "noStems": "Aucune piste pour le moment",
+      "versions": "Versions",
+      "comments": "Commentaires"
+    }
+  },
+  "clubs": {
+    "title": "Clubs Musicaux",
+    "subtitle": "Rejoignez des clubs, partagez vos projets et collaborez",
+    "noClubs": "Aucun club pour le moment",
+    "member": "Membre",
+    "members": "membres",
+    "projects": "projets",
+    "joinClub": "Rejoindre le Club",
+    "leaveClub": "Quitter le Club",
+    "tabs": {
+      "overview": "Aperçu",
+      "discussions": "Discussions",
+      "projects": "Projets",
+      "challenges": "Défis",
+      "remixes": "Remixes",
+      "members": "Membres"
+    },
+    "overview": {
+      "discussionsCount": "Discussions",
+      "projectsCount": "Projets",
+      "challengesCount": "Défis",
+      "membersCount": "Membres"
+    },
+    "discussions": {
+      "title": "Discussions",
+      "newDiscussion": "Nouvelle Discussion",
+      "noDiscussions": "Aucune discussion pour le moment",
+      "emptyMessage": "Partagez des idées, posez des questions ou lancez une conversation",
+      "beFirst": "Soyez le premier à lancer une conversation !",
+      "replies": "réponses"
+    },
+    "projects": {
+      "title": "Projets du Club",
+      "createProject": "Créer un Projet",
+      "noProjects": "Aucun projet partagé pour le moment"
+    },
+    "challenges": {
+      "title": "Défis du Club",
+      "noChallenges": "Aucun défi pour le moment",
+      "status": {
+        "active": "Actif",
+        "upcoming": "À venir",
+        "ended": "Terminé"
+      },
+      "starts": "Début",
+      "ends": "Fin"
+    },
+    "remixes": {
+      "title": "Remixes du Club",
+      "noRemixes": "Aucun remix pour le moment",
+      "emptyMessage": "Les membres du club n'ont pas encore créé de remixes. Soyez le premier !",
+      "badge": "Remix",
+      "remixOf": "Remix de"
+    },
+    "members": {
+      "title": "Membres du Club",
+      "noMembers": "Aucun membre pour le moment",
+      "role": {
+        "admin": "Admin",
+        "member": "Membre"
+      },
+      "joined": "Rejoint le"
+    }
+  },
+  "admin": {
+    "title": "Tableau de Bord Admin",
+    "subtitle": "Gérez votre plateforme AudioCollab",
+    "nav": {
+      "dashboard": "Tableau de bord",
+      "clubs": "Clubs",
+      "users": "Utilisateurs",
+      "projects": "Projets",
+      "backToSite": "Retour au site"
+    },
+    "stats": {
+      "totalUsers": "Total d'Utilisateurs",
+      "totalProjects": "Total de Projets",
+      "totalClubs": "Total de Clubs"
+    },
+    "recentUsers": "Utilisateurs Récents",
+    "recentProjects": "Projets Récents",
+    "clubs": {
+      "title": "Gérer les Clubs",
+      "subtitle": "Créer et gérer les clubs de genres musicaux",
+      "newClub": "Nouveau Club",
+      "noClubs": "Aucun club créé pour le moment. Créez votre premier club de genre musical !",
+      "table": {
+        "name": "Nom",
+        "slug": "Slug",
+        "visibility": "Visibilité",
+        "members": "Membres",
+        "projects": "Projets",
+        "actions": "Actions",
+        "view": "Voir",
+        "edit": "Modifier"
+      }
+    }
+  },
+  "remixes": {
+    "title": "Remixes",
+    "remixThisProject": "Remixer ce projet",
+    "badge": "Remix",
+    "remixOf": "Remix de",
+    "noRemixes": "Aucun remix pour le moment",
+    "creating": "Création du remix..."
+  },
+  "multitrack": {
+    "stems": {
+      "title": "Pistes",
+      "addStem": "Ajouter une Piste",
+      "noStems": "Aucune piste pour le moment",
+      "upload": "Téléverser une Piste",
+      "name": "Nom de la Piste",
+      "volume": "Volume",
+      "pan": "Panoramique",
+      "mute": "Muet",
+      "solo": "Solo",
+      "delete": "Supprimer"
+    },
+    "player": {
+      "play": "Lecture",
+      "pause": "Pause",
+      "stop": "Arrêt",
+      "mixer": "Mixeur",
+      "waveform": "Forme d'onde",
+      "timeline": "Timeline"
+    },
+    "comments": {
+      "timeline": "Commentaires Timeline",
+      "noComments": "Aucun commentaire timeline pour le moment",
+      "addComment": "Ajouter un commentaire à ce moment",
+      "atTime": "à"
+    },
+    "discussions": {
+      "title": "Discussion",
+      "noMessages": "Aucun message pour le moment",
+      "startConversation": "Commencer la conversation",
+      "typeMessage": "Tapez un message...",
+      "send": "Envoyer"
+    },
+    "versions": {
+      "title": "Versions",
+      "noVersions": "Aucune version pour le moment",
+      "createVersion": "Créer une Version",
+      "label": "Libellé de la Version",
+      "notes": "Notes"
+    },
+    "collaborators": {
+      "title": "Collaborateurs",
+      "addCollaborator": "Ajouter un Collaborateur",
+      "noCollaborators": "Aucun collaborateur pour le moment",
+      "instrument": "Instrument",
+      "role": "Rôle"
+    }
+  }
+}

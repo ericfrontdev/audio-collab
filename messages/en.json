@@ -1,0 +1,233 @@
+{
+  "common": {
+    "appName": "AudioCollab",
+    "tagline": "Collaborative Music Studio"
+  },
+  "nav": {
+    "projects": "Projects",
+    "clubs": "Clubs",
+    "profile": "Profile",
+    "login": "Login",
+    "logout": "Logout",
+    "signup": "Sign Up"
+  },
+  "home": {
+    "title": "AudioCollab",
+    "subtitle": "Collaborative Music Studio",
+    "description": "Create, collaborate, and remix music with musicians around the world"
+  },
+  "auth": {
+    "login": {
+      "title": "Login to AudioCollab",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signupLink": "Sign up"
+    },
+    "signup": {
+      "title": "Create your account",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Optional",
+      "displayNameHint": "Leave blank to use your email prefix",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Create Account",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "myProjects": "My Projects",
+    "noProjects": "No projects yet. Start creating!",
+    "newProject": "New Project",
+    "create": {
+      "title": "Create New Project",
+      "projectTitle": "Project Title",
+      "description": "Description",
+      "bpm": "BPM",
+      "key": "Key",
+      "tags": "Tags",
+      "tagsPlaceholder": "Add tags (comma separated)",
+      "mode": "Visibility",
+      "modePrivate": "Private",
+      "modePublic": "Public",
+      "modeRemixable": "Remixable",
+      "submit": "Create Project",
+      "cancel": "Cancel"
+    },
+    "edit": {
+      "title": "Edit Project",
+      "submit": "Save Changes"
+    },
+    "delete": {
+      "confirm": "Are you sure you want to delete this project?",
+      "button": "Delete Project"
+    },
+    "details": {
+      "owner": "Owner",
+      "createdAt": "Created",
+      "updatedAt": "Updated",
+      "stems": "Stems",
+      "noStems": "No stems yet",
+      "versions": "Versions",
+      "comments": "Comments"
+    }
+  },
+  "clubs": {
+    "title": "Musical Clubs",
+    "subtitle": "Join clubs, share your projects, and collaborate",
+    "noClubs": "No clubs yet",
+    "member": "Member",
+    "members": "members",
+    "projects": "projects",
+    "joinClub": "Join Club",
+    "leaveClub": "Leave Club",
+    "tabs": {
+      "overview": "Overview",
+      "discussions": "Discussions",
+      "projects": "Projects",
+      "challenges": "Challenges",
+      "remixes": "Remixes",
+      "members": "Members"
+    },
+    "overview": {
+      "discussionsCount": "Discussions",
+      "projectsCount": "Projects",
+      "challengesCount": "Challenges",
+      "membersCount": "Members"
+    },
+    "discussions": {
+      "title": "Discussions",
+      "newDiscussion": "New Discussion",
+      "noDiscussions": "No discussions yet",
+      "emptyMessage": "Share ideas, ask questions, or start a conversation",
+      "beFirst": "Be the first to start a conversation!",
+      "replies": "replies"
+    },
+    "projects": {
+      "title": "Club Projects",
+      "createProject": "Create Project",
+      "noProjects": "No projects shared yet"
+    },
+    "challenges": {
+      "title": "Club Challenges",
+      "noChallenges": "No challenges yet",
+      "status": {
+        "active": "Active",
+        "upcoming": "Upcoming",
+        "ended": "Ended"
+      },
+      "starts": "Starts",
+      "ends": "Ends"
+    },
+    "remixes": {
+      "title": "Club Remixes",
+      "noRemixes": "No remixes yet",
+      "emptyMessage": "Club members haven't created any remixes yet. Be the first!",
+      "badge": "Remix",
+      "remixOf": "Remix of"
+    },
+    "members": {
+      "title": "Club Members",
+      "noMembers": "No members yet",
+      "role": {
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "joined": "Joined"
+    }
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage your AudioCollab platform",
+    "nav": {
+      "dashboard": "Dashboard",
+      "clubs": "Clubs",
+      "users": "Users",
+      "projects": "Projects",
+      "backToSite": "Back to Site"
+    },
+    "stats": {
+      "totalUsers": "Total Users",
+      "totalProjects": "Total Projects",
+      "totalClubs": "Total Clubs"
+    },
+    "recentUsers": "Recent Users",
+    "recentProjects": "Recent Projects",
+    "clubs": {
+      "title": "Manage Clubs",
+      "subtitle": "Create and manage musical genre clubs",
+      "newClub": "New Club",
+      "noClubs": "No clubs created yet. Create your first musical genre club!",
+      "table": {
+        "name": "Name",
+        "slug": "Slug",
+        "visibility": "Visibility",
+        "members": "Members",
+        "projects": "Projects",
+        "actions": "Actions",
+        "view": "View",
+        "edit": "Edit"
+      }
+    }
+  },
+  "remixes": {
+    "title": "Remixes",
+    "remixThisProject": "Remix this project",
+    "badge": "Remix",
+    "remixOf": "Remix of",
+    "noRemixes": "No remixes yet",
+    "creating": "Creating remix..."
+  },
+  "multitrack": {
+    "stems": {
+      "title": "Stems",
+      "addStem": "Add Stem",
+      "noStems": "No stems yet",
+      "upload": "Upload Stem",
+      "name": "Stem Name",
+      "volume": "Volume",
+      "pan": "Pan",
+      "mute": "Mute",
+      "solo": "Solo",
+      "delete": "Delete"
+    },
+    "player": {
+      "play": "Play",
+      "pause": "Pause",
+      "stop": "Stop",
+      "mixer": "Mixer",
+      "waveform": "Waveform",
+      "timeline": "Timeline"
+    },
+    "comments": {
+      "timeline": "Timeline Comments",
+      "noComments": "No timeline comments yet",
+      "addComment": "Add comment at this time",
+      "atTime": "at"
+    },
+    "discussions": {
+      "title": "Discussion",
+      "noMessages": "No messages yet",
+      "startConversation": "Start the conversation",
+      "typeMessage": "Type a message...",
+      "send": "Send"
+    },
+    "versions": {
+      "title": "Versions",
+      "noVersions": "No versions yet",
+      "createVersion": "Create Version",
+      "label": "Version Label",
+      "notes": "Notes"
+    },
+    "collaborators": {
+      "title": "Collaborators",
+      "addCollaborator": "Add Collaborator",
+      "noCollaborators": "No collaborators yet",
+      "instrument": "Instrument",
+      "role": "Role"
+    }
+  }
+}
