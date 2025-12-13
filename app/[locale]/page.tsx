@@ -185,7 +185,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               </div>
               <h3 className="text-xl font-semibold mb-2">Genre-based Clubs</h3>
               <p className="text-muted-foreground">
-                Join Hip-Hop, EDM, Jazz clubs. Collaborate with your community.
+                Join clubs of any musical genre. Collaborate with your community.
               </p>
             </Card>
 
