@@ -192,7 +192,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             {/* Feature 5 */}
             <Card className="p-6 hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Building2 className="h-6 w-6 text-primary" />
+                <Music className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-semibold mb-2">Project Studios</h3>
               <p className="text-muted-foreground">
