@@ -344,7 +344,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             </div>
           </div>
           <div className="mt-8 text-center text-sm text-muted-foreground">
-            © 2024 AudioCollab. Built with 💜 for music creators.
+            © 2025 AudioCollab. Built with 💜 for music creators.
           </div>
         </div>
       </footer>
