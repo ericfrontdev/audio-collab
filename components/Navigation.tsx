@@ -46,6 +46,7 @@ export default function Navigation({ user, isAdmin = false }: NavigationProps) {
                 width={56}
                 height={56}
                 className="object-contain"
+                unoptimized
               />
               <span className="text-xl font-bold text-white">
                 AudioCollab

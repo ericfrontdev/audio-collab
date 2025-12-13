@@ -39,7 +39,6 @@ export default async function Home({
               width={64}
               height={64}
               className="object-contain"
-              unoptimized
             />
             <span className="text-3xl font-bold text-white">AudioCollab</span>
           </div>
@@ -386,7 +385,6 @@ export default async function Home({
                 width={32}
                 height={32}
                 className="object-contain"
-                unoptimized
               />
               <span className="font-semibold text-lg">AudioCollab</span>
             </div>

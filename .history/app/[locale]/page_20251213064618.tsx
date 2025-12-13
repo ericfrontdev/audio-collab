@@ -1,12 +1,4 @@
-import {
-  Music,
-  Users,
-  Repeat,
-  MessageSquare,
-  Layers,
-  Sparkles,
-  Building2,
-} from 'lucide-react'
+import { Music, Users, Repeat, MessageSquare, Layers, Sparkles, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,20 +6,13 @@ import WaitlistForm from '@/components/WaitlistForm'
 import Link from 'next/link'
 import Image from 'next/image'
 
-export default async function Home({
-  params,
-}: {
-  params: Promise<{ locale: string }>
-}) {
+export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section
-        className="relative overflow-hidden"
-        style={{ backgroundColor: '#1a1817' }}
-      >
+      <section className="relative overflow-hidden" style={{ backgroundColor: '#1a1817' }}>
         <div className="absolute inset-0 bg-grid-white/[0.02] [mask-image:radial-gradient(white,transparent_85%)]" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24 sm:pb-32">
@@ -39,27 +24,23 @@ export default async function Home({
               width={64}
               height={64}
               className="object-contain"
-              unoptimized
             />
-            <span className="text-3xl font-bold text-white">AudioCollab</span>
+            <span className="text-3xl font-bold text-white">
+              AudioCollab
+            </span>
           </div>
 
           <div className="text-center space-y-8">
             {/* Badge */}
             <div className="flex justify-center">
-              <Badge
-                variant="secondary"
-                className="px-4 py-2 text-sm"
-              >
+              <Badge variant="secondary" className="px-4 py-2 text-sm">
                 🎵 Beta Launch - Free for Early Adopters
               </Badge>
             </div>
 
             {/* Title */}
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
-              <span className="block text-foreground">
-                Collaborate on Music
-              </span>
+              <span className="block text-foreground">Collaborate on Music</span>
               <span className="block bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                 With Producers Worldwide
               </span>
@@ -67,8 +48,8 @@ export default async function Home({
 
             {/* Subtitle */}
             <p className="max-w-2xl mx-auto text-xl text-muted-foreground">
-              Upload individual tracks, join clubs, remix projects, and build
-              music together. Your online music studio.
+              Upload individual tracks, join clubs, remix projects, and build music together.
+              Your online music studio.
             </p>
 
             {/* Waitlist Form */}
@@ -97,34 +78,22 @@ export default async function Home({
                 <div className="flex items-start gap-3">
                   <div className="mt-1 text-destructive">❌</div>
                   <div>
-                    <p className="font-medium text-foreground">
-                      Emailing tracks back and forth
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Losing files in endless email threads
-                    </p>
+                    <p className="font-medium text-foreground">Emailing tracks back and forth</p>
+                    <p className="text-sm text-muted-foreground">Losing files in endless email threads</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1 text-destructive">❌</div>
                   <div>
-                    <p className="font-medium text-foreground">
-                      Lost in Dropbox folders
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      No organization, no version control
-                    </p>
+                    <p className="font-medium text-foreground">Lost in Dropbox folders</p>
+                    <p className="text-sm text-muted-foreground">No organization, no version control</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1 text-destructive">❌</div>
                   <div>
-                    <p className="font-medium text-foreground">
-                      No feedback on specific parts
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      &ldquo;Love the track!&rdquo; isn&apos;t enough
-                    </p>
+                    <p className="font-medium text-foreground">No feedback on specific parts</p>
+                    <p className="text-sm text-muted-foreground">&ldquo;Love the track!&rdquo; isn&apos;t enough</p>
                   </div>
                 </div>
               </div>
@@ -139,34 +108,22 @@ export default async function Home({
                 <div className="flex items-start gap-3">
                   <div className="mt-1 text-primary">✅</div>
                   <div>
-                    <p className="font-medium text-foreground">
-                      Upload & organize tracks
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Vocals, drums, bass - all in one place
-                    </p>
+                    <p className="font-medium text-foreground">Upload & organize tracks</p>
+                    <p className="text-sm text-muted-foreground">Vocals, drums, bass - all in one place</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1 text-primary">✅</div>
                   <div>
-                    <p className="font-medium text-foreground">
-                      Comment on timestamps
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      &ldquo;Love the drop at 1:32!&rdquo;
-                    </p>
+                    <p className="font-medium text-foreground">Comment on timestamps</p>
+                    <p className="text-sm text-muted-foreground">&ldquo;Love the drop at 1:32!&rdquo;</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-1 text-primary">✅</div>
                   <div>
-                    <p className="font-medium text-foreground">
-                      Version control built-in
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Track every change, never lose progress
-                    </p>
+                    <p className="font-medium text-foreground">Version control built-in</p>
+                    <p className="text-sm text-muted-foreground">Track every change, never lose progress</p>
                   </div>
                 </div>
               </div>
@@ -193,9 +150,7 @@ export default async function Home({
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                 <Layers className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">
-                Multi-track Projects
-              </h3>
+              <h3 className="text-xl font-semibold mb-2">Multi-track Projects</h3>
               <p className="text-muted-foreground">
                 Upload vocals, drums, bass separately. Solo/mute each track.
               </p>
@@ -208,8 +163,7 @@ export default async function Home({
               </div>
               <h3 className="text-xl font-semibold mb-2">Timeline Comments</h3>
               <p className="text-muted-foreground">
-                Comment at specific timestamps. Precise feedback where it
-                matters.
+                Comment at specific timestamps. Precise feedback where it matters.
               </p>
             </Card>
 
@@ -231,8 +185,7 @@ export default async function Home({
               </div>
               <h3 className="text-xl font-semibold mb-2">Genre-based Clubs</h3>
               <p className="text-muted-foreground">
-                Join clubs of any musical genre. Collaborate with your
-                community.
+                Join clubs of any musical genre. Collaborate with your community.
               </p>
             </Card>
 
@@ -243,8 +196,7 @@ export default async function Home({
               </div>
               <h3 className="text-xl font-semibold mb-2">Project Studios</h3>
               <p className="text-muted-foreground">
-                Each project has its own Studio - a dedicated space with
-                Discord-style chat, timeline, and collaboration tools.
+                Each project has its own Studio - a dedicated space with Discord-style chat, timeline, and collaboration tools.
               </p>
             </Card>
 
@@ -253,9 +205,7 @@ export default async function Home({
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                 <Sparkles className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">
-                Online DAW (Coming)
-              </h3>
+              <h3 className="text-xl font-semibold mb-2">Online DAW (Coming)</h3>
               <p className="text-muted-foreground">
                 Full production studio in your browser. Real-time collaboration.
               </p>
@@ -281,17 +231,13 @@ export default async function Home({
             <div className="flex gap-6">
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-lg font-bold text-primary-foreground">
-                    1
-                  </span>
+                  <span className="text-lg font-bold text-primary-foreground">1</span>
                 </div>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h3 className="text-2xl font-semibold">Phase 1 - Beta</h3>
-                  <Badge className="bg-green-500/10 text-green-700 dark:text-green-400">
-                    In Progress
-                  </Badge>
+                  <Badge className="bg-green-500/10 text-green-700 dark:text-green-400">In Progress</Badge>
                 </div>
                 <p className="text-muted-foreground mb-3">
                   Core collaboration features
@@ -309,16 +255,12 @@ export default async function Home({
             <div className="flex gap-6">
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center">
-                  <span className="text-lg font-bold text-secondary-foreground">
-                    2
-                  </span>
+                  <span className="text-lg font-bold text-secondary-foreground">2</span>
                 </div>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-2xl font-semibold">
-                    Phase 2 - Multitrack
-                  </h3>
+                  <h3 className="text-2xl font-semibold">Phase 2 - Multitrack</h3>
                   <Badge variant="outline">Coming Soon</Badge>
                 </div>
                 <p className="text-muted-foreground mb-3">
@@ -337,9 +279,7 @@ export default async function Home({
             <div className="flex gap-6">
               <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                  <span className="text-lg font-bold text-muted-foreground">
-                    3
-                  </span>
+                  <span className="text-lg font-bold text-muted-foreground">3</span>
                 </div>
               </div>
               <div className="flex-1">
@@ -365,7 +305,9 @@ export default async function Home({
       {/* Final CTA */}
       <section className="py-20 bg-gradient-to-b from-background to-primary/10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-6">Ready to Collaborate?</h2>
+          <h2 className="text-4xl font-bold mb-6">
+            Ready to Collaborate?
+          </h2>
           <p className="text-xl text-muted-foreground mb-8">
             Join the waitlist and be among the first to experience AudioCollab.
           </p>
@@ -386,15 +328,11 @@ export default async function Home({
                 width={32}
                 height={32}
                 className="object-contain"
-                unoptimized
               />
               <span className="font-semibold text-lg">AudioCollab</span>
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground">
-              <a
-                href="mailto:hello@audiocollab.app"
-                className="hover:text-foreground transition-colors"
-              >
+              <a href="mailto:hello@audiocollab.app" className="hover:text-foreground transition-colors">
                 Contact
               </a>
             </div>
