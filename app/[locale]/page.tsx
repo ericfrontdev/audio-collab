@@ -192,22 +192,22 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             {/* Feature 5 */}
             <Card className="p-6 hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Sparkles className="h-6 w-6 text-primary" />
+                <Building2 className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Online DAW (Coming)</h3>
+              <h3 className="text-xl font-semibold mb-2">Project Studios</h3>
               <p className="text-muted-foreground">
-                Full production studio in your browser. Real-time collaboration.
+                Each project has its own Studio - a dedicated space with Discord-style chat, timeline, and collaboration tools.
               </p>
             </Card>
 
             {/* Feature 6 */}
             <Card className="p-6 hover:shadow-lg transition-shadow">
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Building2 className="h-6 w-6 text-primary" />
+                <Sparkles className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Project Studios</h3>
+              <h3 className="text-xl font-semibold mb-2">Online DAW (Coming)</h3>
               <p className="text-muted-foreground">
-                Each project has its own Studio - a dedicated space with Discord-style chat, timeline, and collaboration tools.
+                Full production studio in your browser. Real-time collaboration.
               </p>
             </Card>
           </div>
