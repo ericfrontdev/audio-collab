@@ -297,19 +297,20 @@ export default async function Home({
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-2xl font-semibold">Phase 1 - Beta</h3>
+                  <h3 className="text-2xl font-semibold">Phase 1 - MVP</h3>
                   <Badge className="bg-green-500/10 text-green-700 dark:text-green-400">
                     In Progress
                   </Badge>
                 </div>
                 <p className="text-muted-foreground mb-3">
-                  Core collaboration features
+                  Core collaboration platform
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">Upload projects</Badge>
-                  <Badge variant="secondary">Clubs</Badge>
-                  <Badge variant="secondary">Discussions</Badge>
-                  <Badge variant="secondary">Remixes</Badge>
+                  <Badge variant="secondary">Multi-track upload</Badge>
+                  <Badge variant="secondary">Waveform comments</Badge>
+                  <Badge variant="secondary">Rough mixing tools</Badge>
+                  <Badge variant="secondary">Project Studios</Badge>
+                  <Badge variant="secondary">Genre Clubs</Badge>
                 </div>
               </div>
             </div>
@@ -326,18 +327,18 @@ export default async function Home({
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h3 className="text-2xl font-semibold">
-                    Phase 2 - Multitrack
+                    Phase 2 - Enhanced Features
                   </h3>
                   <Badge variant="outline">Coming Soon</Badge>
                 </div>
                 <p className="text-muted-foreground mb-3">
-                  Professional multitrack features
+                  Professional collaboration tools
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">Multi-track upload</Badge>
-                  <Badge variant="secondary">Waveforms</Badge>
-                  <Badge variant="secondary">Basic mixing</Badge>
-                  <Badge variant="secondary">Solo/mute</Badge>
+                  <Badge variant="secondary">Version history</Badge>
+                  <Badge variant="secondary">Export mixdowns</Badge>
+                  <Badge variant="secondary">Download tracks</Badge>
+                  <Badge variant="secondary">Splitsheets</Badge>
                 </div>
               </div>
             </div>
@@ -353,17 +354,17 @@ export default async function Home({
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-2xl font-semibold">Phase 3 - DAW</h3>
+                  <h3 className="text-2xl font-semibold">Phase 3 - Online DAW</h3>
                   <Badge variant="outline">Future</Badge>
                 </div>
                 <p className="text-muted-foreground mb-3">
-                  Full online DAW (AudioCollab Studio)
+                  Browser-based production studio
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">Timeline editing</Badge>
-                  <Badge variant="secondary">Effects</Badge>
-                  <Badge variant="secondary">MIDI</Badge>
-                  <Badge variant="secondary">Real-time collab</Badge>
+                  <Badge variant="secondary">Timeline/sequencer</Badge>
+                  <Badge variant="secondary">MIDI support</Badge>
+                  <Badge variant="secondary">Web Audio plugins</Badge>
+                  <Badge variant="secondary">Effects & instruments</Badge>
                 </div>
               </div>
             </div>
