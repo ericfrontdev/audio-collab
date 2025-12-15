@@ -58,17 +58,16 @@ export default async function Home({
             {/* Title */}
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
               <span className="block text-foreground">
-                Collaborate on Music
+                Next-Gen Music Collaboration
               </span>
               <span className="block bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                With Producers Worldwide
+                for Independent Musicians
               </span>
             </h1>
 
             {/* Subtitle */}
             <p className="max-w-2xl mx-auto text-xl text-muted-foreground">
-              Upload individual tracks, join clubs, remix projects, and build
-              music together. Your online music studio.
+              Comment on waveforms with precise timestamps. Adjust volume, pan, and mixing in real-time. Collaborate with zero friction.
             </p>
 
             {/* Waitlist Form */}
@@ -151,10 +150,21 @@ export default async function Home({
                   <div className="mt-1 text-primary">✅</div>
                   <div>
                     <p className="font-medium text-foreground">
-                      Comment on timestamps
+                      Comment on waveforms with timestamps
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      &ldquo;Love the drop at 1:32!&rdquo;
+                      &ldquo;Love the drop at 1:32!&rdquo; - directly on the audio
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1 text-primary">✅</div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Built-in rough mixing tools
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Adjust volume, pan, mute, solo before final production
                     </p>
                   </div>
                 </div>
@@ -197,7 +207,7 @@ export default async function Home({
                 Multi-track Projects
               </h3>
               <p className="text-muted-foreground">
-                Upload vocals, drums, bass separately. Solo/mute each track.
+                Upload vocals, drums, bass separately. Built-in mixing controls - volume, pan, mute, solo. Hear your ideas instantly.
               </p>
             </Card>
 
@@ -206,10 +216,9 @@ export default async function Home({
               <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                 <MessageSquare className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Timeline Comments</h3>
+              <h3 className="text-xl font-semibold mb-2">Waveform Comments</h3>
               <p className="text-muted-foreground">
-                Comment at specific timestamps. Precise feedback where it
-                matters.
+                Comment directly on waveforms with precise timestamps - just like SoundCloud. Give feedback exactly where it matters.
               </p>
             </Card>
 
