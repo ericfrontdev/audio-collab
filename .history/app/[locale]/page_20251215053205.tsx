@@ -5,7 +5,7 @@ import {
   MessageSquare,
   Layers,
   Sparkles,
-  Headphones,
+  Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -47,10 +47,12 @@ export default async function Home({
           <div className="text-center space-y-8">
             {/* Badge */}
             <div className="flex justify-center">
-              <Card className="flex gap-2 items-center px-6 py-2 text-sm">
-                <Headphones className="text-primary" /> Beta Launch - Free for
-                Early Adopters
-              </Card>
+              <Badge
+                variant="secondary"
+                className="px-4 py-2 text-sm"
+              >
+                🎵 Beta Launch - Free for Early Adopters
+              </Badge>
             </div>
 
             {/* Title */}
@@ -65,9 +67,7 @@ export default async function Home({
 
             {/* Subtitle */}
             <p className="max-w-2xl mx-auto text-xl text-muted-foreground">
-              Comment on waveforms with precise timestamps. Adjust volume, pan,
-              solo and mute for rough mixing in real-time. Collaborate with zero
-              friction.
+              Comment on waveforms with precise timestamps. Adjust volume, pan, and mixing in real-time. Collaborate with zero friction.
             </p>
 
             {/* Waitlist Form */}
@@ -153,8 +153,7 @@ export default async function Home({
                       Comment on waveforms with timestamps
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      &ldquo;Love the drop at 1:32!&rdquo; - directly on the
-                      audio
+                      &ldquo;Love the drop at 1:32!&rdquo; - directly on the audio
                     </p>
                   </div>
                 </div>
@@ -208,8 +207,7 @@ export default async function Home({
                 Multi-track Projects
               </h3>
               <p className="text-muted-foreground">
-                Upload vocals, drums, bass separately. Built-in mixing controls
-                - volume, pan, mute, solo. Hear your ideas instantly.
+                Upload vocals, drums, bass separately. Built-in mixing controls - volume, pan, mute, solo. Hear your ideas instantly.
               </p>
             </Card>
 
@@ -220,8 +218,7 @@ export default async function Home({
               </div>
               <h3 className="text-xl font-semibold mb-2">Waveform Comments</h3>
               <p className="text-muted-foreground">
-                Comment directly on waveforms with precise timestamps - just
-                like SoundCloud. Give feedback exactly where it matters.
+                Comment directly on waveforms with precise timestamps - just like SoundCloud. Give feedback exactly where it matters.
               </p>
             </Card>
 
@@ -357,9 +354,7 @@ export default async function Home({
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-2xl font-semibold">
-                    Phase 3 - Online DAW
-                  </h3>
+                  <h3 className="text-2xl font-semibold">Phase 3 - Online DAW</h3>
                   <Badge variant="outline">Future</Badge>
                 </div>
                 <p className="text-muted-foreground mb-3">

@@ -47,7 +47,7 @@ export async function signup(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  redirect(`/${locale}/dashboard`)
+  redirect(`/onboarding`)
 }
 
 export async function logout(locale: string = 'en') {

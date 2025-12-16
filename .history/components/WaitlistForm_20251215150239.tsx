@@ -84,7 +84,7 @@ export default function WaitlistForm({ locale }: { locale: string }) {
           type="submit"
           disabled={status === 'loading'}
           size="lg"
-          className="whitespace-nowrap"
+          className="whitespace-nowrap text-semibold"
         >
           {status === 'loading' ? (
             <>

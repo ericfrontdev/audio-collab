@@ -1,9 +1,43 @@
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
+import { type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
-export default createMiddleware(routing);
+// Create next-intl middleware
+const intlMiddleware = createMiddleware(routing);
+
+export default async function proxy(request: NextRequest) {
+  // Handle i18n routing
+  let response = intlMiddleware(request);
+
+  // Update Supabase session
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // Refresh session if needed
+  await supabase.auth.getUser();
+
+  return response;
+}
 
 export const config = {
-  // Match only internationalized pathnames
-  matcher: ['/', '/(fr|en)/:path*']
+  matcher: [
+    // Skip Next.js internals and all static files
+    '/((?!_next|_vercel|.*\\..*).*)',
+  ],
 };

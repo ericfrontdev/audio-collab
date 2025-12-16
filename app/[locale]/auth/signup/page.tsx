@@ -4,7 +4,12 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useActionState } from 'react';
+import Image from 'next/image';
 import { signup } from '@/app/actions/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function SignupPage() {
   const t = useTranslations('auth.signup');
@@ -13,80 +18,94 @@ export default function SignupPage() {
   const [state, formAction] = useActionState(signup, null);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-md space-y-8 p-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold">{t('title')}</h2>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo + Brand */}
+        <div className="flex flex-col items-center gap-4">
+          <Link href={`/${locale}`} className="flex items-center gap-3">
+            <Image
+              src="/images/AC_Logo.webp"
+              alt="AudioCollab"
+              width={48}
+              height={48}
+              className="object-contain"
+              unoptimized
+            />
+            <span className="text-2xl font-bold text-foreground">AudioCollab</span>
+          </Link>
         </div>
 
-        <form action={formAction} className="mt-8 space-y-6">
-          <input type="hidden" name="locale" value={locale} />
+        {/* Sign Up Card */}
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">
+              {t('title')}
+            </CardTitle>
+            <CardDescription className="text-center">
+              {t('subtitle')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={formAction} className="space-y-4">
+              <input type="hidden" name="locale" value={locale} />
 
-          {state?.error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {state.error}
-            </div>
-          )}
+              {state?.error && (
+                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive border border-destructive/20">
+                  {state.error}
+                </div>
+              )}
 
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="display_name" className="block text-sm font-medium">
-                {t('displayName')}
-              </label>
-              <input
-                id="display_name"
-                name="display_name"
-                type="text"
-                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t('displayNameHint')}
-              </p>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="display_name">{t('displayName')}</Label>
+                <Input
+                  id="display_name"
+                  name="display_name"
+                  type="text"
+                  placeholder={t('displayNamePlaceholder')}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('displayNameHint')}
+                </p>
+              </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium">
-                {t('email')}
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">{t('email')}</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium">
-                {t('password')}
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2"
-              />
-            </div>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">{t('password')}</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
 
-          <div>
-            <button
-              type="submit"
-              className="w-full rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
-            >
-              {t('submit')}
-            </button>
-          </div>
+              <Button type="submit" className="w-full" size="lg">
+                {t('submit')}
+              </Button>
 
-          <div className="text-center text-sm">
-            {t('hasAccount')}{' '}
-            <Link href="../login" className="font-medium text-primary hover:underline">
-              {t('loginLink')}
-            </Link>
-          </div>
-        </form>
+              <div className="text-center text-sm text-muted-foreground">
+                {t('hasAccount')}{' '}
+                <Link
+                  href={`/${locale}/auth/login`}
+                  className="font-medium text-primary hover:underline"
+                >
+                  {t('loginLink')}
+                </Link>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

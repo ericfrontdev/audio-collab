@@ -8,9 +8,7 @@ import { Loader2, CheckCircle2 } from 'lucide-react'
 
 export default function WaitlistForm({ locale }: { locale: string }) {
   const [email, setEmail] = useState('')
-  const [status, setStatus] = useState<
-    'idle' | 'loading' | 'success' | 'error'
-  >('idle')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,15 +26,16 @@ export default function WaitlistForm({ locale }: { locale: string }) {
 
     const supabase = createClient()
 
-    const { error } = await supabase.from('waitlist').insert({
-      email: email.trim().toLowerCase(),
-      locale,
-      metadata: {
-        user_agent:
-          typeof window !== 'undefined' ? window.navigator.userAgent : null,
-        timestamp: new Date().toISOString(),
-      },
-    })
+    const { error } = await supabase
+      .from('waitlist')
+      .insert({
+        email: email.trim().toLowerCase(),
+        locale,
+        metadata: {
+          user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : null,
+          timestamp: new Date().toISOString()
+        }
+      })
 
     if (error) {
       // Handle duplicate email error
@@ -66,10 +65,7 @@ export default function WaitlistForm({ locale }: { locale: string }) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full space-y-3"
-    >
+    <form onSubmit={handleSubmit} className="w-full space-y-3">
       <div className="flex flex-col sm:flex-row gap-2">
         <Input
           type="email"

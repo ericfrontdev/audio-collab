@@ -18,7 +18,8 @@
   },
   "auth": {
     "login": {
-      "title": "Login to AudioCollab",
+      "title": "Welcome back",
+      "subtitle": "Sign in to your AudioCollab account",
       "email": "Email",
       "password": "Password",
       "submit": "Sign In",
@@ -27,6 +28,7 @@
     },
     "signup": {
       "title": "Create your account",
+      "subtitle": "Join AudioCollab and start collaborating",
       "displayName": "Display Name",
       "displayNamePlaceholder": "Optional",
       "displayNameHint": "Leave blank to use your email prefix",

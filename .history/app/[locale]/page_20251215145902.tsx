@@ -66,8 +66,7 @@ export default async function Home({
             {/* Subtitle */}
             <p className="max-w-2xl mx-auto text-xl text-muted-foreground">
               Comment on waveforms with precise timestamps. Adjust volume, pan,
-              solo and mute for rough mixing in real-time. Collaborate with zero
-              friction.
+              and mixing in real-time. Collaborate with zero friction.
             </p>
 
             {/* Waitlist Form */}
