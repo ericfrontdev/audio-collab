@@ -116,10 +116,19 @@ export function CreateClubForm() {
         if (avatar_url) updateData.avatar_url = avatar_url;
         if (banner_url) updateData.banner_url = banner_url;
 
-        await supabase
+        console.log('Updating club with URLs:', updateData);
+
+        const { error: updateError } = await supabase
           .from('clubs')
           .update(updateData)
           .eq('id', club.id);
+
+        if (updateError) {
+          console.error('Failed to update club URLs:', updateError);
+          toast.error('Club created but failed to update images');
+        } else {
+          console.log('Club URLs updated successfully');
+        }
       }
 
       toast.success('Club created successfully!');
