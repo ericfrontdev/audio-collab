@@ -75,7 +75,7 @@ export function CreateClubForm() {
       // Upload avatar if provided
       if (avatarFile && club) {
         const avatarExt = avatarFile.name.split('.').pop();
-        const avatarPath = `avatars/${club.id}-${Date.now()}.${avatarExt}`;
+        const avatarPath = `clubs/avatars/${club.id}-${Date.now()}.${avatarExt}`;
 
         const { error: avatarError } = await supabase.storage
           .from('clubs')
@@ -94,7 +94,7 @@ export function CreateClubForm() {
       // Upload banner if provided
       if (bannerFile && club) {
         const bannerExt = bannerFile.name.split('.').pop();
-        const bannerPath = `banners/${club.id}-${Date.now()}.${bannerExt}`;
+        const bannerPath = `clubs/banners/${club.id}-${Date.now()}.${bannerExt}`;
 
         const { error: bannerError } = await supabase.storage
           .from('clubs')
