@@ -173,7 +173,7 @@ export function CreateClubForm() {
             name="slug"
             required
             maxLength={100}
-            pattern="[a-z0-9-]+"
+            pattern="[a-z0-9\-]+"
             placeholder="e.g., blues, jazz, rock"
             className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
