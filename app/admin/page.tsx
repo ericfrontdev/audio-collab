@@ -40,15 +40,37 @@ export default async function AdminDashboard() {
 
   console.log('Admin check passed! Loading dashboard...');
 
-  // Temporarily skip queries to isolate the issue
-  const totalUsers = 0;
-  const totalProjects = 0;
-  const totalClubs = 0;
-  const totalMemberships = 0;
-  const recentUsers: any[] = [];
-  const clubs: any[] = [];
+  // Get stats
+  let totalUsers = 0, totalProjects = 0, totalClubs = 0, totalMemberships = 0;
+  let recentUsers: any[] = [];
+  let clubs: any[] = [];
 
-  console.log('About to render JSX...');
+  try {
+    const results = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('projects').select('*', { count: 'exact', head: true }),
+      supabase.from('clubs').select('*', { count: 'exact', head: true }),
+      supabase.from('club_members').select('*', { count: 'exact', head: true }),
+      supabase
+        .from('profiles')
+        .select('id, username, display_name, created_at, is_admin')
+        .order('created_at', { ascending: false })
+        .limit(10),
+      supabase
+        .from('clubs')
+        .select('*')
+        .order('created_at', { ascending: false })
+    ]);
+
+    totalUsers = results[0].count || 0;
+    totalProjects = results[1].count || 0;
+    totalClubs = results[2].count || 0;
+    totalMemberships = results[3].count || 0;
+    recentUsers = results[4].data || [];
+    clubs = results[5].data || [];
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+  }
 
   return (
     <AppLayout>
@@ -100,7 +122,7 @@ export default async function AdminDashboard() {
             <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-400">Total Memberships</p>
+                  <p className="text-sm font-medium text-gray-400">Total Club Members</p>
                   <p className="text-3xl font-bold text-white mt-2">{totalMemberships || 0}</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-lg">

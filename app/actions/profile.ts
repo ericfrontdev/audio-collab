@@ -113,8 +113,10 @@ export async function updateProfile(formData: FormData) {
   const websiteUrl = formData.get('website_url') as string
   const isPublic = formData.get('is_public') === 'true'
   const avatarFile = formData.get('avatar') as File | null
+  const bannerFile = formData.get('banner') as File | null
 
   let avatarUrl = formData.get('current_avatar_url') as string | null
+  let bannerUrl = formData.get('current_banner_url') as string | null
 
   // Upload new avatar if provided
   if (avatarFile && avatarFile.size > 0) {
@@ -141,12 +143,38 @@ export async function updateProfile(formData: FormData) {
     avatarUrl = publicUrl
   }
 
+  // Upload new banner if provided
+  if (bannerFile && bannerFile.size > 0) {
+    const fileExt = bannerFile.name.split('.').pop()
+    const fileName = `${user.id}-banner-${Date.now()}.${fileExt}`
+    const filePath = `banners/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('profiles')
+      .upload(filePath, bannerFile, {
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+    if (uploadError) {
+      return { error: `Banner upload failed: ${uploadError.message}` }
+    }
+
+    // Get public URL
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from('profiles').getPublicUrl(filePath)
+
+    bannerUrl = publicUrl
+  }
+
   // Update profile (username cannot be changed)
   const { error } = await supabase
     .from('profiles')
     .update({
       display_name: displayName || null,
       avatar_url: avatarUrl,
+      banner_url: bannerUrl,
       bio: bio || null,
       musical_roles: musicalRoles,
       genres: genres,

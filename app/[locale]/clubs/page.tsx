@@ -1,114 +1,113 @@
 import { createClient } from '@/lib/supabase/server'
-import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { Music, Users, Guitar, Mic2, Piano, Disc3, Radio, Headphones, Heart, Drum, Music2, Volume2, Waves } from 'lucide-react'
+import type { ClubWithStats } from '@/types/club'
+import { AppLayout } from '@/components/layouts/AppLayout'
+
+// Genre-specific icons
+const genreIcons: Record<string, any> = {
+  'Lo-fi': Headphones,
+  'Hip-Hop': Mic2,
+  'Jazz': Piano,
+  'Rock': Guitar,
+  'Electronic': Disc3,
+  'Pop': Heart,
+  'R&B': Music2,
+  'Indie': Radio,
+  'Metal': Volume2,
+  'Country': Guitar,
+  'Classical': Music,
+  'Ambient': Waves,
+}
 
 export default async function ClubsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   const supabase = await createClient()
-  const t = await getTranslations('clubs')
 
-  // Check authentication
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect(`/${locale}/auth/login`)
-  }
-
-  // Fetch all public clubs with member count
+  // Get all clubs
   const { data: clubs } = await supabase
     .from('clubs')
-    .select(`
-      *,
-      club_members!inner(count),
-      club_projects!inner(count)
-    `)
-    .eq('visibility', 'public')
+    .select('*')
     .order('name')
 
-  // Get user's memberships
-  const { data: userMemberships } = await supabase
-    .from('club_members')
-    .select('club_id')
-    .eq('user_id', user.id)
+  // Get user's club memberships if authenticated
+  let userClubIds: string[] = []
+  if (user) {
+    const { data: memberships } = await supabase
+      .from('club_members')
+      .select('club_id')
+      .eq('user_id', user.id)
 
-  const memberClubIds = new Set(userMemberships?.map(m => m.club_id) || [])
+    userClubIds = memberships?.map(m => m.club_id) || []
+  }
+
+  // Enhance clubs with stats
+  const clubsWithStats: ClubWithStats[] = await Promise.all(
+    (clubs || []).map(async (club) => {
+      const { count } = await supabase
+        .from('club_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('club_id', club.id)
+
+      return {
+        ...club,
+        member_count: count || 0,
+        is_member: userClubIds.includes(club.id),
+      }
+    })
+  )
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {t('title')}
-          </h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            {t('subtitle')}
+    <AppLayout>
+      <div className="min-h-screen bg-black py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-5xl font-bold mb-3 text-white">Musical Clubs</h1>
+          <p className="text-gray-400 text-lg">
+            Join genre-based communities, share projects, and collaborate with musicians
           </p>
         </div>
 
         {/* Clubs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {clubs?.map((club) => {
-            const isMember = memberClubIds.has(club.id)
-            const memberCount = club.club_members?.[0]?.count || 0
-            const projectCount = club.club_projects?.[0]?.count || 0
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {clubsWithStats.map((club) => {
+            const Icon = genreIcons[club.genre] || Music
 
             return (
-              <Link
-                key={club.id}
-                href={`/${locale}/clubs/${club.slug}`}
-                className="block"
-              >
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
-                  {/* Cover Image */}
-                  {club.cover_url ? (
-                    <div className="h-48 overflow-hidden">
-                      <img
-                        src={club.cover_url}
-                        alt={club.name}
-                        className="w-full h-full object-cover"
-                      />
+              <Link key={club.id} href={`/${locale}/clubs/${club.slug}`}>
+                <div className="group relative aspect-square rounded-2xl bg-black border-2 border-transparent shadow-[0_0_60px_-12px_rgba(168,85,247,0.4)] hover:border-primary hover:shadow-[0_0_80px_-8px_rgba(168,85,247,0.8)] transition-all duration-300 hover:scale-[1.02]">
+                  {/* Inner card content */}
+                  <div className="relative w-full h-full rounded-xl p-5 flex flex-col justify-between">
+                    {/* Icon */}
+                    <div className="mb-3">
+                      <Icon className="w-8 h-8 text-white/90 group-hover:text-primary transition-colors duration-300" />
                     </div>
-                  ) : (
-                    <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                      <svg className="h-16 w-16 text-primary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                      </svg>
-                    </div>
-                  )}
 
-                  {/* Content */}
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {/* Content */}
+                    <div>
+                      <h3 className="text-lg font-bold text-white group-hover:text-primary mb-2 transition-colors duration-300">
                         {club.name}
                       </h3>
-                      {isMember && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                          {t('member')}
-                        </span>
-                      )}
-                    </div>
-
-                    {club.description && (
-                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                        {club.description}
+                      <p className="text-gray-400 group-hover:text-primary/70 text-xs leading-relaxed line-clamp-2 mb-3 transition-colors duration-300">
+                        {club.description || 'A community for music lovers and creators'}
                       </p>
-                    )}
 
-                    {/* Stats */}
-                    <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center">
-                        <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        {memberCount} {t('members')}
-                      </div>
-                      <div className="flex items-center">
-                        <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                        </svg>
-                        {projectCount} {t('projects')}
+                      {/* Stats */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-gray-500 group-hover:text-primary/80 text-xs transition-colors duration-300">
+                          <Users className="w-3.5 h-3.5" />
+                          <span>{club.member_count}</span>
+                        </div>
+                        {club.is_member && (
+                          <div className="px-1.5 py-0.5 rounded bg-white/10 group-hover:bg-primary/20 text-white group-hover:text-primary text-[10px] font-medium transition-colors duration-300">
+                            Joined
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -118,30 +117,18 @@ export default async function ClubsPage({ params }: { params: Promise<{ locale: 
           })}
         </div>
 
-        {(!clubs || clubs.length === 0) && (
-          <div className="text-center py-12">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-              />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-              {t('noClubs')}
-            </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {t('subtitle')}
+        {/* Empty State */}
+        {clubsWithStats.length === 0 && (
+          <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800 p-16 text-center">
+            <Music className="w-20 h-20 mx-auto mb-6 text-zinc-700" />
+            <h3 className="text-2xl font-semibold mb-3 text-white">No clubs yet</h3>
+            <p className="text-gray-400 text-lg">
+              Clubs will appear here once they are created
             </p>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </AppLayout>
   )
 }

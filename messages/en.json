@@ -183,6 +183,37 @@
     "noRemixes": "No remixes yet",
     "creating": "Creating remix..."
   },
+  "profile": {
+    "edit": {
+      "title": "Edit Profile",
+      "subtitle": "Update your profile information",
+      "username": "Username",
+      "usernameHint": "Username cannot be changed",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Your display name",
+      "avatar": "Avatar",
+      "avatarChange": "Change Avatar",
+      "banner": "Banner Image",
+      "bannerChange": "Change Banner",
+      "bio": "Bio",
+      "bioPlaceholder": "Tell us about yourself...",
+      "musicalRoles": "Musical Roles",
+      "genres": "Genres",
+      "socialLinks": "Social Links",
+      "soundcloud": "SoundCloud URL",
+      "instagram": "Instagram URL",
+      "twitter": "Twitter URL",
+      "youtube": "YouTube URL",
+      "website": "Website URL",
+      "privacy": "Privacy",
+      "publicProfile": "Public Profile",
+      "publicProfileHint": "Make your profile visible to everyone",
+      "submit": "Save Changes",
+      "cancel": "Cancel",
+      "success": "Profile updated successfully!",
+      "error": "Failed to update profile"
+    }
+  },
   "multitrack": {
     "stems": {
       "title": "Stems",

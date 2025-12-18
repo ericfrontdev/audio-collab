@@ -1,251 +1,166 @@
-import { createClient } from '@/lib/supabase/server'
-import { getTranslations } from 'next-intl/server'
-import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
-import ClubTabs from '@/components/clubs/ClubTabs'
-import JoinLeaveButton from '@/components/clubs/JoinLeaveButton'
+import { createClient } from '@/lib/supabase/server';
+import { notFound } from 'next/navigation';
+import { AppLayout } from '@/components/layouts/AppLayout';
+import { ClubHeader } from '@/components/clubs/ClubHeader';
+import { ClubTabs } from '@/components/clubs/ClubTabs';
+import { UserProfileCard } from '@/components/cards/UserProfileCard';
+import { QuickActions } from '@/components/cards/QuickActions';
 
-export default async function ClubDetailPage({
+export default async function ClubPage({
   params,
-  searchParams
 }: {
-  params: Promise<{ locale: string; slug: string }>
-  searchParams: Promise<{ tab?: string }>
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { locale, slug } = await params
-  const { tab = 'overview' } = await searchParams
-  const supabase = await createClient()
-  const t = await getTranslations('clubs')
+  const { locale, slug } = await params;
+  const supabase = await createClient();
 
-  // Check authentication
-  const { data: { user } } = await supabase.auth.getUser()
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect(`/${locale}/auth/login`)
+  // Get club data
+  const { data: club, error: clubError } = await supabase
+    .from('clubs')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  if (clubError || !club) {
+    notFound();
   }
 
-  // Fetch club details
-  const { data: club, error } = await supabase
-    .from('clubs')
+  // Get member count
+  const { count: memberCount } = await supabase
+    .from('club_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('club_id', club.id);
+
+  // Check if user is member
+  let isMember = false;
+  if (user) {
+    const { data: membership } = await supabase
+      .from('club_members')
+      .select('id')
+      .eq('club_id', club.id)
+      .eq('user_id', user.id)
+      .single();
+
+    isMember = !!membership;
+  }
+
+  // Get user profile if authenticated
+  let userProfile = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    userProfile = profile;
+  }
+
+  // Get club members
+  const { data: clubMembers } = await supabase
+    .from('club_members')
+    .select('user_id, joined_at')
+    .eq('club_id', club.id)
+    .order('joined_at', { ascending: false });
+
+  // Get profiles for all members
+  let formattedMembers: any[] = [];
+  if (clubMembers && clubMembers.length > 0) {
+    const userIds = clubMembers.map(m => m.user_id);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .in('id', userIds);
+
+    formattedMembers = clubMembers.map(m => {
+      const profile = profiles?.find(p => p.id === m.user_id);
+      return {
+        id: profile?.id || m.user_id,
+        username: profile?.username || 'unknown',
+        display_name: profile?.display_name,
+        avatar_url: profile?.avatar_url,
+        joined_at: m.joined_at,
+      };
+    });
+  }
+
+  // Get projects for this club
+  const { data: projects } = await supabase
+    .from('projects')
     .select(`
       *,
-      club_members!inner(
-        id,
-        user_id,
-        role,
-        joined_at,
-        profiles:user_id (
-          display_name,
-          avatar_url
-        )
-      )
+      owner_profile:profiles!projects_owner_id_fkey(username, display_name, avatar_url)
     `)
-    .eq('slug', slug)
-    .single()
+    .eq('club_id', club.id)
+    .order('created_at', { ascending: false });
 
-  if (error || !club) {
-    notFound()
-  }
+  // Get member count for each project
+  let projectsWithDetails: any[] = [];
+  if (projects && projects.length > 0) {
+    const projectIds = projects.map(p => p.id);
+    const { data: memberCounts } = await supabase
+      .from('project_members')
+      .select('project_id')
+      .in('project_id', projectIds);
 
-  // Check if user is a member
-  const isMember = club.club_members.some((m: any) => m.user_id === user.id)
-
-  // Fetch tab-specific data based on active tab
-  let tabData: any = null
-
-  switch (tab) {
-    case 'projects':
-      const { data: projects } = await supabase
-        .from('projects')
-        .select(`
-          *,
-          profiles:owner_id (
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('kind', 'club')
-        .eq('club_id', club.id)
-        .order('created_at', { ascending: false })
-      tabData = projects
-      break
-
-    case 'challenges':
-      const { data: challenges } = await supabase
-        .from('club_challenges')
-        .select('*')
-        .eq('club_id', club.id)
-        .order('created_at', { ascending: false })
-      tabData = challenges
-      break
-
-    case 'discussions':
-      const { data: threads } = await supabase
-        .from('club_threads')
-        .select(`
-          *,
-          profiles:created_by (
-            display_name,
-            avatar_url
-          ),
-          club_thread_replies!inner(count)
-        `)
-        .eq('club_id', club.id)
-        .order('created_at', { ascending: false })
-      tabData = threads
-      break
-
-    case 'remixes':
-      // Fetch all remixes (projects with parent_project_id) from this club
-      const { data: remixProjects } = await supabase
-        .from('project_remixes')
-        .select('*')
-        .eq('club_id', club.id)
-        .order('created_at', { ascending: false })
-      tabData = remixProjects
-      break
-
-    case 'members':
-      tabData = club.club_members
-      break
-
-    default:
-      // Overview - fetch counts
-      const [
-        { count: projectCount },
-        { count: challengeCount },
-        { count: threadCount },
-        { count: memberCount }
-      ] = await Promise.all([
-        supabase.from('club_projects').select('*', { count: 'exact', head: true }).eq('club_id', club.id),
-        supabase.from('club_challenges').select('*', { count: 'exact', head: true }).eq('club_id', club.id),
-        supabase.from('club_threads').select('*', { count: 'exact', head: true }).eq('club_id', club.id),
-        supabase.from('club_members').select('*', { count: 'exact', head: true }).eq('club_id', club.id)
-      ])
-      tabData = { projectCount, challengeCount, threadCount, memberCount }
+    projectsWithDetails = projects.map(p => ({
+      ...p,
+      member_count: memberCounts?.filter(m => m.project_id === p.id).length || 0,
+    }));
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Hero Section */}
-      <div className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Cover Image */}
-          {club.cover_url && (
-            <div className="h-64 -mx-4 sm:-mx-6 lg:-mx-8 mb-6 overflow-hidden">
-              <img
-                src={club.cover_url}
-                alt={club.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+    <AppLayout>
+      <div className="min-h-screen bg-black">
+        {/* 3 Column Layout */}
+        <div className="flex">
+          {/* Main Content - Center */}
+          <div className="flex-1 min-w-0">
+            <ClubHeader
+              club={club}
+              memberCount={memberCount || 0}
+              isMember={isMember}
+              userId={user?.id}
+            />
+            <ClubTabs
+              clubId={club.id}
+              clubSlug={club.slug}
+              isMember={isMember}
+              club={club}
+              members={formattedMembers}
+              projects={projectsWithDetails}
+            />
+          </div>
 
-          <div className="py-8">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-                  {club.name}
-                </h1>
-                {club.description && (
-                  <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-                    {club.description}
-                  </p>
-                )}
-                <div className="mt-4 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center">
-                    <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    {club.club_members?.length || 0} {t('members')}
-                  </div>
+          {/* Right Sidebar */}
+          <aside className="hidden xl:block w-96 border-l border-zinc-800 p-6 space-y-6">
+            {/* User Profile Card */}
+            {userProfile && <UserProfileCard profile={userProfile} />}
+
+            {/* Quick Actions */}
+            <QuickActions clubId={club.id} isMember={isMember} />
+
+            {/* Club Info Card */}
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
+              <h3 className="text-sm font-semibold text-white mb-2">About this club</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                {club.description || 'No description available'}
+              </p>
+              {club.rules && (
+                <div className="mt-3 pt-3 border-t border-zinc-800">
+                  <h4 className="text-xs font-semibold text-white mb-1">Rules</h4>
+                  <p className="text-xs text-gray-400 leading-relaxed">{club.rules}</p>
                 </div>
-              </div>
-
-              <div className="ml-6">
-                <JoinLeaveButton clubId={club.id} isMember={isMember} locale={locale} />
-              </div>
+              )}
             </div>
-          </div>
-
-          {/* Tabs Navigation */}
-          <div className="border-t border-gray-200 dark:border-gray-700 -mb-px">
-            <nav className="flex space-x-8">
-              <Link
-                href={`/${locale}/clubs/${slug}`}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  !tab || tab === 'overview'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                {t('tabs.overview')}
-              </Link>
-              <Link
-                href={`/${locale}/clubs/${slug}?tab=discussions`}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  tab === 'discussions'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                {t('tabs.discussions')}
-              </Link>
-              <Link
-                href={`/${locale}/clubs/${slug}?tab=projects`}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  tab === 'projects'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                {t('tabs.projects')}
-              </Link>
-              <Link
-                href={`/${locale}/clubs/${slug}?tab=challenges`}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  tab === 'challenges'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                {t('tabs.challenges')}
-              </Link>
-              <Link
-                href={`/${locale}/clubs/${slug}?tab=remixes`}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  tab === 'remixes'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                {t('tabs.remixes')}
-              </Link>
-              <Link
-                href={`/${locale}/clubs/${slug}?tab=members`}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  tab === 'members'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                {t('tabs.members')}
-              </Link>
-            </nav>
-          </div>
+          </aside>
         </div>
       </div>
-
-      {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ClubTabs
-          tab={tab}
-          club={club}
-          tabData={tabData}
-          isMember={isMember}
-          locale={locale}
-        />
-      </div>
-    </div>
-  )
+    </AppLayout>
+  );
 }

@@ -1,9 +1,12 @@
-import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 import { AppLayout } from '@/components/layouts/AppLayout';
-import { CreateClubForm } from '@/components/admin/CreateClubForm';
+import { EditClubForm } from '@/components/admin/EditClubForm';
 
-export default async function NewClubPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function EditClubPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = await createClient();
 
   // Get current user
@@ -26,16 +29,27 @@ export default async function NewClubPage() {
     redirect('/');
   }
 
+  // Fetch club data
+  const { data: club, error } = await supabase
+    .from('clubs')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !club) {
+    redirect('/admin/clubs');
+  }
+
   return (
     <AppLayout>
       <div className="min-h-screen bg-black">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white">Create New Club</h1>
-            <p className="mt-2 text-gray-400">Add a new musical genre club</p>
+            <h1 className="text-3xl font-bold text-white">Edit Club</h1>
+            <p className="mt-2 text-gray-400">Update club information</p>
           </div>
 
-          <CreateClubForm />
+          <EditClubForm club={club} />
         </div>
       </div>
     </AppLayout>

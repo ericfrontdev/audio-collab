@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/server';
 import Navigation from '@/components/Navigation';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import "../globals.css";
 
 export const metadata: Metadata = {
@@ -60,6 +62,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <NextIntlClientProvider messages={messages}>
           {!isLandingPage && <Navigation user={user} isAdmin={isAdmin} />}
           {children}
+          <ToastContainer position="bottom-right" theme="dark" />
         </NextIntlClientProvider>
       </body>
     </html>

@@ -4,8 +4,9 @@ import { createClient } from '@/lib/supabase/server';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Music, Link as LinkIcon, Instagram, Youtube } from 'lucide-react';
+import { Music, Link as LinkIcon, Instagram, Youtube, Users } from 'lucide-react';
 import Link from 'next/link';
+import { AppLayout } from '@/components/layouts/AppLayout';
 
 export default async function ProfilePage({
   params,
@@ -36,24 +37,49 @@ export default async function ProfilePage({
     notFound();
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Banner */}
-      <div className="relative h-64 bg-gradient-to-r from-primary/20 to-purple-600/20">
-        {profile.banner_url ? (
-          <Image
-            src={profile.banner_url}
-            alt="Profile banner"
-            fill
-            className="object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-600/20" />
-        )}
-      </div>
+  // Fetch user's clubs
+  const { data: clubMemberships } = await supabase
+    .from('club_members')
+    .select('club_id, joined_at')
+    .eq('user_id', profile.id)
+    .order('joined_at', { ascending: false });
 
-      {/* Content */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+  let userClubs: any[] = [];
+  if (clubMemberships && clubMemberships.length > 0) {
+    const clubIds = clubMemberships.map(m => m.club_id);
+    const { data: clubs } = await supabase
+      .from('clubs')
+      .select('id, name, slug, genre, avatar_url')
+      .in('id', clubIds);
+
+    userClubs = clubMemberships.map(m => {
+      const club = clubs?.find(c => c.id === m.club_id);
+      return {
+        ...club,
+        joined_at: m.joined_at,
+      };
+    }).filter(c => c.id); // Remove any nulls
+  }
+
+  return (
+    <AppLayout>
+      <div className="min-h-screen bg-black">
+        {/* Banner */}
+        <div className="relative h-64 bg-gradient-to-r from-primary/20 to-purple-600/20">
+          {profile.banner_url ? (
+            <Image
+              src={profile.banner_url}
+              alt="Profile banner"
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-600/20" />
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Avatar + Basic Info */}
         <div className="relative -mt-16 mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
@@ -126,6 +152,37 @@ export default async function ProfilePage({
                 <Badge key={genre} variant="outline">
                   {genre}
                 </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Clubs */}
+        {userClubs.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
+              CLUBS ({userClubs.length})
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {userClubs.map((club) => (
+                <Link key={club.id} href={`/clubs/${club.slug}`}>
+                  <div className="group flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-900/50 border border-zinc-800 hover:border-primary/50 transition-colors">
+                    {club.avatar_url ? (
+                      <Image
+                        src={club.avatar_url}
+                        alt={club.name}
+                        width={20}
+                        height={20}
+                        className="rounded object-cover"
+                      />
+                    ) : (
+                      <Users className="w-4 h-4 text-zinc-600" />
+                    )}
+                    <span className="text-sm text-white group-hover:text-primary transition-colors">
+                      {club.name}
+                    </span>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -209,7 +266,8 @@ export default async function ProfilePage({
             </p>
           </Card>
         </div>
+        </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
