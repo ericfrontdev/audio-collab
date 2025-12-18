@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
       },
     ],
     dangerouslyAllowSVG: true,
-    unoptimized: process.env.NODE_ENV === 'development', // Disable optimization for local dev
+    unoptimized: true, // Disable optimization to avoid CORS issues with Supabase
   },
 };
 
