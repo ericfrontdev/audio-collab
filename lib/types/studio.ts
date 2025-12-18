@@ -227,7 +227,7 @@ export const MIXER_DEFAULTS = {
  */
 
 export function isAudioFile(file: File): boolean {
-  return AUDIO_CONSTRAINTS.SUPPORTED_FORMATS.includes(file.type);
+  return AUDIO_CONSTRAINTS.SUPPORTED_FORMATS.includes(file.type as any);
 }
 
 export function isFileSizeValid(file: File): boolean {

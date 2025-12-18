@@ -23,10 +23,6 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     unoptimized: process.env.NODE_ENV === 'development', // Disable optimization for local dev
   },
-  // Allow localhost images in development
-  experimental: {
-    allowPrivateIpAddresses: true,
-  },
 };
 
 export default withNextIntl(nextConfig);
