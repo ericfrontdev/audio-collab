@@ -194,7 +194,7 @@ async function extractWaveformData(audioBuffer: ArrayBuffer): Promise<number[]> 
 export async function uploadTake(
   trackId: string,
   formData: FormData
-): Promise<{ success: boolean; take?: ProjectTake; error?: string }> {
+): Promise<{ success: boolean; take?: ProjectTake; error?: string; errorDetails?: any }> {
   try {
     const supabase = await createClient();
 
