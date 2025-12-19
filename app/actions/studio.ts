@@ -257,6 +257,7 @@ export async function uploadTake(
     const filePath = `${track.project_id}/${trackId}/${takeId}.${fileExt}`;
 
     // Upload to Supabase storage
+    console.log('Uploading to storage:', filePath);
     const { error: uploadError } = await supabase.storage
       .from('project-audio')
       .upload(filePath, file, {
@@ -264,7 +265,11 @@ export async function uploadTake(
         upsert: false,
       });
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      throw uploadError;
+    }
+    console.log('Storage upload successful');
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
@@ -278,6 +283,15 @@ export async function uploadTake(
     const waveform_data = [] as number[]; // TODO: Extract real waveform
 
     // Create take record
+    console.log('Creating take record:', {
+      id: takeId,
+      track_id: trackId,
+      audio_url: publicUrl,
+      duration,
+      file_size: file.size,
+      file_format: fileExt,
+    });
+
     const { data: take, error: insertError } = await supabase
       .from('project_takes')
       .insert({
@@ -292,7 +306,17 @@ export async function uploadTake(
       .select()
       .single();
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('Database insert error:', insertError);
+      console.error('Error details:', {
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+      });
+      throw insertError;
+    }
+    console.log('Take record created successfully:', take);
 
     revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
     return { success: true, take };
