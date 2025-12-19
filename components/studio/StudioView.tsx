@@ -50,11 +50,12 @@ export function StudioView({ projectId }: StudioViewProps) {
 
     const result = await deleteTrack(trackId);
     if (result.success) {
-      toast.success('Track deleted successfully');
+      // Remove track from local state without reloading
+      setTracks(prevTracks => prevTracks.filter(t => t.id !== trackId));
       if (selectedTrackId === trackId) {
         setSelectedTrackId(null);
       }
-      loadStudioData();
+      toast.success('Track deleted successfully');
     } else {
       toast.error(result.error || 'Failed to delete track');
     }
