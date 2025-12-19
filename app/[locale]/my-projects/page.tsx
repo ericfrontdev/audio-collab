@@ -20,7 +20,7 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
   }
 
   // Get user's projects (both owned and collaborated)
-  const { data: projects } = await supabase
+  const { data: projects, error: projectsError } = await supabase
     .from('projects')
     .select(`
       *,
@@ -29,6 +29,11 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
     `)
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
+
+  // Debug logging
+  console.log('User ID:', user.id);
+  console.log('Projects:', projects);
+  console.log('Projects Error:', projectsError);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
