@@ -322,7 +322,16 @@ export async function uploadTake(
     return { success: true, take };
   } catch (error: any) {
     console.error('Error uploading take:', error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error.message,
+      errorDetails: {
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        message: error.message,
+      }
+    };
   }
 }
 

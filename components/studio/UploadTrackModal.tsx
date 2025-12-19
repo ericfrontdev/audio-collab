@@ -112,6 +112,7 @@ export function UploadTrackModal({
       console.log('Upload result:', uploadResult);
 
       if (!uploadResult.success) {
+        console.error('Upload failed with details:', (uploadResult as any).errorDetails);
         throw new Error(uploadResult.error || 'Failed to upload audio');
       }
 
