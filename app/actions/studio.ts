@@ -130,7 +130,7 @@ export async function updateTrack(
 }
 
 /**
- * Delete a track and all its takes
+ * Delete a track and all its takes (including storage files)
  */
 export async function deleteTrack(
   trackId: string
@@ -138,12 +138,43 @@ export async function deleteTrack(
   try {
     const supabase = await createClient();
 
-    // Get project_id before deletion
+    // Get track and all takes before deletion
     const { data: track } = await supabase
       .from('project_tracks')
       .select('project_id')
       .eq('id', trackId)
       .single();
+
+    if (!track) {
+      return { success: false, error: 'Track not found' };
+    }
+
+    // Get all takes to delete their files from storage
+    const { data: takes } = await supabase
+      .from('project_takes')
+      .select('audio_url')
+      .eq('track_id', trackId);
+
+    // Delete audio files from storage
+    if (takes && takes.length > 0) {
+      const filePaths = takes
+        .map(take => {
+          const match = take.audio_url.match(/project-audio\/(.+)$/);
+          return match ? match[1] : null;
+        })
+        .filter(Boolean) as string[];
+
+      if (filePaths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from('project-audio')
+          .remove(filePaths);
+
+        if (storageError) {
+          console.error('Error deleting files from storage:', storageError);
+          // Continue anyway - we'll delete the database records
+        }
+      }
+    }
 
     // Delete track (cascade will handle takes, comments, mixer_settings)
     const { error } = await supabase
@@ -153,10 +184,7 @@ export async function deleteTrack(
 
     if (error) throw error;
 
-    if (track) {
-      revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
-    }
-
+    revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
     return { success: true };
   } catch (error: any) {
     console.error('Error deleting track:', error);

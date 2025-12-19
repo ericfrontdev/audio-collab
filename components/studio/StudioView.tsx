@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { UploadTrackModal } from './UploadTrackModal';
-import { getProjectStudioData } from '@/app/actions/studio';
+import { getProjectStudioData, deleteTrack } from '@/app/actions/studio';
 import { ProjectTrack } from '@/lib/types/studio';
+import { toast } from 'react-toastify';
 
 interface StudioViewProps {
   projectId: string;
@@ -40,6 +41,23 @@ export function StudioView({ projectId }: StudioViewProps) {
 
   const handleUploadSuccess = () => {
     loadStudioData();
+  };
+
+  const handleDeleteTrack = async (trackId: string, trackName: string) => {
+    if (!confirm(`Are you sure you want to delete "${trackName}"? This will also delete all audio files for this track.`)) {
+      return;
+    }
+
+    const result = await deleteTrack(trackId);
+    if (result.success) {
+      toast.success('Track deleted successfully');
+      if (selectedTrackId === trackId) {
+        setSelectedTrackId(null);
+      }
+      loadStudioData();
+    } else {
+      toast.error(result.error || 'Failed to delete track');
+    }
   };
 
   const selectedTrack = tracks.find(t => t.id === selectedTrackId);
@@ -146,32 +164,48 @@ export function StudioView({ projectId }: StudioViewProps) {
             ) : (
               <div className="p-2 space-y-1">
                 {tracks.map((track) => (
-                  <button
+                  <div
                     key={track.id}
-                    onClick={() => setSelectedTrackId(track.id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                    className={`relative group rounded-lg transition-colors ${
                       selectedTrackId === track.id
-                        ? 'bg-zinc-800 text-white'
-                        : 'text-gray-400 hover:bg-zinc-800/50 hover:text-white'
+                        ? 'bg-zinc-800'
+                        : 'hover:bg-zinc-800/50'
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: track.color }}
-                      />
-                      <span className="text-sm font-medium truncate">{track.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
+                    <button
+                      onClick={() => setSelectedTrackId(track.id)}
+                      className="w-full text-left px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
                         <div
-                          className="h-full bg-primary"
-                          style={{ width: '80%' }}
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: track.color }}
                         />
+                        <span className={`text-sm font-medium truncate ${
+                          selectedTrackId === track.id ? 'text-white' : 'text-gray-400'
+                        }`}>{track.name}</span>
                       </div>
-                      <span className="text-xs text-gray-500">80%</span>
-                    </div>
-                  </button>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary"
+                            style={{ width: '80%' }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500">80%</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTrack(track.id, track.name);
+                      }}
+                      className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+                      title="Delete track"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
