@@ -26,25 +26,6 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
 
-  // Get club info separately if needed
-  let projectsWithClubs = projects || [];
-  if (projects && projects.length > 0) {
-    const clubIds = projects.map(p => p.club_id).filter(Boolean);
-    if (clubIds.length > 0) {
-      const { data: clubs } = await supabase
-        .from('clubs')
-        .select('id, name, slug')
-        .in('id', clubIds);
-
-      if (clubs) {
-        projectsWithClubs = projects.map(project => ({
-          ...project,
-          club: clubs.find(c => c.id === project.club_id) || null
-        }));
-      }
-    }
-  }
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -79,9 +60,9 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
           )}
 
           {/* Projects Grid */}
-          {projectsWithClubs && projectsWithClubs.length > 0 ? (
+          {projects && projects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projectsWithClubs.map((project) => (
+              {projects.map((project) => (
                 <Link key={project.id} href={`/${locale}/projects/${project.id}`}>
                   <div className="group rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden hover:border-primary/50 transition-all duration-300">
                     {/* Project Cover Image */}
@@ -134,18 +115,7 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
                         </p>
                       )}
 
-                      {/* Club Info */}
-                      {project.club && (
-                        <div className="mb-3">
-                          <Link
-                            href={`/${locale}/clubs/${project.club.slug}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs text-primary hover:underline"
-                          >
-                            {project.club.name}
-                          </Link>
-                        </div>
-                      )}
+                      {/* Club Info - Removed temporarily */}
 
                       {/* Meta Info */}
                       <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-zinc-800">
