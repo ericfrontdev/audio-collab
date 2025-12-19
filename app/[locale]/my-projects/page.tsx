@@ -27,7 +27,7 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
     .order('created_at', { ascending: false });
 
   // Get club info separately if needed
-  let projectsWithClubs = projects;
+  let projectsWithClubs = projects || [];
   if (projects && projects.length > 0) {
     const clubIds = projects.map(p => p.club_id).filter(Boolean);
     if (clubIds.length > 0) {
@@ -36,10 +36,12 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
         .select('id, name, slug')
         .in('id', clubIds);
 
-      projectsWithClubs = projects.map(project => ({
-        ...project,
-        club: clubs?.find(c => c.id === project.club_id) || null
-      }));
+      if (clubs) {
+        projectsWithClubs = projects.map(project => ({
+          ...project,
+          club: clubs.find(c => c.id === project.club_id) || null
+        }));
+      }
     }
   }
 
