@@ -37,6 +37,14 @@ export default async function ProfilePage({
     notFound();
   }
 
+  // Fetch user's projects
+  const { data: userProjects } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('owner_id', profile.id)
+    .order('created_at', { ascending: false })
+    .limit(6); // Show first 6 projects
+
   // Fetch user's clubs
   const { data: clubMemberships } = await supabase
     .from('club_members')
@@ -257,14 +265,52 @@ export default async function ProfilePage({
           </div>
         )}
 
-        {/* Projects Placeholder */}
+        {/* Projects */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Projects</h2>
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">
-              No projects yet. Create your first project!
-            </p>
-          </Card>
+          {userProjects && userProjects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {userProjects.map((project) => (
+                <Link key={project.id} href={`/projects/${project.id}`}>
+                  <Card className="group overflow-hidden hover:border-primary/50 transition-colors cursor-pointer">
+                    <div className="relative h-32 bg-gradient-to-br from-primary/20 to-purple-600/20">
+                      {project.cover_url && (
+                        <Image
+                          src={project.cover_url}
+                          alt={project.title}
+                          fill
+                          className="object-cover"
+                        />
+                      )}
+                      {project.status && (
+                        <div className="absolute top-2 right-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {project.status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-white group-hover:text-primary transition-colors line-clamp-1">
+                        {project.title}
+                      </h3>
+                      {project.description && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {project.description}
+                        </p>
+                      )}
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground">
+                No projects yet. {isOwner && "Create your first project!"}
+              </p>
+            </Card>
+          )}
         </div>
         </div>
       </div>
