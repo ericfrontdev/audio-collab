@@ -532,21 +532,64 @@ export async function getProjectStudioData(projectId: string) {
   try {
     const supabase = await createClient();
 
-    // Get all tracks with their related data
-    const { data: tracks, error } = await supabase
+    // Get all tracks
+    const { data: tracks, error: tracksError } = await supabase
       .from('project_tracks')
-      .select(`
-        *,
-        takes:project_takes(*),
-        comments:project_track_comments(*, profile:profiles(*)),
-        mixer_settings:project_mixer_settings(*)
-      `)
+      .select('*')
       .eq('project_id', projectId)
       .order('order_index');
 
-    if (error) throw error;
+    if (tracksError) throw tracksError;
 
-    return { success: true, tracks };
+    if (!tracks || tracks.length === 0) {
+      return { success: true, tracks: [] };
+    }
+
+    const trackIds = tracks.map(t => t.id);
+
+    // Get all takes for these tracks
+    const { data: takes } = await supabase
+      .from('project_takes')
+      .select('*')
+      .in('track_id', trackIds)
+      .order('created_at', { ascending: false });
+
+    // Get all comments for these tracks
+    const { data: comments } = await supabase
+      .from('project_track_comments')
+      .select('*')
+      .in('track_id', trackIds)
+      .order('timestamp');
+
+    // Get all mixer settings for these tracks
+    const { data: mixerSettings } = await supabase
+      .from('project_mixer_settings')
+      .select('*')
+      .in('track_id', trackIds);
+
+    // Get user profiles for comments
+    const userIds = comments?.map(c => c.user_id).filter(Boolean) || [];
+    const { data: profiles } = userIds.length > 0
+      ? await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', userIds)
+      : { data: [] };
+
+    // Merge data together
+    const tracksWithDetails = tracks.map(track => ({
+      ...track,
+      takes: takes?.filter(t => t.track_id === track.id) || [],
+      comments: comments
+        ?.filter(c => c.track_id === track.id)
+        .map(comment => ({
+          ...comment,
+          profile: profiles?.find(p => p.id === comment.user_id) || null,
+        })) || [],
+      mixer_settings: mixerSettings?.find(m => m.track_id === track.id) || null,
+    }));
+
+    return { success: true, tracks: tracksWithDetails };
   } catch (error: any) {
     console.error('Error fetching studio data:', error);
     return { success: false, error: error.message, tracks: [] };
