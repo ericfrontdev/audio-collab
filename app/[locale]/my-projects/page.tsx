@@ -30,11 +30,6 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
 
-  // Debug logging
-  console.log('User ID:', user.id);
-  console.log('Projects:', projects);
-  console.log('Projects Error:', projectsError);
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -59,6 +54,14 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
               </Button>
             </Link>
           </div>
+
+          {/* Debug Info */}
+          {projectsError && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500 rounded-lg">
+              <p className="text-red-400 text-sm">Error: {projectsError.message}</p>
+              <p className="text-red-400 text-xs mt-2">Code: {projectsError.code}</p>
+            </div>
+          )}
 
           {/* Projects Grid */}
           {projects && projects.length > 0 ? (
