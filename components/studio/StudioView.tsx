@@ -8,6 +8,7 @@ import { UploadTrackModal } from './UploadTrackModal';
 import { getProjectStudioData, deleteTrack } from '@/app/actions/studio';
 import { ProjectTrack } from '@/lib/types/studio';
 import { toast } from 'react-toastify';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface StudioViewProps {
   projectId: string;
@@ -21,6 +22,11 @@ export function StudioView({ projectId }: StudioViewProps) {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    trackId: string;
+    trackName: string;
+  }>({ isOpen: false, trackId: '', trackName: '' });
 
   // Load studio data
   const loadStudioData = async () => {
@@ -43,10 +49,13 @@ export function StudioView({ projectId }: StudioViewProps) {
     loadStudioData();
   };
 
-  const handleDeleteTrack = async (trackId: string, trackName: string) => {
-    if (!confirm(`Are you sure you want to delete "${trackName}"? This will also delete all audio files for this track.`)) {
-      return;
-    }
+  const handleDeleteTrack = (trackId: string, trackName: string) => {
+    setDeleteConfirmation({ isOpen: true, trackId, trackName });
+  };
+
+  const confirmDeleteTrack = async () => {
+    const { trackId, trackName } = deleteConfirmation;
+    setDeleteConfirmation({ isOpen: false, trackId: '', trackName: '' });
 
     const result = await deleteTrack(trackId);
     if (result.success) {
@@ -55,10 +64,14 @@ export function StudioView({ projectId }: StudioViewProps) {
       if (selectedTrackId === trackId) {
         setSelectedTrackId(null);
       }
-      toast.success('Track deleted successfully');
+      toast.success(`Track "${trackName}" deleted successfully`);
     } else {
       toast.error(result.error || 'Failed to delete track');
     }
+  };
+
+  const cancelDeleteTrack = () => {
+    setDeleteConfirmation({ isOpen: false, trackId: '', trackName: '' });
   };
 
   const selectedTrack = tracks.find(t => t.id === selectedTrackId);
@@ -383,6 +396,18 @@ export function StudioView({ projectId }: StudioViewProps) {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onSuccess={handleUploadSuccess}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirmation.isOpen}
+        title="Delete Track"
+        message={`Are you sure you want to delete "${deleteConfirmation.trackName}"? This will permanently delete the track and all its audio files.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={confirmDeleteTrack}
+        onCancel={cancelDeleteTrack}
       />
     </div>
   );
