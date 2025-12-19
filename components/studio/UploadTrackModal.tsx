@@ -31,6 +31,17 @@ export function UploadTrackModal({
 
   if (!isOpen) return null;
 
+  // Add error boundary check
+  if (!projectId) {
+    console.error('UploadTrackModal: projectId is required');
+    return null;
+  }
+
+  if (!existingTracks) {
+    console.error('UploadTrackModal: existingTracks is required');
+    return null;
+  }
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -53,31 +64,33 @@ export function UploadTrackModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedFile) {
-      toast.error('Please select an audio file');
-      return;
-    }
-
-    if (uploadType === 'new-track' && !trackName.trim()) {
-      toast.error('Please enter a track name');
-      return;
-    }
-
-    if (uploadType === 'add-take' && !selectedTrackId) {
-      toast.error('Please select a track');
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadProgress(10);
-
     try {
+      if (!selectedFile) {
+        toast.error('Please select an audio file');
+        return;
+      }
+
+      if (uploadType === 'new-track' && !trackName.trim()) {
+        toast.error('Please enter a track name');
+        return;
+      }
+
+      if (uploadType === 'add-take' && !selectedTrackId) {
+        toast.error('Please select a track');
+        return;
+      }
+
+      setIsUploading(true);
+      setUploadProgress(10);
+
       let trackId = selectedTrackId;
 
       // If creating a new track, create it first
       if (uploadType === 'new-track') {
+        console.log('Creating new track:', trackName);
         setUploadProgress(20);
         const trackResult = await createTrack(projectId, trackName.trim());
+        console.log('Track creation result:', trackResult);
 
         if (!trackResult.success || !trackResult.track) {
           throw new Error(trackResult.error || 'Failed to create track');
@@ -90,11 +103,13 @@ export function UploadTrackModal({
       }
 
       // Upload the audio file
+      console.log('Uploading audio file to track:', trackId);
       const formData = new FormData();
       formData.append('audio', selectedFile);
 
       setUploadProgress(50);
       const uploadResult = await uploadTake(trackId, formData);
+      console.log('Upload result:', uploadResult);
 
       if (!uploadResult.success) {
         throw new Error(uploadResult.error || 'Failed to upload audio');
@@ -119,9 +134,9 @@ export function UploadTrackModal({
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || 'Failed to upload audio');
+      setUploadProgress(0);
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 
