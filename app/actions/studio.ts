@@ -30,20 +30,39 @@ export async function createTrack(
   try {
     const supabase = await createClient();
 
-    // Verify user is a project member
+    // Verify user authentication
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return { success: false, error: 'Unauthorized' };
     }
 
-    const { data: membership } = await supabase
-      .from('project_members')
-      .select('id')
-      .eq('project_id', projectId)
-      .eq('user_id', user.id)
+    // Get project and check access
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, owner_id, club_id')
+      .eq('id', projectId)
       .single();
 
-    if (!membership) {
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Check if user is project owner or club member
+    const isOwner = project.owner_id === user.id;
+    let isMember = isOwner;
+
+    if (project.club_id && !isOwner) {
+      const { data: clubMembership } = await supabase
+        .from('club_members')
+        .select('id')
+        .eq('club_id', project.club_id)
+        .eq('user_id', user.id)
+        .single();
+
+      isMember = !!clubMembership;
+    }
+
+    if (!isMember) {
       return { success: false, error: 'You are not a member of this project' };
     }
 
@@ -185,7 +204,7 @@ export async function uploadTake(
       return { success: false, error: 'Unauthorized' };
     }
 
-    // Get track and verify project membership
+    // Get track info
     const { data: track } = await supabase
       .from('project_tracks')
       .select('project_id')
@@ -196,14 +215,33 @@ export async function uploadTake(
       return { success: false, error: 'Track not found' };
     }
 
-    const { data: membership } = await supabase
-      .from('project_members')
-      .select('id')
-      .eq('project_id', track.project_id)
-      .eq('user_id', user.id)
+    // Get project and check access
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, owner_id, club_id')
+      .eq('id', track.project_id)
       .single();
 
-    if (!membership) {
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Check if user is project owner or club member
+    const isOwner = project.owner_id === user.id;
+    let isMember = isOwner;
+
+    if (project.club_id && !isOwner) {
+      const { data: clubMembership } = await supabase
+        .from('club_members')
+        .select('id')
+        .eq('club_id', project.club_id)
+        .eq('user_id', user.id)
+        .single();
+
+      isMember = !!clubMembership;
+    }
+
+    if (!isMember) {
       return { success: false, error: 'You are not a member of this project' };
     }
 
