@@ -134,36 +134,60 @@ CREATE POLICY "Anyone can view project tracks"
   ON project_tracks FOR SELECT
   USING (true);
 
--- Project members can insert tracks
-CREATE POLICY "Project members can insert tracks"
+-- Project owners and club members can insert tracks
+CREATE POLICY "Project owners and club members can insert tracks"
   ON project_tracks FOR INSERT
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM project_members
-      WHERE project_members.project_id = project_tracks.project_id
-      AND project_members.user_id = auth.uid()
+      SELECT 1 FROM projects p
+      WHERE p.id = project_tracks.project_id
+      AND (
+        p.owner_id = auth.uid()
+        OR
+        (p.club_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM club_members cm
+          WHERE cm.club_id = p.club_id
+          AND cm.user_id = auth.uid()
+        ))
+      )
     )
   );
 
--- Project members can update tracks
-CREATE POLICY "Project members can update tracks"
+-- Project owners and club members can update tracks
+CREATE POLICY "Project owners and club members can update tracks"
   ON project_tracks FOR UPDATE
   USING (
     EXISTS (
-      SELECT 1 FROM project_members
-      WHERE project_members.project_id = project_tracks.project_id
-      AND project_members.user_id = auth.uid()
+      SELECT 1 FROM projects p
+      WHERE p.id = project_tracks.project_id
+      AND (
+        p.owner_id = auth.uid()
+        OR
+        (p.club_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM club_members cm
+          WHERE cm.club_id = p.club_id
+          AND cm.user_id = auth.uid()
+        ))
+      )
     )
   );
 
--- Project members can delete tracks
-CREATE POLICY "Project members can delete tracks"
+-- Project owners and club members can delete tracks
+CREATE POLICY "Project owners and club members can delete tracks"
   ON project_tracks FOR DELETE
   USING (
     EXISTS (
-      SELECT 1 FROM project_members
-      WHERE project_members.project_id = project_tracks.project_id
-      AND project_members.user_id = auth.uid()
+      SELECT 1 FROM projects p
+      WHERE p.id = project_tracks.project_id
+      AND (
+        p.owner_id = auth.uid()
+        OR
+        (p.club_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM club_members cm
+          WHERE cm.club_id = p.club_id
+          AND cm.user_id = auth.uid()
+        ))
+      )
     )
   );
 
@@ -176,39 +200,63 @@ CREATE POLICY "Anyone can view project takes"
   ON project_takes FOR SELECT
   USING (true);
 
--- Project members can insert takes
-CREATE POLICY "Project members can insert takes"
+-- Project owners and club members can insert takes
+CREATE POLICY "Project owners and club members can insert takes"
   ON project_takes FOR INSERT
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM project_tracks
-      JOIN project_members ON project_members.project_id = project_tracks.project_id
-      WHERE project_tracks.id = project_takes.track_id
-      AND project_members.user_id = auth.uid()
+      SELECT 1 FROM project_tracks pt
+      JOIN projects p ON p.id = pt.project_id
+      WHERE pt.id = project_takes.track_id
+      AND (
+        p.owner_id = auth.uid()
+        OR
+        (p.club_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM club_members cm
+          WHERE cm.club_id = p.club_id
+          AND cm.user_id = auth.uid()
+        ))
+      )
     )
   );
 
--- Project members can update takes
-CREATE POLICY "Project members can update takes"
+-- Project owners and club members can update takes
+CREATE POLICY "Project owners and club members can update takes"
   ON project_takes FOR UPDATE
   USING (
     EXISTS (
-      SELECT 1 FROM project_tracks
-      JOIN project_members ON project_members.project_id = project_tracks.project_id
-      WHERE project_tracks.id = project_takes.track_id
-      AND project_members.user_id = auth.uid()
+      SELECT 1 FROM project_tracks pt
+      JOIN projects p ON p.id = pt.project_id
+      WHERE pt.id = project_takes.track_id
+      AND (
+        p.owner_id = auth.uid()
+        OR
+        (p.club_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM club_members cm
+          WHERE cm.club_id = p.club_id
+          AND cm.user_id = auth.uid()
+        ))
+      )
     )
   );
 
--- Project members can delete takes
-CREATE POLICY "Project members can delete takes"
+-- Project owners and club members can delete takes
+CREATE POLICY "Project owners and club members can delete takes"
   ON project_takes FOR DELETE
   USING (
     EXISTS (
-      SELECT 1 FROM project_tracks
-      JOIN project_members ON project_members.project_id = project_tracks.project_id
-      WHERE project_tracks.id = project_takes.track_id
-      AND project_members.user_id = auth.uid()
+      SELECT 1 FROM project_tracks pt
+      JOIN projects p ON p.id = pt.project_id
+      WHERE pt.id = project_takes.track_id
+      AND (
+        p.owner_id = auth.uid()
+        OR
+        (p.club_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM club_members cm
+          WHERE cm.club_id = p.club_id
+          AND cm.user_id = auth.uid()
+        ))
+      )
     )
   );
 
@@ -222,15 +270,23 @@ CREATE POLICY "Anyone can view track comments"
   USING (true);
 
 -- Authenticated users can insert comments on projects they have access to
-CREATE POLICY "Project members can insert comments"
+CREATE POLICY "Project owners and club members can insert comments"
   ON project_track_comments FOR INSERT
   WITH CHECK (
     auth.uid() = user_id
     AND EXISTS (
-      SELECT 1 FROM project_tracks
-      JOIN project_members ON project_members.project_id = project_tracks.project_id
-      WHERE project_tracks.id = project_track_comments.track_id
-      AND project_members.user_id = auth.uid()
+      SELECT 1 FROM project_tracks pt
+      JOIN projects p ON p.id = pt.project_id
+      WHERE pt.id = project_track_comments.track_id
+      AND (
+        p.owner_id = auth.uid()
+        OR
+        (p.club_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM club_members cm
+          WHERE cm.club_id = p.club_id
+          AND cm.user_id = auth.uid()
+        ))
+      )
     )
   );
 
@@ -253,27 +309,43 @@ CREATE POLICY "Anyone can view mixer settings"
   ON project_mixer_settings FOR SELECT
   USING (true);
 
--- Project members can insert mixer settings (should be auto-created by trigger)
-CREATE POLICY "Project members can insert mixer settings"
+-- Project owners and club members can insert mixer settings (should be auto-created by trigger)
+CREATE POLICY "Project owners and club members can insert mixer settings"
   ON project_mixer_settings FOR INSERT
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM project_tracks
-      JOIN project_members ON project_members.project_id = project_tracks.project_id
-      WHERE project_tracks.id = project_mixer_settings.track_id
-      AND project_members.user_id = auth.uid()
+      SELECT 1 FROM project_tracks pt
+      JOIN projects p ON p.id = pt.project_id
+      WHERE pt.id = project_mixer_settings.track_id
+      AND (
+        p.owner_id = auth.uid()
+        OR
+        (p.club_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM club_members cm
+          WHERE cm.club_id = p.club_id
+          AND cm.user_id = auth.uid()
+        ))
+      )
     )
   );
 
--- Project members can update mixer settings
-CREATE POLICY "Project members can update mixer settings"
+-- Project owners and club members can update mixer settings
+CREATE POLICY "Project owners and club members can update mixer settings"
   ON project_mixer_settings FOR UPDATE
   USING (
     EXISTS (
-      SELECT 1 FROM project_tracks
-      JOIN project_members ON project_members.project_id = project_tracks.project_id
-      WHERE project_tracks.id = project_mixer_settings.track_id
-      AND project_members.user_id = auth.uid()
+      SELECT 1 FROM project_tracks pt
+      JOIN projects p ON p.id = pt.project_id
+      WHERE pt.id = project_mixer_settings.track_id
+      AND (
+        p.owner_id = auth.uid()
+        OR
+        (p.club_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM club_members cm
+          WHERE cm.club_id = p.club_id
+          AND cm.user_id = auth.uid()
+        ))
+      )
     )
   );
 
