@@ -92,24 +92,31 @@ export default async function ClubPage({
   // Get projects for this club
   const { data: projects } = await supabase
     .from('projects')
-    .select(`
-      *,
-      owner_profile:profiles!projects_owner_id_fkey(username, display_name, avatar_url)
-    `)
+    .select('*')
     .eq('club_id', club.id)
     .order('created_at', { ascending: false });
 
-  // Get member count for each project
+  // Get owner profiles and member counts for projects
   let projectsWithDetails: any[] = [];
   if (projects && projects.length > 0) {
     const projectIds = projects.map(p => p.id);
+    const ownerIds = projects.map(p => p.owner_id).filter(Boolean);
+
+    // Get owner profiles
+    const { data: ownerProfiles } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .in('id', ownerIds);
+
+    // Get member counts (using collaborators table since project_members might not exist)
     const { data: memberCounts } = await supabase
-      .from('project_members')
+      .from('collaborators')
       .select('project_id')
       .in('project_id', projectIds);
 
     projectsWithDetails = projects.map(p => ({
       ...p,
+      owner_profile: ownerProfiles?.find(profile => profile.id === p.owner_id) || null,
       member_count: memberCounts?.filter(m => m.project_id === p.id).length || 0,
     }));
   }
