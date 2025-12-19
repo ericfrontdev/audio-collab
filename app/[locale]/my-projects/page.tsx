@@ -19,16 +19,29 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
     redirect('/auth/login');
   }
 
-  // Get user's projects (both owned and collaborated)
+  // Get user's projects
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
-    .select(`
-      *,
-      owner_profile:profiles!projects_owner_id_fkey(username, display_name, avatar_url),
-      club:clubs(name, slug)
-    `)
+    .select('*')
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
+
+  // Get club info separately if needed
+  let projectsWithClubs = projects;
+  if (projects && projects.length > 0) {
+    const clubIds = projects.map(p => p.club_id).filter(Boolean);
+    if (clubIds.length > 0) {
+      const { data: clubs } = await supabase
+        .from('clubs')
+        .select('id, name, slug')
+        .in('id', clubIds);
+
+      projectsWithClubs = projects.map(project => ({
+        ...project,
+        club: clubs?.find(c => c.id === project.club_id) || null
+      }));
+    }
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -64,9 +77,9 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
           )}
 
           {/* Projects Grid */}
-          {projects && projects.length > 0 ? (
+          {projectsWithClubs && projectsWithClubs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
+              {projectsWithClubs.map((project) => (
                 <Link key={project.id} href={`/${locale}/projects/${project.id}`}>
                   <div className="group rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden hover:border-primary/50 transition-all duration-300">
                     {/* Project Cover Image */}
