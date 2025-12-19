@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { UploadTrackModal } from './UploadTrackModal';
 import { getProjectStudioData } from '@/app/actions/studio';
@@ -12,6 +13,7 @@ interface StudioViewProps {
 }
 
 export function StudioView({ projectId }: StudioViewProps) {
+  const router = useRouter();
   const [tracks, setTracks] = useState<ProjectTrack[]>([]);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -63,8 +65,18 @@ export function StudioView({ projectId }: StudioViewProps) {
     <div className="flex flex-col h-screen bg-zinc-950">
       {/* Header with Transport Controls */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-900/80">
-        {/* Left: Project info */}
+        {/* Left: Back button + Project info */}
         <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          <div className="h-6 w-px bg-zinc-700" />
           <h1 className="text-lg font-semibold text-white">Audio Track</h1>
           <span className="text-sm text-gray-400">Saved just now</span>
         </div>
