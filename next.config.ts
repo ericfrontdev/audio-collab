@@ -6,6 +6,11 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '100mb', // Allow up to 100MB for audio file uploads
+    },
+  },
   images: {
     remotePatterns: [
       {
