@@ -22,7 +22,7 @@ export default async function ProjectStudioPage({
   // Fetch project to verify it exists
   const { data: project, error } = await supabase
     .from('projects')
-    .select('id, name, club_id')
+    .select('id, title, owner_id, club_id')
     .eq('id', id)
     .single();
 
@@ -30,17 +30,24 @@ export default async function ProjectStudioPage({
     notFound();
   }
 
-  // Check if user is a project member (owner or collaborator)
-  const { data: membership } = await supabase
-    .from('project_members')
-    .select('role')
-    .eq('project_id', id)
-    .eq('user_id', user.id)
-    .single();
+  // Check if user is project owner or club member (for club projects)
+  const isOwner = project.owner_id === user.id;
+  let isMember = isOwner;
 
-  if (!membership) {
-    // User is not a member, redirect to project detail page
-    redirect(`/${locale}/projects/${id}`);
+  if (project.club_id && !isOwner) {
+    const { data: clubMembership } = await supabase
+      .from('club_members')
+      .select('id')
+      .eq('club_id', project.club_id)
+      .eq('user_id', user.id)
+      .single();
+
+    isMember = !!clubMembership;
+  }
+
+  if (!isMember) {
+    // User doesn't have access
+    redirect(`/${locale}/clubs`);
   }
 
   return <StudioView projectId={id} />;
