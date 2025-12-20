@@ -460,7 +460,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
 
