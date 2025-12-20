@@ -81,7 +81,8 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       container: containerRef.current,
       waveColor: trackColor + '40', // 25% opacity
       progressColor: trackColor,
-      cursorColor: '#ffffff',
+      cursorColor: 'transparent', // Hide cursor, use global playhead instead
+      cursorWidth: 0,
       barWidth: 2,
       barGap: 1,
       barRadius: 2,
