@@ -79,7 +79,7 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
     // Create WaveSurfer instance
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
-      waveColor: trackColor + '40', // 25% opacity
+      waveColor: trackColor,
       progressColor: trackColor,
       cursorColor: 'transparent', // Hide cursor, use global playhead instead
       cursorWidth: 0,
