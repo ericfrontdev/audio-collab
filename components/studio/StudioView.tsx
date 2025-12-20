@@ -41,6 +41,7 @@ export function StudioView({ projectId }: StudioViewProps) {
   const waveformRefs = useRef<Map<string, WaveformDisplayRef>>(new Map());
   const [trackVolumes, setTrackVolumes] = useState<Map<string, number>>(new Map());
   const [trackMutes, setTrackMutes] = useState<Set<string>>(new Set());
+  const [trackSolos, setTrackSolos] = useState<Set<string>>(new Set());
   const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
   const timelineRef = useRef<HTMLDivElement>(null);
   const [commentModal, setCommentModal] = useState<{
@@ -51,12 +52,6 @@ export function StudioView({ projectId }: StudioViewProps) {
   }>({ isOpen: false, trackId: '', timestamp: 0, position: { x: 0, y: 0 } });
   const [currentUser, setCurrentUser] = useState<{ avatar_url?: string | null } | null>(null);
   const [isPortrait, setIsPortrait] = useState(false);
-  const [volumePopup, setVolumePopup] = useState<{
-    isOpen: boolean;
-    trackId: string;
-    position: { x: number; y: number };
-  }>({ isOpen: false, trackId: '', position: { x: 0, y: 0 } });
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const primaryColor = '#9363f7'; // Exact primary button color
 
   // Check orientation on mobile
@@ -189,6 +184,38 @@ export function StudioView({ projectId }: StudioViewProps) {
     }
   }, []);
 
+  const handleSoloToggle = useCallback((trackId: string) => {
+    setTrackSolos(prev => {
+      const newSolos = new Set(prev);
+      if (newSolos.has(trackId)) {
+        // Unsolo this track
+        newSolos.delete(trackId);
+      } else {
+        // Solo this track
+        newSolos.add(trackId);
+      }
+
+      // Update mutes based on solo state
+      // If any tracks are soloed, mute all non-soloed tracks
+      if (newSolos.size > 0) {
+        waveformRefs.current.forEach((ref, id) => {
+          if (newSolos.has(id)) {
+            ref.setMute(false);
+          } else {
+            ref.setMute(true);
+          }
+        });
+      } else {
+        // No tracks soloed, restore original mute states
+        waveformRefs.current.forEach((ref, id) => {
+          ref.setMute(trackMutes.has(id));
+        });
+      }
+
+      return newSolos;
+    });
+  }, [trackMutes]);
+
   const handleWaveformReady = useCallback((duration: number) => {
     setMaxDuration(prev => Math.max(prev, duration));
   }, []);
@@ -270,27 +297,6 @@ export function StudioView({ projectId }: StudioViewProps) {
       toast.error(result.error || 'Failed to add comment');
     }
   }, [commentModal.trackId]);
-
-  // Handle long press on track
-  const handleTrackPressStart = useCallback((e: React.MouseEvent | React.TouchEvent, trackId: string) => {
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-
-    longPressTimer.current = setTimeout(() => {
-      setVolumePopup({
-        isOpen: true,
-        trackId,
-        position: { x: clientX, y: clientY },
-      });
-    }, 500); // 500ms long press
-  }, []);
-
-  const handleTrackPressEnd = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
 
   // Handle dragging
   useEffect(() => {
@@ -495,16 +501,11 @@ export function StudioView({ projectId }: StudioViewProps) {
                         : 'hover:bg-zinc-800/50'
                     }`}
                   >
-                    <button
+                    <div
                       onClick={() => setSelectedTrackId(track.id)}
-                      onMouseDown={(e) => handleTrackPressStart(e, track.id)}
-                      onMouseUp={handleTrackPressEnd}
-                      onMouseLeave={handleTrackPressEnd}
-                      onTouchStart={(e) => handleTrackPressStart(e, track.id)}
-                      onTouchEnd={handleTrackPressEnd}
-                      className="w-full text-left px-2 sm:px-3 py-2"
+                      className="w-full text-left px-2 sm:px-3 py-3"
                     >
-                      <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <div
                             className="w-2 h-2 rounded-full flex-shrink-0"
@@ -527,16 +528,50 @@ export function StudioView({ projectId }: StudioViewProps) {
                           return null;
                         })()}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary"
-                            style={{ width: `${trackVolumes.get(track.id) || 80}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-500">{trackVolumes.get(track.id) || 80}%</span>
+                      {/* Volume Slider */}
+                      <div className="mb-2" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={trackVolumes.get(track.id) || 80}
+                          onChange={(e) => handleVolumeChange(track.id, Number(e.target.value))}
+                          className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-primary"
+                          style={{
+                            background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${trackVolumes.get(track.id) || 80}%, #3f3f46 ${trackVolumes.get(track.id) || 80}%, #3f3f46 100%)`
+                          }}
+                        />
                       </div>
-                    </button>
+                      {/* M and S Buttons */}
+                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMuteToggle(track.id);
+                          }}
+                          className={`flex-1 px-2 py-1 text-xs font-bold rounded transition-colors ${
+                            trackMutes.has(track.id)
+                              ? 'bg-yellow-600 text-white'
+                              : 'bg-zinc-800 text-gray-400 hover:bg-zinc-700'
+                          }`}
+                        >
+                          M
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSoloToggle(track.id);
+                          }}
+                          className={`flex-1 px-2 py-1 text-xs font-bold rounded transition-colors ${
+                            trackSolos.has(track.id)
+                              ? 'bg-green-600 text-white'
+                              : 'bg-zinc-800 text-gray-400 hover:bg-zinc-700'
+                          }`}
+                        >
+                          S
+                        </button>
+                      </div>
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -798,64 +833,6 @@ export function StudioView({ projectId }: StudioViewProps) {
         onSubmit={handleCommentSubmit}
         onClose={() => setCommentModal({ ...commentModal, isOpen: false })}
       />
-
-      {/* Volume Control Popup */}
-      {volumePopup.isOpen && (() => {
-        const popupTrack = tracks.find(t => t.id === volumePopup.trackId);
-        const volume = trackVolumes.get(volumePopup.trackId) || 80;
-        const isMuted = trackMutes.has(volumePopup.trackId);
-
-        if (!popupTrack) return null;
-
-        return (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setVolumePopup({ ...volumePopup, isOpen: false })}
-            />
-
-            {/* Popup */}
-            <div
-              className="fixed z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl p-4 w-64"
-              style={{
-                left: `${volumePopup.position.x}px`,
-                top: `${volumePopup.position.y}px`,
-                transform: 'translate(-50%, -50%)',
-              }}
-            >
-              <h3 className="text-sm font-semibold text-white mb-3">{popupTrack.name}</h3>
-
-              {/* Volume Control */}
-              <div className="mb-3">
-                <label className="text-xs text-gray-400 mb-2 block">Volume</label>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-400">🔊</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={volume}
-                    onChange={(e) => handleVolumeChange(volumePopup.trackId, Number(e.target.value))}
-                    className="flex-1"
-                  />
-                  <span className="text-xs text-gray-400 w-10 text-right">{volume}%</span>
-                </div>
-              </div>
-
-              {/* Mute Button */}
-              <Button
-                onClick={() => handleMuteToggle(volumePopup.trackId)}
-                variant={isMuted ? 'default' : 'outline'}
-                size="sm"
-                className="w-full"
-              >
-                {isMuted ? 'Unmute' : 'Mute'}
-              </Button>
-            </div>
-          </>
-        );
-      })()}
     </div>
   );
 }
