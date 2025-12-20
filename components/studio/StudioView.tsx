@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,8 @@ export function StudioView({ projectId }: StudioViewProps) {
     trackName: string;
   }>({ isOpen: false, trackId: '', trackName: '' });
   const waveformRefs = useRef<Map<string, WaveformDisplayRef>>(new Map());
+  const [trackVolumes, setTrackVolumes] = useState<Map<string, number>>(new Map());
+  const [trackMutes, setTrackMutes] = useState<Set<string>>(new Set());
 
   // Load studio data
   const loadStudioData = async () => {
@@ -97,7 +99,32 @@ export function StudioView({ projectId }: StudioViewProps) {
     setCurrentTime(0);
   };
 
+  const handleVolumeChange = (trackId: string, volume: number) => {
+    const waveformRef = waveformRefs.current.get(trackId);
+    if (waveformRef) {
+      waveformRef.setVolume(volume / 100);
+      setTrackVolumes(new Map(trackVolumes.set(trackId, volume)));
+    }
+  };
+
+  const handleMuteToggle = (trackId: string) => {
+    const waveformRef = waveformRefs.current.get(trackId);
+    if (waveformRef) {
+      const newMutes = new Set(trackMutes);
+      if (newMutes.has(trackId)) {
+        newMutes.delete(trackId);
+        waveformRef.setMute(false);
+      } else {
+        newMutes.add(trackId);
+        waveformRef.setMute(true);
+      }
+      setTrackMutes(newMutes);
+    }
+  };
+
   const selectedTrack = tracks.find(t => t.id === selectedTrackId);
+  const selectedTrackVolume = selectedTrackId ? (trackVolumes.get(selectedTrackId) || 80) : 80;
+  const isSelectedTrackMuted = selectedTrackId ? trackMutes.has(selectedTrackId) : false;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -386,11 +413,20 @@ export function StudioView({ projectId }: StudioViewProps) {
                     type="range"
                     min="0"
                     max="100"
-                    defaultValue="80"
+                    value={selectedTrackVolume}
+                    onChange={(e) => selectedTrackId && handleVolumeChange(selectedTrackId, Number(e.target.value))}
                     className="flex-1"
                   />
-                  <span className="text-sm text-gray-400 w-12 text-right">80%</span>
+                  <span className="text-sm text-gray-400 w-12 text-right">{selectedTrackVolume}%</span>
                 </div>
+                <Button
+                  onClick={() => selectedTrackId && handleMuteToggle(selectedTrackId)}
+                  variant={isSelectedTrackMuted ? 'default' : 'outline'}
+                  size="sm"
+                  className="mt-3 w-full"
+                >
+                  {isSelectedTrackMuted ? 'Unmute Track' : 'Mute Track'}
+                </Button>
               </div>
 
               {/* Amplifier */}

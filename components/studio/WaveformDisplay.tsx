@@ -20,6 +20,8 @@ export interface WaveformDisplayRef {
   getDuration: () => number;
   getCurrentTime: () => number;
   isPlaying: () => boolean;
+  setVolume: (volume: number) => void;
+  setMute: (muted: boolean) => void;
 }
 
 export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayProps>(
@@ -48,6 +50,8 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       getDuration: () => wavesurferRef.current?.getDuration() || 0,
       getCurrentTime: () => wavesurferRef.current?.getCurrentTime() || 0,
       isPlaying: () => wavesurferRef.current?.isPlaying() || false,
+      setVolume: (volume: number) => wavesurferRef.current?.setVolume(volume),
+      setMute: (muted: boolean) => wavesurferRef.current?.setMuted(muted),
     }));
 
   useEffect(() => {
