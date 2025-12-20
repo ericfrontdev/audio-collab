@@ -32,6 +32,8 @@ export function StudioView({ projectId }: StudioViewProps) {
   const waveformRefs = useRef<Map<string, WaveformDisplayRef>>(new Map());
   const [trackVolumes, setTrackVolumes] = useState<Map<string, number>>(new Map());
   const [trackMutes, setTrackMutes] = useState<Set<string>>(new Set());
+  const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
+  const timelineRef = useRef<HTMLDivElement>(null);
 
   // Load studio data
   const loadStudioData = async () => {
@@ -136,6 +138,60 @@ export function StudioView({ projectId }: StudioViewProps) {
   const handleTimeUpdate = useCallback((time: number) => {
     setCurrentTime(time);
   }, []);
+
+  // Handle timeline seek (click and drag)
+  const handleTimelineSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineRef.current) return;
+
+    const rect = timelineRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const percentage = x / rect.width;
+    const newTime = percentage * maxDuration;
+
+    // Seek all waveforms
+    waveformRefs.current.forEach((ref) => {
+      ref.seekTo(newTime);
+    });
+
+    setCurrentTime(newTime);
+  }, [maxDuration]);
+
+  const handleTimelineMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDraggingPlayhead(true);
+    handleTimelineSeek(e);
+  }, [handleTimelineSeek]);
+
+  // Handle dragging
+  useEffect(() => {
+    if (!isDraggingPlayhead) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!timelineRef.current) return;
+
+      const rect = timelineRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+      const percentage = x / rect.width;
+      const newTime = percentage * maxDuration;
+
+      waveformRefs.current.forEach((ref) => {
+        ref.seekTo(newTime);
+      });
+
+      setCurrentTime(newTime);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingPlayhead(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingPlayhead, maxDuration]);
 
   const selectedTrack = tracks.find(t => t.id === selectedTrackId);
   const selectedTrackVolume = selectedTrackId ? (trackVolumes.get(selectedTrackId) || 80) : 80;
@@ -372,7 +428,12 @@ export function StudioView({ projectId }: StudioViewProps) {
               </div>
 
               {/* Timeline Ruler */}
-              <div className="h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0 relative">
+              <div
+                ref={timelineRef}
+                className="h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0 relative cursor-pointer select-none"
+                onMouseDown={handleTimelineMouseDown}
+                style={{ cursor: isDraggingPlayhead ? 'grabbing' : 'pointer' }}
+              >
                 <div className="h-full relative">
                   {(() => {
                     const { markers, ticks } = getTimelineData(maxDuration);
