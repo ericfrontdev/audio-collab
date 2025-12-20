@@ -324,10 +324,6 @@ export function StudioView({ projectId }: StudioViewProps) {
     };
   }, [isDraggingPlayhead, maxDuration]);
 
-  const selectedTrack = tracks.find(t => t.id === selectedTrackId);
-  const selectedTrackVolume = selectedTrackId ? (trackVolumes.get(selectedTrackId) || 80) : 80;
-  const isSelectedTrackMuted = selectedTrackId ? trackMutes.has(selectedTrackId) : false;
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -759,50 +755,7 @@ export function StudioView({ projectId }: StudioViewProps) {
           )}
         </div>
 
-        {/* Right Sidebar: Track Controls - Hidden, using popup instead */}
-        {false && selectedTrack && (
-          <div className="w-48 lg:w-80 border-l border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
-            <div className="p-2 sm:p-4 border-b border-zinc-800 flex items-center justify-between">
-              <h2 className="text-xs sm:text-sm font-semibold text-white truncate">{selectedTrack.name}</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-8 h-8 p-0 flex-shrink-0"
-                onClick={() => setSelectedTrackId(null)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
-              {/* Volume */}
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-white mb-2 sm:mb-3 block">Volume</label>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <span className="text-gray-400 text-sm sm:text-base">🔊</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={selectedTrackVolume}
-                    onChange={(e) => selectedTrackId && handleVolumeChange(selectedTrackId, Number(e.target.value))}
-                    className="flex-1"
-                  />
-                  <span className="text-xs sm:text-sm text-gray-400 w-10 sm:w-12 text-right">{selectedTrackVolume}%</span>
-                </div>
-                <Button
-                  onClick={() => selectedTrackId && handleMuteToggle(selectedTrackId)}
-                  variant={isSelectedTrackMuted ? 'default' : 'outline'}
-                  size="sm"
-                  className="mt-2 sm:mt-3 w-full text-xs sm:text-sm"
-                >
-                  {isSelectedTrackMuted ? 'Unmute' : 'Mute'}
-                </Button>
-              </div>
-
-            </div>
-          </div>
-        )}
+        {/* Right Sidebar removed - using long-press popup instead */}
       </div>
 
       {/* Upload Modal */}
