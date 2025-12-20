@@ -485,6 +485,9 @@ export function StudioView({ projectId }: StudioViewProps) {
             <h2 className="text-sm font-semibold text-white">Tracks</h2>
           </div>
 
+          {/* Spacer to align with timeline */}
+          <div className="h-10 md:h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0" />
+
           <div className="flex-1 overflow-y-auto">
             {tracks.length === 0 ? (
               <div className="p-4 text-center">
