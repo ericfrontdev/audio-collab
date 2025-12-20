@@ -380,21 +380,21 @@ export function StudioView({ projectId }: StudioViewProps) {
       )}
 
       {/* Header with Transport Controls */}
-      <div className="flex items-center justify-between px-3 md:px-6 py-3 border-b border-zinc-800 bg-zinc-900/80">
+      <div className="flex items-center justify-between px-2 sm:px-3 lg:px-6 py-2 sm:py-3 border-b border-zinc-800 bg-zinc-900/80">
         {/* Left: Back button + Project info */}
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 min-w-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
-            className="gap-2"
+            className="gap-1 sm:gap-2 flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Back</span>
           </Button>
-          <div className="h-6 w-px bg-zinc-700 hidden sm:block" />
-          <h1 className="text-sm md:text-lg font-semibold text-white truncate">Audio Track</h1>
-          <span className="text-xs md:text-sm text-gray-400 hidden sm:inline">Saved just now</span>
+          <div className="h-6 w-px bg-zinc-700 hidden lg:block" />
+          <h1 className="text-sm lg:text-lg font-semibold text-white truncate">Audio Track</h1>
+          <span className="text-xs text-gray-400 hidden lg:inline">Saved just now</span>
         </div>
 
         {/* Center: Transport Controls */}
@@ -436,14 +436,14 @@ export function StudioView({ projectId }: StudioViewProps) {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-1 md:gap-2">
-          <Button variant="outline" size="sm" className="hidden sm:flex">
-            <Share2 className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">Share</span>
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <Button variant="outline" size="sm" className="hidden lg:flex">
+            <Share2 className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Share</span>
           </Button>
           <Button size="sm">
-            <UploadIcon className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">Export</span>
+            <UploadIcon className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Export</span>
           </Button>
         </div>
       </div>
@@ -451,9 +451,9 @@ export function StudioView({ projectId }: StudioViewProps) {
       {/* Main Studio Layout: 3 Columns */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar: Track List */}
-        <div className="w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
-          <div className="p-4 border-b border-zinc-800">
-            <h2 className="text-sm font-semibold text-white mb-3">Tracks</h2>
+        <div className="w-48 lg:w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
+          <div className="p-2 sm:p-4 border-b border-zinc-800">
+            <h2 className="text-sm font-semibold text-white mb-2 sm:mb-3">Tracks</h2>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -474,7 +474,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                   >
                     <button
                       onClick={() => setSelectedTrackId(track.id)}
-                      className="w-full text-left px-3 py-2"
+                      className="w-full text-left px-2 sm:px-3 py-2"
                     >
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <div className="flex items-center gap-2 min-w-0">
@@ -525,14 +525,14 @@ export function StudioView({ projectId }: StudioViewProps) {
             )}
           </div>
 
-          <div className="p-4 border-t border-zinc-800">
+          <div className="p-2 sm:p-4 border-t border-zinc-800">
             <Button
               onClick={() => setIsUploadModalOpen(true)}
-              className="w-full"
+              className="w-full text-xs sm:text-sm"
               size="sm"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add New Track
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+              Add Track
             </Button>
           </div>
         </div>
