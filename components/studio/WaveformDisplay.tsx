@@ -89,7 +89,7 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       height,
       normalize: true,
       backend: 'WebAudio',
-      interact: true,
+      interact: false, // Disable WaveSurfer's click-to-seek to allow comment overlay to work
     });
 
     wavesurferRef.current = wavesurfer;
