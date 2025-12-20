@@ -350,9 +350,20 @@ export function StudioView({ projectId }: StudioViewProps) {
               </div>
             </div>
           ) : (
-            <>
+            <div className="flex-1 flex flex-col relative overflow-hidden">
+              {/* Single unified playhead that spans timeline and waveforms */}
+              {maxDuration > 0 && (
+                <div
+                  className="absolute top-0 bottom-0 bg-white z-30 pointer-events-none"
+                  style={{
+                    left: `calc(1rem + (100% - 2rem) * ${currentTime / maxDuration})`,
+                    width: '2px',
+                  }}
+                />
+              )}
+
               {/* Timeline Ruler */}
-              <div className="h-12 border-b border-zinc-800 bg-zinc-900/30 relative">
+              <div className="h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
                 <div className="px-4 h-full flex items-center relative">
                   {/* Tick marks */}
                   <div className="absolute inset-0 flex px-4">
@@ -371,15 +382,6 @@ export function StudioView({ projectId }: StudioViewProps) {
                       </div>
                     ))}
                   </div>
-                  {/* Playhead in timeline */}
-                  {maxDuration > 0 && (
-                    <div
-                      className="absolute top-0 bottom-0 w-0.5 bg-white z-30 pointer-events-none"
-                      style={{
-                        left: `calc(1rem + ${(currentTime / maxDuration) * 100}%)`,
-                      }}
-                    />
-                  )}
                   {/* Time markers */}
                   <div className="flex-1 flex justify-between text-xs text-gray-500 relative z-10">
                     {getTimelineMarkers(maxDuration).map((marker, index) => (
@@ -391,16 +393,7 @@ export function StudioView({ projectId }: StudioViewProps) {
 
               {/* Tracks & Waveforms */}
               <div className="flex-1 overflow-auto">
-                <div className="p-4 space-y-3 relative">
-                  {/* Global playhead cursor */}
-                  {maxDuration > 0 && (
-                    <div
-                      className="absolute top-0 bottom-0 w-0.5 bg-white z-20 pointer-events-none"
-                      style={{
-                        left: `calc(${(currentTime / maxDuration) * 100}%)`,
-                      }}
-                    />
-                  )}
+                <div className="p-4 space-y-3">
                   {tracks.map((track) => {
                     const activeTake = (track as any).takes?.find((t: any) => t.is_active) || (track as any).takes?.[0];
 
