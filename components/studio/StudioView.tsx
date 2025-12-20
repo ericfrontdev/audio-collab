@@ -399,29 +399,29 @@ export function StudioView({ projectId }: StudioViewProps) {
                       onClick={() => setSelectedTrackId(track.id)}
                       className="w-full text-left px-3 py-2"
                     >
-                      <div className="flex items-center gap-2 mb-1">
-                        <div
-                          className="w-2 h-2 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: track.color }}
-                        />
-                        <span className={`text-sm font-medium truncate ${
-                          selectedTrackId === track.id ? 'text-white' : 'text-gray-400'
-                        }`}>{track.name}</span>
-                      </div>
-                      {(() => {
-                        const activeTake = (track as any).takes?.find((t: any) => t.is_active) || (track as any).takes?.[0];
-                        const uploader = activeTake?.uploader;
-                        if (uploader) {
-                          return (
-                            <div className="mb-1 ml-4">
-                              <span className="text-xs text-gray-500">
-                                by @{uploader.username || uploader.display_name || 'unknown'}
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: track.color }}
+                          />
+                          <span className={`text-sm font-medium truncate ${
+                            selectedTrackId === track.id ? 'text-white' : 'text-gray-400'
+                          }`}>{track.name}</span>
+                        </div>
+                        {(() => {
+                          const activeTake = (track as any).takes?.find((t: any) => t.is_active) || (track as any).takes?.[0];
+                          const uploader = activeTake?.uploader;
+                          if (uploader) {
+                            return (
+                              <span className="text-[10px] text-gray-400 bg-zinc-800 px-2 py-0.5 rounded-full flex-shrink-0">
+                                @{uploader.username || uploader.display_name || 'unknown'}
                               </span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
                           <div
