@@ -204,9 +204,18 @@ export function StudioView({ projectId }: StudioViewProps) {
   // Handle comment submission
   const handleCommentSubmit = useCallback(async (text: string, timestamp: number) => {
     const result = await addTrackComment(commentModal.trackId, timestamp, text);
-    if (result.success) {
+    if (result.success && result.comment) {
       toast.success('Comment added!');
-      await loadStudioData(); // Reload to show new comment
+      // Add comment to local state instead of reloading everything
+      setTracks(prevTracks => prevTracks.map(track => {
+        if (track.id === commentModal.trackId) {
+          return {
+            ...track,
+            comments: [...(track.comments || []), result.comment],
+          };
+        }
+        return track;
+      }));
     } else {
       toast.error(result.error || 'Failed to add comment');
     }
