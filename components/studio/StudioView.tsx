@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { UploadTrackModal } from './UploadTrackModal';
 import { getProjectStudioData, deleteTrack, addTrackComment } from '@/app/actions/studio';
-import { ProjectTrack } from '@/lib/types/studio';
+import { ProjectTrack, ProjectTrackComment } from '@/lib/types/studio';
 import { toast } from 'react-toastify';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { WaveformDisplay, WaveformDisplayRef } from './WaveformDisplay';
@@ -17,9 +17,16 @@ interface StudioViewProps {
   projectId: string;
 }
 
+// Extended track type with comments and takes
+interface TrackWithDetails extends ProjectTrack {
+  takes?: any[];
+  comments?: any[];
+  mixer_settings?: any;
+}
+
 export function StudioView({ projectId }: StudioViewProps) {
   const router = useRouter();
-  const [tracks, setTracks] = useState<ProjectTrack[]>([]);
+  const [tracks, setTracks] = useState<TrackWithDetails[]>([]);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
