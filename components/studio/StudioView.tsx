@@ -420,7 +420,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                         }`}
                         onClick={() => setSelectedTrackId(track.id)}
                       >
-                        <div className="h-20 bg-zinc-900/30 p-2">
+                        <div className="h-20 bg-zinc-900/30 py-2">
                           {activeTake ? (
                             <WaveformDisplay
                               ref={(ref) => {
