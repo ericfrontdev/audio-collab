@@ -23,6 +23,7 @@ export function StudioView({ projectId }: StudioViewProps) {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
+  const [maxDuration, setMaxDuration] = useState(0);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
     trackId: string;
@@ -129,7 +130,7 @@ export function StudioView({ projectId }: StudioViewProps) {
   }, []);
 
   const handleWaveformReady = useCallback((duration: number) => {
-    // Waveform is ready
+    setMaxDuration(prev => Math.max(prev, duration));
   }, []);
 
   const handleTimeUpdate = useCallback((time: number) => {
@@ -144,6 +145,33 @@ export function StudioView({ projectId }: StudioViewProps) {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Generate timeline markers based on max duration
+  const getTimelineMarkers = (duration: number) => {
+    if (duration === 0) return ['00:00'];
+
+    let interval: number;
+    if (duration <= 30) {
+      interval = 5;
+    } else if (duration <= 120) {
+      interval = 15;
+    } else if (duration <= 300) {
+      interval = 30;
+    } else {
+      interval = 60;
+    }
+
+    const markers: string[] = [];
+    const numMarkers = 8; // Show 8 markers across the timeline
+    const step = Math.ceil(duration / (numMarkers - 1) / interval) * interval;
+
+    for (let i = 0; i < numMarkers; i++) {
+      const time = Math.min(i * step, duration);
+      markers.push(formatTime(time));
+    }
+
+    return markers;
   };
 
   if (isLoading) {
@@ -269,10 +297,10 @@ export function StudioView({ projectId }: StudioViewProps) {
                         <div className="flex-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary"
-                            style={{ width: '80%' }}
+                            style={{ width: `${trackVolumes.get(track.id) || 80}%` }}
                           />
                         </div>
-                        <span className="text-xs text-gray-500">80%</span>
+                        <span className="text-xs text-gray-500">{trackVolumes.get(track.id) || 80}%</span>
                       </div>
                     </button>
                     <button
@@ -327,14 +355,9 @@ export function StudioView({ projectId }: StudioViewProps) {
               <div className="h-12 border-b border-zinc-800 bg-zinc-900/30 px-4">
                 <div className="h-full flex items-center">
                   <div className="flex-1 flex justify-between text-xs text-gray-500">
-                    <span>00:00</span>
-                    <span>00:15</span>
-                    <span>00:30</span>
-                    <span>00:45</span>
-                    <span>01:00</span>
-                    <span>01:15</span>
-                    <span>01:30</span>
-                    <span>01:45</span>
+                    {getTimelineMarkers(maxDuration).map((marker, index) => (
+                      <span key={index}>{marker}</span>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -439,49 +462,6 @@ export function StudioView({ projectId }: StudioViewProps) {
                 </Button>
               </div>
 
-              {/* Amplifier */}
-              <div>
-                <label className="text-sm font-medium text-white mb-3 block">Amplifier</label>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-400">📊</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    defaultValue="0"
-                    className="flex-1"
-                  />
-                  <span className="text-sm text-gray-400 w-12 text-right">0%</span>
-                </div>
-              </div>
-
-              {/* Pan */}
-              <div>
-                <label className="text-sm font-medium text-white mb-3 block">Pan</label>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-400">🎧</span>
-                  <input
-                    type="range"
-                    min="-50"
-                    max="50"
-                    defaultValue="0"
-                    className="flex-1"
-                  />
-                  <span className="text-gray-400">🎧</span>
-                </div>
-              </div>
-
-              {/* Update Feature - Placeholder */}
-              <div>
-                <label className="text-sm font-medium text-white mb-3 block">Update Feature</label>
-                <div className="p-6 border border-zinc-800 rounded-lg text-center">
-                  <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-zinc-800 flex items-center justify-center">
-                    <span className="text-2xl">🔇</span>
-                  </div>
-                  <p className="text-sm font-medium text-white mb-1">Noise Cancelation</p>
-                  <p className="text-xs text-gray-500">You can remove noise from your audio sound</p>
-                </div>
-              </div>
             </div>
           </div>
         )}
