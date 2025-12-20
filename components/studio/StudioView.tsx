@@ -358,21 +358,19 @@ export function StudioView({ projectId }: StudioViewProps) {
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col relative overflow-hidden">
-              {/* Single unified playhead that spans timeline and waveforms */}
-              {maxDuration > 0 && (
-                <div
-                  className="absolute top-0 bottom-0 bg-white z-30 pointer-events-none"
-                  style={{
-                    left: `calc(1rem + (100% - 2rem) * ${currentTime / maxDuration})`,
-                    width: '2px',
-                  }}
-                />
-              )}
-
+            <div className="flex-1 flex flex-col overflow-hidden">
               {/* Timeline Ruler */}
-              <div className="h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
+              <div className="h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0 relative">
                 <div className="px-4 h-full relative">
+                  {/* Playhead in timeline */}
+                  {maxDuration > 0 && (
+                    <div
+                      className="absolute top-0 h-full w-0.5 bg-white z-30 pointer-events-none"
+                      style={{
+                        left: `${(currentTime / maxDuration) * 100}%`,
+                      }}
+                    />
+                  )}
                   {(() => {
                     const { markers, ticks } = getTimelineData(maxDuration);
                     return (
@@ -406,8 +404,17 @@ export function StudioView({ projectId }: StudioViewProps) {
               </div>
 
               {/* Tracks & Waveforms */}
-              <div className="flex-1 overflow-auto">
-                <div className="p-4 space-y-3">
+              <div className="flex-1 overflow-auto relative">
+                <div className="p-4 space-y-3 relative">
+                  {/* Playhead extending through waveforms */}
+                  {maxDuration > 0 && (
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-white z-30 pointer-events-none"
+                      style={{
+                        left: `${(currentTime / maxDuration) * 100}%`,
+                      }}
+                    />
+                  )}
                   {tracks.map((track) => {
                     const activeTake = (track as any).takes?.find((t: any) => t.is_active) || (track as any).takes?.[0];
 
