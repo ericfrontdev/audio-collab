@@ -50,19 +50,7 @@ export function StudioView({ projectId }: StudioViewProps) {
     position: { x: number; y: number };
   }>({ isOpen: false, trackId: '', timestamp: 0, position: { x: 0, y: 0 } });
   const [currentUser, setCurrentUser] = useState<{ avatar_url?: string | null } | null>(null);
-  const [primaryColor, setPrimaryColor] = useState('#A78BFA');
-
-  // Get primary color from CSS variable
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const computedColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--primary')
-        .trim();
-      if (computedColor) {
-        setPrimaryColor(computedColor);
-      }
-    }
-  }, []);
+  const primaryColor = '#A78BFA'; // Bright purple to match primary buttons
 
   // Load studio data
   const loadStudioData = async () => {
