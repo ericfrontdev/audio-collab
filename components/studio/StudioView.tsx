@@ -50,7 +50,26 @@ export function StudioView({ projectId }: StudioViewProps) {
     position: { x: number; y: number };
   }>({ isOpen: false, trackId: '', timestamp: 0, position: { x: 0, y: 0 } });
   const [currentUser, setCurrentUser] = useState<{ avatar_url?: string | null } | null>(null);
+  const [isPortrait, setIsPortrait] = useState(false);
   const primaryColor = '#9363f7'; // Exact primary button color
+
+  // Check orientation on mobile
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth < 768; // md breakpoint
+      const isPortraitMode = window.innerHeight > window.innerWidth;
+      setIsPortrait(isMobile && isPortraitMode);
+    };
+
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   // Load studio data
   const loadStudioData = async () => {
@@ -336,6 +355,30 @@ export function StudioView({ projectId }: StudioViewProps) {
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950">
+      {/* Portrait Mode Warning - Mobile Only */}
+      {isPortrait && (
+        <div className="fixed inset-0 z-[100] bg-zinc-950 flex items-center justify-center p-6">
+          <div className="text-center max-w-sm">
+            <div className="w-24 h-24 mx-auto mb-6 relative">
+              <div className="absolute inset-0 border-4 border-primary rounded-2xl rotate-0 transition-transform duration-500 animate-pulse" />
+              <div className="absolute inset-0 border-4 border-primary/30 rounded-2xl rotate-90" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-12 h-12 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-3">Rotation requise</h2>
+            <p className="text-gray-400 text-lg mb-2">
+              Veuillez tourner votre appareil en mode paysage pour utiliser le studio.
+            </p>
+            <p className="text-gray-500 text-sm">
+              Le studio nécessite plus d'espace horizontal pour afficher correctement les waveforms et la timeline.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header with Transport Controls */}
       <div className="flex items-center justify-between px-3 md:px-6 py-3 border-b border-zinc-800 bg-zinc-900/80">
         {/* Left: Back button + Project info */}
@@ -408,9 +451,9 @@ export function StudioView({ projectId }: StudioViewProps) {
       {/* Main Studio Layout: 3 Columns */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar: Track List */}
-        <div className="w-32 md:w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
-          <div className="p-2 md:p-4 border-b border-zinc-800">
-            <h2 className="text-xs md:text-sm font-semibold text-white mb-2 md:mb-3">Tracks</h2>
+        <div className="w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
+          <div className="p-4 border-b border-zinc-800">
+            <h2 className="text-sm font-semibold text-white mb-3">Tracks</h2>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -431,15 +474,15 @@ export function StudioView({ projectId }: StudioViewProps) {
                   >
                     <button
                       onClick={() => setSelectedTrackId(track.id)}
-                      className="w-full text-left px-2 md:px-3 py-2"
+                      className="w-full text-left px-3 py-2"
                     >
-                      <div className="flex items-center justify-between gap-1 md:gap-2 mb-1">
-                        <div className="flex items-center gap-1 md:gap-2 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 min-w-0">
                           <div
                             className="w-2 h-2 rounded-full flex-shrink-0"
                             style={{ backgroundColor: track.color }}
                           />
-                          <span className={`text-xs md:text-sm font-medium truncate ${
+                          <span className={`text-sm font-medium truncate ${
                             selectedTrackId === track.id ? 'text-white' : 'text-gray-400'
                           }`}>{track.name}</span>
                         </div>
@@ -448,7 +491,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                           const uploader = activeTake?.uploader;
                           if (uploader) {
                             return (
-                              <span className="hidden md:inline text-[10px] text-gray-400 bg-zinc-800 px-2 py-0.5 rounded-full flex-shrink-0 mr-6">
+                              <span className="text-[10px] text-gray-400 bg-zinc-800 px-2 py-0.5 rounded-full flex-shrink-0 mr-6">
                                 @{uploader.username || uploader.display_name || 'unknown'}
                               </span>
                             );
@@ -456,7 +499,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                           return null;
                         })()}
                       </div>
-                      <div className="hidden md:flex items-center gap-2">
+                      <div className="flex items-center gap-2">
                         <div className="flex-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary"
@@ -482,14 +525,14 @@ export function StudioView({ projectId }: StudioViewProps) {
             )}
           </div>
 
-          <div className="p-2 md:p-4 border-t border-zinc-800">
+          <div className="p-4 border-t border-zinc-800">
             <Button
               onClick={() => setIsUploadModalOpen(true)}
               className="w-full"
               size="sm"
             >
-              <Plus className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">Add New Track</span>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Track
             </Button>
           </div>
         </div>
