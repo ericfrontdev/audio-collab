@@ -42,6 +42,17 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Store callbacks in refs to avoid recreating WaveSurfer
+    const onReadyRef = useRef(onReady);
+    const onSeekRef = useRef(onSeek);
+    const onTimeUpdateRef = useRef(onTimeUpdate);
+
+    useEffect(() => {
+      onReadyRef.current = onReady;
+      onSeekRef.current = onSeek;
+      onTimeUpdateRef.current = onTimeUpdate;
+    });
+
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
       play: () => wavesurferRef.current?.play(),
@@ -88,8 +99,8 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
     // Event listeners
     wavesurfer.on('ready', () => {
       setIsLoading(false);
-      if (onReady) {
-        onReady(wavesurfer.getDuration());
+      if (onReadyRef.current) {
+        onReadyRef.current(wavesurfer.getDuration());
       }
     });
 
@@ -100,14 +111,14 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
     });
 
     wavesurfer.on('seeking', () => {
-      if (onSeek) {
-        onSeek(wavesurfer.getCurrentTime());
+      if (onSeekRef.current) {
+        onSeekRef.current(wavesurfer.getCurrentTime());
       }
     });
 
     wavesurfer.on('timeupdate', (time) => {
-      if (onTimeUpdate) {
-        onTimeUpdate(time);
+      if (onTimeUpdateRef.current) {
+        onTimeUpdateRef.current(time);
       }
     });
 
@@ -115,7 +126,7 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
     return () => {
       wavesurfer.destroy();
     };
-  }, [audioUrl, trackId, trackColor, height, onReady, onSeek, onTimeUpdate]);
+  }, [audioUrl, trackId]);
 
   return (
     <div className="relative w-full">

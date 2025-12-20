@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -99,28 +99,42 @@ export function StudioView({ projectId }: StudioViewProps) {
     setCurrentTime(0);
   };
 
-  const handleVolumeChange = (trackId: string, volume: number) => {
+  const handleVolumeChange = useCallback((trackId: string, volume: number) => {
     const waveformRef = waveformRefs.current.get(trackId);
     if (waveformRef) {
       waveformRef.setVolume(volume / 100);
-      setTrackVolumes(new Map(trackVolumes.set(trackId, volume)));
+      setTrackVolumes(prev => {
+        const newMap = new Map(prev);
+        newMap.set(trackId, volume);
+        return newMap;
+      });
     }
-  };
+  }, []);
 
-  const handleMuteToggle = (trackId: string) => {
+  const handleMuteToggle = useCallback((trackId: string) => {
     const waveformRef = waveformRefs.current.get(trackId);
     if (waveformRef) {
-      const newMutes = new Set(trackMutes);
-      if (newMutes.has(trackId)) {
-        newMutes.delete(trackId);
-        waveformRef.setMute(false);
-      } else {
-        newMutes.add(trackId);
-        waveformRef.setMute(true);
-      }
-      setTrackMutes(newMutes);
+      setTrackMutes(prev => {
+        const newMutes = new Set(prev);
+        if (newMutes.has(trackId)) {
+          newMutes.delete(trackId);
+          waveformRef.setMute(false);
+        } else {
+          newMutes.add(trackId);
+          waveformRef.setMute(true);
+        }
+        return newMutes;
+      });
     }
-  };
+  }, []);
+
+  const handleWaveformReady = useCallback((duration: number) => {
+    // Waveform is ready
+  }, []);
+
+  const handleTimeUpdate = useCallback((time: number) => {
+    setCurrentTime(time);
+  }, []);
 
   const selectedTrack = tracks.find(t => t.id === selectedTrackId);
   const selectedTrackVolume = selectedTrackId ? (trackVolumes.get(selectedTrackId) || 80) : 80;
@@ -353,12 +367,8 @@ export function StudioView({ projectId }: StudioViewProps) {
                               trackId={track.id}
                               trackColor={track.color}
                               height={64}
-                              onReady={(duration) => {
-                                console.log(`Track ${track.name} duration: ${duration}s`);
-                              }}
-                              onTimeUpdate={(time) => {
-                                setCurrentTime(time);
-                              }}
+                              onReady={handleWaveformReady}
+                              onTimeUpdate={handleTimeUpdate}
                             />
                           ) : (
                             <div className="h-full flex items-center justify-center">
