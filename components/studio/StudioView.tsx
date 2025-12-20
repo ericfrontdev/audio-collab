@@ -414,7 +414,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                           const uploader = activeTake?.uploader;
                           if (uploader) {
                             return (
-                              <span className="text-[10px] text-gray-400 bg-zinc-800 px-2 py-0.5 rounded-full flex-shrink-0">
+                              <span className="text-[10px] text-gray-400 bg-zinc-800 px-2 py-0.5 rounded-full flex-shrink-0 mr-6">
                                 @{uploader.username || uploader.display_name || 'unknown'}
                               </span>
                             );
@@ -559,7 +559,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                                 }}
                                 audioUrl={activeTake.audio_url}
                                 trackId={track.id}
-                                trackColor="#8B5CF6"
+                                trackColor="#A78BFA"
                                 height={64}
                                 onReady={handleWaveformReady}
                                 onTimeUpdate={handleTimeUpdate}
