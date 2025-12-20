@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
 interface WaveformDisplayProps {
@@ -9,21 +9,46 @@ interface WaveformDisplayProps {
   trackColor: string;
   onReady?: (duration: number) => void;
   onSeek?: (time: number) => void;
+  onTimeUpdate?: (time: number) => void;
   height?: number;
 }
 
-export function WaveformDisplay({
-  audioUrl,
-  trackId,
-  trackColor,
-  onReady,
-  onSeek,
-  height = 80,
-}: WaveformDisplayProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const wavesurferRef = useRef<WaveSurfer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export interface WaveformDisplayRef {
+  play: () => void;
+  pause: () => void;
+  seekTo: (time: number) => void;
+  getDuration: () => number;
+  getCurrentTime: () => number;
+  isPlaying: () => boolean;
+}
+
+export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayProps>(
+  function WaveformDisplay(
+    {
+      audioUrl,
+      trackId,
+      trackColor,
+      onReady,
+      onSeek,
+      onTimeUpdate,
+      height = 80,
+    },
+    ref
+  ) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Expose methods via ref
+    useImperativeHandle(ref, () => ({
+      play: () => wavesurferRef.current?.play(),
+      pause: () => wavesurferRef.current?.pause(),
+      seekTo: (time: number) => wavesurferRef.current?.seekTo(time / (wavesurferRef.current?.getDuration() || 1)),
+      getDuration: () => wavesurferRef.current?.getDuration() || 0,
+      getCurrentTime: () => wavesurferRef.current?.getCurrentTime() || 0,
+      isPlaying: () => wavesurferRef.current?.isPlaying() || false,
+    }));
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -76,11 +101,17 @@ export function WaveformDisplay({
       }
     });
 
+    wavesurfer.on('timeupdate', (time) => {
+      if (onTimeUpdate) {
+        onTimeUpdate(time);
+      }
+    });
+
     // Cleanup on unmount
     return () => {
       wavesurfer.destroy();
     };
-  }, [audioUrl, trackId, trackColor, height, onReady, onSeek]);
+  }, [audioUrl, trackId, trackColor, height, onReady, onSeek, onTimeUpdate]);
 
   return (
     <div className="relative w-full">
@@ -104,4 +135,4 @@ export function WaveformDisplay({
       />
     </div>
   );
-}
+});

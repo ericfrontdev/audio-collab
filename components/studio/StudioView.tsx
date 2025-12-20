@@ -9,7 +9,7 @@ import { getProjectStudioData, deleteTrack } from '@/app/actions/studio';
 import { ProjectTrack } from '@/lib/types/studio';
 import { toast } from 'react-toastify';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { WaveformDisplay } from './WaveformDisplay';
+import { WaveformDisplay, WaveformDisplayRef } from './WaveformDisplay';
 
 interface StudioViewProps {
   projectId: string;
@@ -28,6 +28,7 @@ export function StudioView({ projectId }: StudioViewProps) {
     trackId: string;
     trackName: string;
   }>({ isOpen: false, trackId: '', trackName: '' });
+  const waveformRefs = useRef<Map<string, WaveformDisplayRef>>(new Map());
 
   // Load studio data
   const loadStudioData = async () => {
@@ -75,6 +76,27 @@ export function StudioView({ projectId }: StudioViewProps) {
     setDeleteConfirmation({ isOpen: false, trackId: '', trackName: '' });
   };
 
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      // Pause all waveforms
+      waveformRefs.current.forEach((ref) => ref.pause());
+      setIsPlaying(false);
+    } else {
+      // Play all waveforms
+      waveformRefs.current.forEach((ref) => ref.play());
+      setIsPlaying(true);
+    }
+  };
+
+  const handleStop = () => {
+    waveformRefs.current.forEach((ref) => {
+      ref.pause();
+      ref.seekTo(0);
+    });
+    setIsPlaying(false);
+    setCurrentTime(0);
+  };
+
   const selectedTrack = tracks.find(t => t.id === selectedTrackId);
 
   const formatTime = (seconds: number) => {
@@ -120,7 +142,8 @@ export function StudioView({ projectId }: StudioViewProps) {
             variant="ghost"
             size="sm"
             className="w-8 h-8 p-0"
-            onClick={() => setCurrentTime(0)}
+            onClick={handleStop}
+            disabled={tracks.length === 0}
           >
             <SkipBack className="w-4 h-4 text-gray-400" />
           </Button>
@@ -128,7 +151,7 @@ export function StudioView({ projectId }: StudioViewProps) {
             variant="ghost"
             size="sm"
             className="w-10 h-10 p-0 bg-primary hover:bg-primary/90"
-            onClick={() => setIsPlaying(!isPlaying)}
+            onClick={handlePlayPause}
             disabled={tracks.length === 0}
           >
             {isPlaying ? (
@@ -141,6 +164,7 @@ export function StudioView({ projectId }: StudioViewProps) {
             variant="ghost"
             size="sm"
             className="w-8 h-8 p-0"
+            disabled={tracks.length === 0}
           >
             <SkipForward className="w-4 h-4 text-gray-400" />
           </Button>
@@ -291,12 +315,22 @@ export function StudioView({ projectId }: StudioViewProps) {
                         <div className="h-20 bg-zinc-900/30 p-2">
                           {activeTake ? (
                             <WaveformDisplay
+                              ref={(ref) => {
+                                if (ref) {
+                                  waveformRefs.current.set(track.id, ref);
+                                } else {
+                                  waveformRefs.current.delete(track.id);
+                                }
+                              }}
                               audioUrl={activeTake.audio_url}
                               trackId={track.id}
                               trackColor={track.color}
                               height={64}
                               onReady={(duration) => {
                                 console.log(`Track ${track.name} duration: ${duration}s`);
+                              }}
+                              onTimeUpdate={(time) => {
+                                setCurrentTime(time);
                               }}
                             />
                           ) : (
