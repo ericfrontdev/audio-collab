@@ -195,6 +195,23 @@ export function StudioView({ projectId }: StudioViewProps) {
     handleTimelineSeek(e);
   }, [handleTimelineSeek]);
 
+  const handleTimelineTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (!timelineRef.current || e.touches.length === 0) return;
+    setIsDraggingPlayhead(true);
+
+    const rect = timelineRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.touches[0].clientX - rect.left, rect.width));
+    const percentage = x / rect.width;
+    const newTime = percentage * maxDuration;
+
+    // Seek all waveforms
+    waveformRefs.current.forEach((ref) => {
+      ref.seekTo(newTime);
+    });
+
+    setCurrentTime(newTime);
+  }, [maxDuration]);
+
   // Handle waveform click to add comment
   const handleWaveformClick = useCallback((e: React.MouseEvent<HTMLDivElement>, trackId: string) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -540,7 +557,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                 ref={timelineRef}
                 className="h-10 md:h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0 relative cursor-pointer select-none touch-none"
                 onMouseDown={handleTimelineMouseDown}
-                onTouchStart={handleTimelineMouseDown}
+                onTouchStart={handleTimelineTouchStart}
                 style={{ cursor: isDraggingPlayhead ? 'grabbing' : 'pointer' }}
               >
                 <div className="h-full relative">
