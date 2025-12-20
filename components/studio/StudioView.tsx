@@ -729,25 +729,25 @@ export function StudioView({ projectId }: StudioViewProps) {
 
         {/* Right Sidebar: Track Controls (only show if track selected) */}
         {selectedTrack && (
-          <div className="hidden md:flex w-80 border-l border-zinc-800 bg-zinc-900/50 flex-col">
-            <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-white">{selectedTrack.name}</h2>
+          <div className="w-48 lg:w-80 border-l border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
+            <div className="p-2 sm:p-4 border-b border-zinc-800 flex items-center justify-between">
+              <h2 className="text-xs sm:text-sm font-semibold text-white truncate">{selectedTrack.name}</h2>
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-8 h-8 p-0"
+                className="w-8 h-8 p-0 flex-shrink-0"
                 onClick={() => setSelectedTrackId(null)}
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 sm:space-y-6">
               {/* Volume */}
               <div>
-                <label className="text-sm font-medium text-white mb-3 block">Volume</label>
-                <div className="flex items-center gap-3">
-                  <span className="text-gray-400">🔊</span>
+                <label className="text-xs sm:text-sm font-medium text-white mb-2 sm:mb-3 block">Volume</label>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="text-gray-400 text-sm sm:text-base">🔊</span>
                   <input
                     type="range"
                     min="0"
@@ -756,15 +756,15 @@ export function StudioView({ projectId }: StudioViewProps) {
                     onChange={(e) => selectedTrackId && handleVolumeChange(selectedTrackId, Number(e.target.value))}
                     className="flex-1"
                   />
-                  <span className="text-sm text-gray-400 w-12 text-right">{selectedTrackVolume}%</span>
+                  <span className="text-xs sm:text-sm text-gray-400 w-10 sm:w-12 text-right">{selectedTrackVolume}%</span>
                 </div>
                 <Button
                   onClick={() => selectedTrackId && handleMuteToggle(selectedTrackId)}
                   variant={isSelectedTrackMuted ? 'default' : 'outline'}
                   size="sm"
-                  className="mt-3 w-full"
+                  className="mt-2 sm:mt-3 w-full text-xs sm:text-sm"
                 >
-                  {isSelectedTrackMuted ? 'Unmute Track' : 'Mute Track'}
+                  {isSelectedTrackMuted ? 'Unmute' : 'Mute'}
                 </Button>
               </div>
 
