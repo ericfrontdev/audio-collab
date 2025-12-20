@@ -330,6 +330,7 @@ export async function uploadTake(
         waveform_data,
         file_size: file.size,
         file_format: fileExt,
+        uploaded_by: user.id,
       })
       .select()
       .single();
@@ -628,19 +629,27 @@ export async function getProjectStudioData(projectId: string) {
       .select('*')
       .in('track_id', trackIds);
 
-    // Get user profiles for comments
-    const userIds = comments?.map(c => c.user_id).filter(Boolean) || [];
-    const { data: profiles } = userIds.length > 0
+    // Get user profiles for comments and takes
+    const commentUserIds = comments?.map(c => c.user_id).filter(Boolean) || [];
+    const takeUserIds = takes?.map(t => t.uploaded_by).filter(Boolean) || [];
+    const allUserIds = [...new Set([...commentUserIds, ...takeUserIds])];
+
+    const { data: profiles } = allUserIds.length > 0
       ? await supabase
           .from('profiles')
           .select('id, username, display_name, avatar_url')
-          .in('id', userIds)
+          .in('id', allUserIds)
       : { data: [] };
 
     // Merge data together
     const tracksWithDetails = tracks.map(track => ({
       ...track,
-      takes: takes?.filter(t => t.track_id === track.id) || [],
+      takes: takes
+        ?.filter(t => t.track_id === track.id)
+        .map(take => ({
+          ...take,
+          uploader: profiles?.find(p => p.id === take.uploaded_by) || null,
+        })) || [],
       comments: comments
         ?.filter(c => c.track_id === track.id)
         .map(comment => ({
