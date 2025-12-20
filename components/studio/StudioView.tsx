@@ -147,31 +147,39 @@ export function StudioView({ projectId }: StudioViewProps) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Generate timeline markers based on max duration
-  const getTimelineMarkers = (duration: number) => {
-    if (duration === 0) return ['00:00'];
+  // Generate timeline markers and ticks based on max duration
+  const getTimelineData = (duration: number) => {
+    if (duration === 0) return { markers: [], ticks: [] };
 
-    let interval: number;
-    if (duration <= 30) {
-      interval = 5;
-    } else if (duration <= 120) {
-      interval = 15;
-    } else if (duration <= 300) {
-      interval = 30;
+    // Determine interval for major markers
+    let majorInterval: number;
+    if (duration <= 60) {
+      majorInterval = 10; // Every 10 seconds
+    } else if (duration <= 180) {
+      majorInterval = 30; // Every 30 seconds
+    } else if (duration <= 600) {
+      majorInterval = 60; // Every minute
     } else {
-      interval = 60;
+      majorInterval = 120; // Every 2 minutes
     }
 
-    const markers: string[] = [];
-    const numMarkers = 8; // Show 8 markers across the timeline
-    const step = Math.ceil(duration / (numMarkers - 1) / interval) * interval;
+    const markers: Array<{ time: number; label: string; position: number }> = [];
+    const ticks: Array<{ time: number; position: number; major: boolean }> = [];
 
-    for (let i = 0; i < numMarkers; i++) {
-      const time = Math.min(i * step, duration);
-      markers.push(formatTime(time));
+    // Generate major markers
+    for (let time = 0; time <= duration; time += majorInterval) {
+      const position = (time / duration) * 100;
+      markers.push({ time, label: formatTime(time), position });
     }
 
-    return markers;
+    // Generate tick marks every second
+    for (let time = 0; time <= duration; time += 1) {
+      const position = (time / duration) * 100;
+      const major = time % 10 === 0;
+      ticks.push({ time, position, major });
+    }
+
+    return { markers, ticks };
   };
 
   if (isLoading) {
@@ -364,30 +372,36 @@ export function StudioView({ projectId }: StudioViewProps) {
 
               {/* Timeline Ruler */}
               <div className="h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
-                <div className="px-4 h-full flex items-center relative">
-                  {/* Tick marks */}
-                  <div className="absolute inset-0 flex px-4">
-                    {Array.from({ length: Math.ceil(maxDuration) }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 relative border-l border-zinc-700/50"
-                        style={{ minWidth: '1px' }}
-                      >
-                        {i % 5 === 0 && (
-                          <div className="absolute top-0 left-0 h-3 w-px bg-zinc-600" />
-                        )}
-                        {i % 10 === 0 && (
-                          <div className="absolute top-0 left-0 h-4 w-px bg-zinc-500" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {/* Time markers */}
-                  <div className="flex-1 flex justify-between text-xs text-gray-500 relative z-10">
-                    {getTimelineMarkers(maxDuration).map((marker, index) => (
-                      <span key={index}>{marker}</span>
-                    ))}
-                  </div>
+                <div className="px-4 h-full relative">
+                  {(() => {
+                    const { markers, ticks } = getTimelineData(maxDuration);
+                    return (
+                      <>
+                        {/* Tick marks */}
+                        {ticks.map((tick, i) => (
+                          <div
+                            key={i}
+                            className="absolute top-0 w-px bg-zinc-700/50"
+                            style={{
+                              left: `${tick.position}%`,
+                              height: tick.major ? '16px' : '8px',
+                              backgroundColor: tick.major ? '#71717a' : '#52525b',
+                            }}
+                          />
+                        ))}
+                        {/* Time markers */}
+                        {markers.map((marker, i) => (
+                          <span
+                            key={i}
+                            className="absolute top-6 text-xs text-gray-500 -translate-x-1/2"
+                            style={{ left: `${marker.position}%` }}
+                          >
+                            {marker.label}
+                          </span>
+                        ))}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
