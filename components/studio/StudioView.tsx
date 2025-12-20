@@ -655,21 +655,31 @@ export function StudioView({ projectId }: StudioViewProps) {
                         <div className="h-20 bg-zinc-900/30 py-2 relative">
                           {activeTake ? (
                             <>
-                              <WaveformDisplay
-                                ref={(ref) => {
-                                  if (ref) {
-                                    waveformRefs.current.set(track.id, ref);
-                                  } else {
-                                    waveformRefs.current.delete(track.id);
-                                  }
-                                }}
-                                audioUrl={activeTake.audio_url}
-                                trackId={track.id}
-                                trackColor={primaryColor}
-                                height={64}
-                                onReady={handleWaveformReady}
-                                onTimeUpdate={handleTimeUpdate}
-                              />
+                              <div className={`relative ${trackMutes.has(track.id) ? 'opacity-30' : ''}`}>
+                                <WaveformDisplay
+                                  ref={(ref) => {
+                                    if (ref) {
+                                      waveformRefs.current.set(track.id, ref);
+                                    } else {
+                                      waveformRefs.current.delete(track.id);
+                                    }
+                                  }}
+                                  audioUrl={activeTake.audio_url}
+                                  trackId={track.id}
+                                  trackColor={primaryColor}
+                                  height={64}
+                                  onReady={handleWaveformReady}
+                                  onTimeUpdate={handleTimeUpdate}
+                                />
+                              </div>
+                              {/* Muted overlay */}
+                              {trackMutes.has(track.id) && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                                  <div className="bg-zinc-900/80 px-3 py-1 rounded-full border border-zinc-700">
+                                    <span className="text-xs text-gray-400 font-medium">🔇 Muted</span>
+                                  </div>
+                                </div>
+                              )}
                               {/* Click overlay for adding comments */}
                               <div
                                 className="absolute inset-0 cursor-text z-10"
