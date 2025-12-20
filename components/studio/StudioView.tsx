@@ -9,6 +9,7 @@ import { getProjectStudioData, deleteTrack } from '@/app/actions/studio';
 import { ProjectTrack } from '@/lib/types/studio';
 import { toast } from 'react-toastify';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { WaveformDisplay } from './WaveformDisplay';
 
 interface StudioViewProps {
   projectId: string;
@@ -276,20 +277,37 @@ export function StudioView({ projectId }: StudioViewProps) {
               {/* Tracks & Waveforms */}
               <div className="flex-1 overflow-auto">
                 <div className="p-4 space-y-3">
-                  {tracks.map((track, index) => (
-                    <div
-                      key={track.id}
-                      className="h-20 rounded-lg border border-zinc-800 bg-zinc-900/30 overflow-hidden cursor-pointer hover:border-zinc-700 transition-colors"
-                      onClick={() => setSelectedTrackId(track.id)}
-                    >
-                      {/* Placeholder waveform */}
-                      <div className="h-full flex items-center px-4">
-                        <div className="flex-1 h-16 bg-gradient-to-r from-blue-500/20 to-blue-500/5 rounded flex items-center justify-center">
-                          <span className="text-gray-600 text-sm">Waveform: {track.name}</span>
+                  {tracks.map((track) => {
+                    const activeTake = (track as any).takes?.find((t: any) => t.is_active) || (track as any).takes?.[0];
+
+                    return (
+                      <div
+                        key={track.id}
+                        className={`rounded-lg border overflow-hidden cursor-pointer hover:border-zinc-700 transition-colors ${
+                          selectedTrackId === track.id ? 'border-primary' : 'border-zinc-800'
+                        }`}
+                        onClick={() => setSelectedTrackId(track.id)}
+                      >
+                        <div className="h-20 bg-zinc-900/30 p-2">
+                          {activeTake ? (
+                            <WaveformDisplay
+                              audioUrl={activeTake.audio_url}
+                              trackId={track.id}
+                              trackColor={track.color}
+                              height={64}
+                              onReady={(duration) => {
+                                console.log(`Track ${track.name} duration: ${duration}s`);
+                              }}
+                            />
+                          ) : (
+                            <div className="h-full flex items-center justify-center">
+                              <span className="text-gray-600 text-sm">No audio uploaded</span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Drag & Drop Zone */}
