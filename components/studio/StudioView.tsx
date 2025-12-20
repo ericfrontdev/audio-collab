@@ -559,14 +559,14 @@ export function StudioView({ projectId }: StudioViewProps) {
                                 }}
                                 audioUrl={activeTake.audio_url}
                                 trackId={track.id}
-                                trackColor={track.color}
+                                trackColor="#8B5CF6"
                                 height={64}
                                 onReady={handleWaveformReady}
                                 onTimeUpdate={handleTimeUpdate}
                               />
                               {/* Click overlay for adding comments */}
                               <div
-                                className="absolute inset-0 cursor-crosshair z-10"
+                                className="absolute inset-0 cursor-text z-10"
                                 onClick={(e) => {
                                   e.stopPropagation(); // Prevent track selection
                                   handleWaveformClick(e, track.id);
@@ -580,7 +580,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                                   className="absolute z-20 group"
                                   style={{
                                     left: `${(comment.timestamp / maxDuration) * 100}%`,
-                                    top: '8px',
+                                    bottom: '8px',
                                     transform: 'translateX(-50%)',
                                   }}
                                   onClick={(e) => e.stopPropagation()} // Prevent click from triggering add comment
@@ -591,12 +591,12 @@ export function StudioView({ projectId }: StudioViewProps) {
                                       <Image
                                         src={comment.profile.avatar_url}
                                         alt={comment.profile.username || 'User'}
-                                        width={32}
-                                        height={32}
-                                        className="rounded-full border-2 border-white shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                                        width={20}
+                                        height={20}
+                                        className="rounded-full border border-white shadow-lg hover:scale-110 transition-transform cursor-pointer"
                                       />
                                     ) : (
-                                      <div className="w-8 h-8 rounded-full border-2 border-white shadow-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-semibold hover:scale-110 transition-transform cursor-pointer">
+                                      <div className="w-5 h-5 rounded-full border border-white shadow-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-semibold hover:scale-110 transition-transform cursor-pointer">
                                         {comment.profile?.username?.[0]?.toUpperCase() || '?'}
                                       </div>
                                     )}
