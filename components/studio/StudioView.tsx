@@ -50,7 +50,7 @@ export function StudioView({ projectId }: StudioViewProps) {
     position: { x: number; y: number };
   }>({ isOpen: false, trackId: '', timestamp: 0, position: { x: 0, y: 0 } });
   const [currentUser, setCurrentUser] = useState<{ avatar_url?: string | null } | null>(null);
-  const primaryColor = '#A78BFA'; // Bright purple to match primary buttons
+  const primaryColor = '#9363f7'; // Exact primary button color
 
   // Load studio data
   const loadStudioData = async () => {
