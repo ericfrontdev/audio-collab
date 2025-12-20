@@ -5,11 +5,12 @@ import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon,
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { UploadTrackModal } from './UploadTrackModal';
-import { getProjectStudioData, deleteTrack } from '@/app/actions/studio';
+import { getProjectStudioData, deleteTrack, addTrackComment } from '@/app/actions/studio';
 import { ProjectTrack } from '@/lib/types/studio';
 import { toast } from 'react-toastify';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { WaveformDisplay, WaveformDisplayRef } from './WaveformDisplay';
+import { AddCommentModal } from './AddCommentModal';
 
 interface StudioViewProps {
   projectId: string;
@@ -34,6 +35,13 @@ export function StudioView({ projectId }: StudioViewProps) {
   const [trackMutes, setTrackMutes] = useState<Set<string>>(new Set());
   const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
   const timelineRef = useRef<HTMLDivElement>(null);
+  const [commentModal, setCommentModal] = useState<{
+    isOpen: boolean;
+    trackId: string;
+    timestamp: number;
+    position: { x: number; y: number };
+  }>({ isOpen: false, trackId: '', timestamp: 0, position: { x: 0, y: 0 } });
+  const [currentUser, setCurrentUser] = useState<{ avatar_url?: string | null } | null>(null);
 
   // Load studio data
   const loadStudioData = async () => {
@@ -50,6 +58,22 @@ export function StudioView({ projectId }: StudioViewProps) {
 
   useEffect(() => {
     loadStudioData();
+
+    // Load current user profile
+    const loadUserProfile = async () => {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single();
+        setCurrentUser(profile);
+      }
+    };
+    loadUserProfile();
   }, [projectId]);
 
   const handleUploadSuccess = () => {
@@ -160,6 +184,32 @@ export function StudioView({ projectId }: StudioViewProps) {
     setIsDraggingPlayhead(true);
     handleTimelineSeek(e);
   }, [handleTimelineSeek]);
+
+  // Handle waveform click to add comment
+  const handleWaveformClick = useCallback((e: React.MouseEvent<HTMLDivElement>, trackId: string) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    const timestamp = percentage * maxDuration;
+
+    setCommentModal({
+      isOpen: true,
+      trackId,
+      timestamp,
+      position: { x: e.clientX, y: e.clientY },
+    });
+  }, [maxDuration]);
+
+  // Handle comment submission
+  const handleCommentSubmit = useCallback(async (text: string, timestamp: number) => {
+    const result = await addTrackComment(commentModal.trackId, timestamp, text);
+    if (result.success) {
+      toast.success('Comment added!');
+      await loadStudioData(); // Reload to show new comment
+    } else {
+      toast.error(result.error || 'Failed to add comment');
+    }
+  }, [commentModal.trackId]);
 
   // Handle dragging
   useEffect(() => {
@@ -495,23 +545,34 @@ export function StudioView({ projectId }: StudioViewProps) {
                         }`}
                         onClick={() => setSelectedTrackId(track.id)}
                       >
-                        <div className="h-20 bg-zinc-900/30 py-2">
+                        <div className="h-20 bg-zinc-900/30 py-2 relative">
                           {activeTake ? (
-                            <WaveformDisplay
-                              ref={(ref) => {
-                                if (ref) {
-                                  waveformRefs.current.set(track.id, ref);
-                                } else {
-                                  waveformRefs.current.delete(track.id);
-                                }
-                              }}
-                              audioUrl={activeTake.audio_url}
-                              trackId={track.id}
-                              trackColor={track.color}
-                              height={64}
-                              onReady={handleWaveformReady}
-                              onTimeUpdate={handleTimeUpdate}
-                            />
+                            <>
+                              <WaveformDisplay
+                                ref={(ref) => {
+                                  if (ref) {
+                                    waveformRefs.current.set(track.id, ref);
+                                  } else {
+                                    waveformRefs.current.delete(track.id);
+                                  }
+                                }}
+                                audioUrl={activeTake.audio_url}
+                                trackId={track.id}
+                                trackColor={track.color}
+                                height={64}
+                                onReady={handleWaveformReady}
+                                onTimeUpdate={handleTimeUpdate}
+                              />
+                              {/* Click overlay for adding comments */}
+                              <div
+                                className="absolute inset-0 cursor-crosshair"
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent track selection
+                                  handleWaveformClick(e, track.id);
+                                }}
+                                title="Click to add a comment"
+                              />
+                            </>
                           ) : (
                             <div className="h-full flex items-center justify-center">
                               <span className="text-gray-600 text-sm">No audio uploaded</span>
@@ -605,6 +666,16 @@ export function StudioView({ projectId }: StudioViewProps) {
         variant="danger"
         onConfirm={confirmDeleteTrack}
         onCancel={cancelDeleteTrack}
+      />
+
+      {/* Add Comment Modal */}
+      <AddCommentModal
+        isOpen={commentModal.isOpen}
+        position={commentModal.position}
+        timestamp={commentModal.timestamp}
+        userAvatar={currentUser?.avatar_url}
+        onSubmit={handleCommentSubmit}
+        onClose={() => setCommentModal({ ...commentModal, isOpen: false })}
       />
     </div>
   );
