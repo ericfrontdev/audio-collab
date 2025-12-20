@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft, Trash2, Menu } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -50,7 +50,6 @@ export function StudioView({ projectId }: StudioViewProps) {
     position: { x: number; y: number };
   }>({ isOpen: false, trackId: '', timestamp: 0, position: { x: 0, y: 0 } });
   const [currentUser, setCurrentUser] = useState<{ avatar_url?: string | null } | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const primaryColor = '#9363f7'; // Exact primary button color
 
   // Load studio data
@@ -339,26 +338,18 @@ export function StudioView({ projectId }: StudioViewProps) {
     <div className="flex flex-col h-screen bg-zinc-950">
       {/* Header with Transport Controls */}
       <div className="flex items-center justify-between px-3 md:px-6 py-3 border-b border-zinc-800 bg-zinc-900/80">
-        {/* Left: Menu button (mobile) + Back button + Project info */}
+        {/* Left: Back button + Project info */}
         <div className="flex items-center gap-2 md:gap-4">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="md:hidden"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={() => router.back()}
-            className="gap-2 hidden md:flex"
+            className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Back</span>
           </Button>
-          <div className="h-6 w-px bg-zinc-700 hidden md:block" />
+          <div className="h-6 w-px bg-zinc-700 hidden sm:block" />
           <h1 className="text-sm md:text-lg font-semibold text-white truncate">Audio Track</h1>
           <span className="text-xs md:text-sm text-gray-400 hidden sm:inline">Saved just now</span>
         </div>
@@ -415,28 +406,11 @@ export function StudioView({ projectId }: StudioViewProps) {
       </div>
 
       {/* Main Studio Layout: 3 Columns */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Mobile Sidebar Overlay */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-
+      <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar: Track List */}
-        <div className={`
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0
-          fixed md:relative
-          w-64 h-full
-          border-r border-zinc-800 bg-zinc-900/50
-          flex flex-col
-          z-50 md:z-auto
-          transition-transform duration-300 ease-in-out
-        `}>
-          <div className="p-4 border-b border-zinc-800">
-            <h2 className="text-sm font-semibold text-white mb-3">Tracks</h2>
+        <div className="w-32 md:w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
+          <div className="p-2 md:p-4 border-b border-zinc-800">
+            <h2 className="text-xs md:text-sm font-semibold text-white mb-2 md:mb-3">Tracks</h2>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -457,15 +431,15 @@ export function StudioView({ projectId }: StudioViewProps) {
                   >
                     <button
                       onClick={() => setSelectedTrackId(track.id)}
-                      className="w-full text-left px-3 py-2"
+                      className="w-full text-left px-2 md:px-3 py-2"
                     >
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center justify-between gap-1 md:gap-2 mb-1">
+                        <div className="flex items-center gap-1 md:gap-2 min-w-0">
                           <div
                             className="w-2 h-2 rounded-full flex-shrink-0"
                             style={{ backgroundColor: track.color }}
                           />
-                          <span className={`text-sm font-medium truncate ${
+                          <span className={`text-xs md:text-sm font-medium truncate ${
                             selectedTrackId === track.id ? 'text-white' : 'text-gray-400'
                           }`}>{track.name}</span>
                         </div>
@@ -474,7 +448,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                           const uploader = activeTake?.uploader;
                           if (uploader) {
                             return (
-                              <span className="text-[10px] text-gray-400 bg-zinc-800 px-2 py-0.5 rounded-full flex-shrink-0 mr-6">
+                              <span className="hidden md:inline text-[10px] text-gray-400 bg-zinc-800 px-2 py-0.5 rounded-full flex-shrink-0 mr-6">
                                 @{uploader.username || uploader.display_name || 'unknown'}
                               </span>
                             );
@@ -482,7 +456,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                           return null;
                         })()}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="hidden md:flex items-center gap-2">
                         <div className="flex-1 h-1 bg-zinc-700 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary"
@@ -508,14 +482,14 @@ export function StudioView({ projectId }: StudioViewProps) {
             )}
           </div>
 
-          <div className="p-4 border-t border-zinc-800">
+          <div className="p-2 md:p-4 border-t border-zinc-800">
             <Button
               onClick={() => setIsUploadModalOpen(true)}
               className="w-full"
               size="sm"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add New Track
+              <Plus className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">Add New Track</span>
             </Button>
           </div>
         </div>
