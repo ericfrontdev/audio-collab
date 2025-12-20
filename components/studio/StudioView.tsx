@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft, Trash2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft, Trash2, Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ export function StudioView({ projectId }: StudioViewProps) {
     position: { x: number; y: number };
   }>({ isOpen: false, trackId: '', timestamp: 0, position: { x: 0, y: 0 } });
   const [currentUser, setCurrentUser] = useState<{ avatar_url?: string | null } | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const primaryColor = '#9363f7'; // Exact primary button color
 
   // Load studio data
@@ -320,29 +321,37 @@ export function StudioView({ projectId }: StudioViewProps) {
   return (
     <div className="flex flex-col h-screen bg-zinc-950">
       {/* Header with Transport Controls */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-900/80">
-        {/* Left: Back button + Project info */}
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between px-3 md:px-6 py-3 border-b border-zinc-800 bg-zinc-900/80">
+        {/* Left: Menu button (mobile) + Back button + Project info */}
+        <div className="flex items-center gap-2 md:gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="md:hidden"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
-            className="gap-2"
+            className="gap-2 hidden md:flex"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            <span className="hidden sm:inline">Back</span>
           </Button>
-          <div className="h-6 w-px bg-zinc-700" />
-          <h1 className="text-lg font-semibold text-white">Audio Track</h1>
-          <span className="text-sm text-gray-400">Saved just now</span>
+          <div className="h-6 w-px bg-zinc-700 hidden md:block" />
+          <h1 className="text-sm md:text-lg font-semibold text-white truncate">Audio Track</h1>
+          <span className="text-xs md:text-sm text-gray-400 hidden sm:inline">Saved just now</span>
         </div>
 
         {/* Center: Transport Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 md:gap-3">
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 h-8 p-0"
+            className="w-8 h-8 p-0 hidden sm:flex"
             onClick={handleStop}
             disabled={tracks.length === 0}
           >
@@ -364,34 +373,51 @@ export function StudioView({ projectId }: StudioViewProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="w-8 h-8 p-0"
+            className="w-8 h-8 p-0 hidden sm:flex"
             disabled={tracks.length === 0}
           >
             <SkipForward className="w-4 h-4 text-gray-400" />
           </Button>
 
-          <div className="ml-4 font-mono text-white text-lg">
+          <div className="ml-2 md:ml-4 font-mono text-white text-sm md:text-lg">
             {formatTime(currentTime)}
           </div>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Share2 className="w-4 h-4 mr-2" />
-            Share
+        <div className="flex items-center gap-1 md:gap-2">
+          <Button variant="outline" size="sm" className="hidden sm:flex">
+            <Share2 className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">Share</span>
           </Button>
           <Button size="sm">
-            <UploadIcon className="w-4 h-4 mr-2" />
-            Export
+            <UploadIcon className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">Export</span>
           </Button>
         </div>
       </div>
 
       {/* Main Studio Layout: 3 Columns */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* Left Sidebar: Track List */}
-        <div className="w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col">
+        <div className={`
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+          fixed md:relative
+          w-64 h-full
+          border-r border-zinc-800 bg-zinc-900/50
+          flex flex-col
+          z-50 md:z-auto
+          transition-transform duration-300 ease-in-out
+        `}>
           <div className="p-4 border-b border-zinc-800">
             <h2 className="text-sm font-semibold text-white mb-3">Tracks</h2>
           </div>
@@ -512,8 +538,9 @@ export function StudioView({ projectId }: StudioViewProps) {
               {/* Timeline Ruler */}
               <div
                 ref={timelineRef}
-                className="h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0 relative cursor-pointer select-none"
+                className="h-10 md:h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0 relative cursor-pointer select-none touch-none"
                 onMouseDown={handleTimelineMouseDown}
+                onTouchStart={handleTimelineMouseDown}
                 style={{ cursor: isDraggingPlayhead ? 'grabbing' : 'pointer' }}
               >
                 <div className="h-full relative">
@@ -668,7 +695,7 @@ export function StudioView({ projectId }: StudioViewProps) {
 
         {/* Right Sidebar: Track Controls (only show if track selected) */}
         {selectedTrack && (
-          <div className="w-80 border-l border-zinc-800 bg-zinc-900/50 flex flex-col">
+          <div className="hidden md:flex w-80 border-l border-zinc-800 bg-zinc-900/50 flex-col">
             <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
               <h2 className="text-sm font-semibold text-white">{selectedTrack.name}</h2>
               <Button
