@@ -481,8 +481,8 @@ export function StudioView({ projectId }: StudioViewProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar: Track List */}
         <div className="w-48 lg:w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
-          <div className="p-2 sm:p-4 border-b border-zinc-800">
-            <h2 className="text-sm font-semibold text-white mb-2 sm:mb-3">Tracks</h2>
+          <div className="px-2 sm:px-3 py-2 border-b border-zinc-800">
+            <h2 className="text-sm font-semibold text-white">Tracks</h2>
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -495,7 +495,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                 {tracks.map((track) => (
                   <div
                     key={track.id}
-                    className={`relative group rounded-lg transition-colors ${
+                    className={`relative group rounded-lg transition-colors h-28 ${
                       selectedTrackId === track.id
                         ? 'bg-zinc-800'
                         : 'hover:bg-zinc-800/50'
@@ -503,7 +503,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                   >
                     <div
                       onClick={() => setSelectedTrackId(track.id)}
-                      className="w-full text-left px-2 sm:px-3 py-3"
+                      className="w-full h-full text-left px-2 sm:px-3 py-2 flex flex-col justify-center"
                     >
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2 min-w-0">
@@ -687,7 +687,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                         }`}
                         onClick={() => setSelectedTrackId(track.id)}
                       >
-                        <div className="h-20 bg-zinc-900/30 py-2 relative">
+                        <div className="h-28 bg-zinc-900/30 py-2 relative">
                           {activeTake ? (
                             <>
                               <div className={`relative ${trackMutes.has(track.id) ? 'opacity-30' : ''}`}>
@@ -702,7 +702,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                                   audioUrl={activeTake.audio_url}
                                   trackId={track.id}
                                   trackColor={primaryColor}
-                                  height={64}
+                                  height={96}
                                   onReady={handleWaveformReady}
                                   onTimeUpdate={handleTimeUpdate}
                                 />
