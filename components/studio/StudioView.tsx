@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus, Share2, Upload as UploadIcon, X, ArrowLeft, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { UploadTrackModal } from './UploadTrackModal';
 import { getProjectStudioData, deleteTrack, addTrackComment } from '@/app/actions/studio';
@@ -565,13 +566,60 @@ export function StudioView({ projectId }: StudioViewProps) {
                               />
                               {/* Click overlay for adding comments */}
                               <div
-                                className="absolute inset-0 cursor-crosshair"
+                                className="absolute inset-0 cursor-crosshair z-10"
                                 onClick={(e) => {
                                   e.stopPropagation(); // Prevent track selection
                                   handleWaveformClick(e, track.id);
                                 }}
                                 title="Click to add a comment"
                               />
+                              {/* Comment bubbles */}
+                              {maxDuration > 0 && (track as any).comments?.map((comment: any) => (
+                                <div
+                                  key={comment.id}
+                                  className="absolute z-20 group"
+                                  style={{
+                                    left: `${(comment.timestamp / maxDuration) * 100}%`,
+                                    top: '8px',
+                                    transform: 'translateX(-50%)',
+                                  }}
+                                  onClick={(e) => e.stopPropagation()} // Prevent click from triggering add comment
+                                >
+                                  {/* Avatar bubble */}
+                                  <div className="relative">
+                                    {comment.profile?.avatar_url ? (
+                                      <Image
+                                        src={comment.profile.avatar_url}
+                                        alt={comment.profile.username || 'User'}
+                                        width={32}
+                                        height={32}
+                                        className="rounded-full border-2 border-white shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                                      />
+                                    ) : (
+                                      <div className="w-8 h-8 rounded-full border-2 border-white shadow-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-semibold hover:scale-110 transition-transform cursor-pointer">
+                                        {comment.profile?.username?.[0]?.toUpperCase() || '?'}
+                                      </div>
+                                    )}
+
+                                    {/* Tooltip */}
+                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-30">
+                                      <div className="bg-zinc-900 text-white text-xs px-3 py-2 rounded-lg shadow-xl border border-zinc-700 whitespace-nowrap max-w-xs">
+                                        <div className="font-semibold mb-1">
+                                          @{comment.profile?.username || comment.profile?.display_name || 'Unknown'}
+                                        </div>
+                                        <div className="text-gray-300 max-w-[250px] break-words whitespace-normal">
+                                          {comment.text}
+                                        </div>
+                                        <div className="text-gray-500 text-[10px] mt-1">
+                                          {formatTime(comment.timestamp)}
+                                        </div>
+                                        {/* Arrow pointing down */}
+                                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-zinc-700" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </>
                           ) : (
                             <div className="h-full flex items-center justify-center">
