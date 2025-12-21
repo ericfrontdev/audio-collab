@@ -61,6 +61,7 @@ export function StudioView({ projectId }: StudioViewProps) {
   const [trackSolos, setTrackSolos] = useState<Set<string>>(new Set())
   const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
+  const isPlayingRef = useRef(false)
   const [commentModal, setCommentModal] = useState<{
     isOpen: boolean
     trackId: string
@@ -204,10 +205,12 @@ export function StudioView({ projectId }: StudioViewProps) {
       }
       waveformRefs.current.forEach((ref) => ref.pause())
       setIsPlaying(false)
+      isPlayingRef.current = false
     } else {
       // Play all waveforms (audio context unlocked on first user interaction)
       waveformRefs.current.forEach((ref) => ref.play())
       setIsPlaying(true)
+      isPlayingRef.current = true
     }
   }
 
@@ -217,6 +220,7 @@ export function StudioView({ projectId }: StudioViewProps) {
       ref.seekTo(0)
     })
     setIsPlaying(false)
+    isPlayingRef.current = false
     setCurrentTime(0)
   }
 
@@ -289,7 +293,10 @@ export function StudioView({ projectId }: StudioViewProps) {
   }, [])
 
   const handleTimeUpdate = useCallback((time: number) => {
-    setCurrentTime(time)
+    // Only update currentTime when actually playing to prevent playhead from jumping back on pause
+    if (isPlayingRef.current) {
+      setCurrentTime(time)
+    }
   }, [])
 
   // Handle timeline seek (click and drag)
