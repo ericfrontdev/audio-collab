@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, X, Image as ImageIcon } from 'lucide-react'
 import { toggleLikePost, updatePost, deletePost } from '@/app/actions/feed'
 import { toast } from 'react-toastify'
 import type { Post } from '@/lib/types/feed'
@@ -26,7 +26,11 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [editImage, setEditImage] = useState<File | null>(null)
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
+  const [removeCurrentImage, setRemoveCurrentImage] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const editFileInputRef = useRef<HTMLInputElement>(null)
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -78,11 +82,53 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
   const handleEdit = () => {
     setIsEditing(true)
     setShowMenu(false)
+    setEditImage(null)
+    setEditImagePreview(null)
+    setRemoveCurrentImage(false)
   }
 
   const handleCancelEdit = () => {
     setIsEditing(false)
     setEditContent(post.content)
+    setEditImage(null)
+    setEditImagePreview(null)
+    setRemoveCurrentImage(false)
+  }
+
+  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB')
+      return
+    }
+
+    setEditImage(file)
+    setRemoveCurrentImage(false)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setEditImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveEditImage = () => {
+    setEditImage(null)
+    setEditImagePreview(null)
+    setRemoveCurrentImage(true)
+    if (editFileInputRef.current) {
+      editFileInputRef.current.value = ''
+    }
   }
 
   const handleSaveEdit = async () => {
@@ -93,7 +139,12 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
 
     setIsUpdating(true)
     try {
-      const result = await updatePost(post.id, editContent)
+      const result = await updatePost(
+        post.id,
+        editContent,
+        editImage || undefined,
+        removeCurrentImage
+      )
 
       if (result.success) {
         toast.success('Post updated successfully!')
@@ -264,8 +315,80 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
             <p className="text-white whitespace-pre-wrap mb-3">{post.content}</p>
           )}
 
-          {/* Post image if attached */}
-          {post.media_url && post.media_type === 'image' && !isEditing && (
+          {/* Post image - Edit mode */}
+          {isEditing && (
+            <>
+              <input
+                ref={editFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleEditImageSelect}
+                className="hidden"
+              />
+
+              {/* Show new image preview, current image, or add button */}
+              {editImagePreview ? (
+                <div className="relative mb-3 rounded-lg overflow-hidden border border-zinc-800">
+                  <img
+                    src={editImagePreview}
+                    alt="New image preview"
+                    className="w-full max-h-[500px] object-contain bg-zinc-950"
+                  />
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <button
+                      onClick={() => editFileInputRef.current?.click()}
+                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+                      title="Change image"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleRemoveEditImage}
+                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : post.media_url && post.media_type === 'image' && !removeCurrentImage ? (
+                <div className="relative mb-3 rounded-lg overflow-hidden border border-zinc-800">
+                  <img
+                    src={post.media_url}
+                    alt="Current image"
+                    className="w-full max-h-[500px] object-contain bg-zinc-950"
+                  />
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <button
+                      onClick={() => editFileInputRef.current?.click()}
+                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+                      title="Change image"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleRemoveEditImage}
+                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+                      title="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => editFileInputRef.current?.click()}
+                  className="mb-3 w-full p-4 rounded-lg border-2 border-dashed border-zinc-700 hover:border-primary/50 text-zinc-500 hover:text-primary transition-colors flex items-center justify-center gap-2"
+                >
+                  <ImageIcon className="w-5 h-5" />
+                  <span>Add image</span>
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Post image - Display mode */}
+          {!isEditing && post.media_url && post.media_type === 'image' && (
             <div className="mb-3 rounded-lg overflow-hidden border border-zinc-800">
               <img
                 src={post.media_url}
