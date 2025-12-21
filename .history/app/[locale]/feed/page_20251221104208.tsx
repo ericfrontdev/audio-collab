@@ -144,10 +144,19 @@ export default async function FeedPage() {
             </div>
             <div className="flex flex-rows">
               <p className="text-xs text-gray-500 leading-relaxed">
-                Made by indie musicians for indie musicians <br />
-                &copy; 2026 AudioCollab
+                made with
+                {/* <span>
+                  <Heart
+                    color="red"
+                    size="16"
+                  />
+                </span> */}
+                for indie musicians
               </p>
             </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              &copy;2026 AudioCollab
+            </p>
           </aside>
         </div>
       </div>

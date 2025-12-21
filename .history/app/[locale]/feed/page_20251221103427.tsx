@@ -142,12 +142,19 @@ export default async function FeedPage() {
                 discover new music from the community.
               </p>
             </div>
-            <div className="flex flex-rows">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Made by indie musicians for indie musicians <br />
-                &copy; 2026 AudioCollab
-              </p>
-            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              made with{' '}
+              <span>
+                <Heart
+                  color="red"
+                  size="18"
+                />
+              </span>{' '}
+              for indie musicians{' '}
+            </p>
+            <p className="ext-xs text-gray-400 leading-relaxed">
+              &copy;2026 AudioCollab
+            </p>
           </aside>
         </div>
       </div>

@@ -6,7 +6,6 @@ import { UserProfileCard } from '@/components/cards/UserProfileCard'
 import { QuickActions } from '@/components/cards/QuickActions'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Heart } from 'lucide-react'
 
 export default async function FeedPage() {
   const supabase = await createClient()
@@ -142,12 +141,10 @@ export default async function FeedPage() {
                 discover new music from the community.
               </p>
             </div>
-            <div className="flex flex-rows">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Made by indie musicians for indie musicians <br />
-                &copy; 2026 AudioCollab
-              </p>
-            </div>
+            <p>
+              made with <span></span> for indie musicians{' '}
+            </p>
+            <p>&copy;2026 AudioCollab</p>
           </aside>
         </div>
       </div>
