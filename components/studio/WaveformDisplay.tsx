@@ -68,9 +68,22 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Cleanup previous instance
+    let isCleanedUp = false;
+
+    // Cleanup previous instance synchronously
     if (wavesurferRef.current) {
-      wavesurferRef.current.destroy();
+      try {
+        wavesurferRef.current.unAll();
+        wavesurferRef.current.destroy();
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+      wavesurferRef.current = null;
+    }
+
+    // Clear the container completely
+    if (containerRef.current) {
+      containerRef.current.innerHTML = '';
     }
 
     setIsLoading(true);
@@ -88,27 +101,35 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       barRadius: 2,
       height,
       normalize: true,
+      // splitChannels not set = channels are merged by default
       backend: 'WebAudio',
       interact: false, // Disable WaveSurfer's click-to-seek to allow comment overlay to work
     });
 
     wavesurferRef.current = wavesurfer;
 
+    // Track if component is still mounted
+    let isMounted = true;
+
     // Load audio
     wavesurfer.load(audioUrl);
 
     // Event listeners
     wavesurfer.on('ready', () => {
-      setIsLoading(false);
-      if (onReadyRef.current) {
-        onReadyRef.current(wavesurfer.getDuration());
+      if (isMounted) {
+        setIsLoading(false);
+        if (onReadyRef.current) {
+          onReadyRef.current(wavesurfer.getDuration());
+        }
       }
     });
 
     wavesurfer.on('error', (err) => {
-      console.error('WaveSurfer error:', err);
-      setError('Failed to load waveform');
-      setIsLoading(false);
+      if (isMounted) {
+        console.error('WaveSurfer error:', err);
+        setError('Failed to load waveform');
+        setIsLoading(false);
+      }
     });
 
     wavesurfer.on('seeking', () => {
@@ -125,7 +146,20 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
 
     // Cleanup on unmount
     return () => {
-      wavesurfer.destroy();
+      isMounted = false;
+      isCleanedUp = true;
+
+      // Clear the ref immediately
+      wavesurferRef.current = null;
+
+      // Only remove event listeners, don't destroy
+      // Destroying during unmount causes AbortError when audio is still loading
+      // The browser's garbage collector will handle cleanup
+      try {
+        wavesurfer.unAll();
+      } catch (error) {
+        // Silently ignore - component already unmounted
+      }
     };
   }, [audioUrl, trackId]);
 

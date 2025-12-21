@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createTrack, uploadTake } from '@/app/actions/studio';
@@ -13,6 +13,7 @@ interface UploadTrackModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  droppedFile?: File | null;
 }
 
 export function UploadTrackModal({
@@ -21,6 +22,7 @@ export function UploadTrackModal({
   isOpen,
   onClose,
   onSuccess,
+  droppedFile,
 }: UploadTrackModalProps) {
   const [uploadType, setUploadType] = useState<'new-track' | 'add-take'>('new-track');
   const [trackName, setTrackName] = useState('');
@@ -28,6 +30,28 @@ export function UploadTrackModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Handle dropped file from drag & drop
+  useEffect(() => {
+    if (droppedFile && isOpen) {
+      // Validate file type
+      if (!isAudioFile(droppedFile)) {
+        toast.error('Please select a valid audio file (MP3, WAV, FLAC, M4A, or OGG)');
+        return;
+      }
+
+      // Validate file size
+      if (!isFileSizeValid(droppedFile)) {
+        toast.error(`File size must be less than ${AUDIO_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024)}MB`);
+        return;
+      }
+
+      setSelectedFile(droppedFile);
+      // Auto-generate track name from file name
+      const nameWithoutExtension = droppedFile.name.replace(/\.[^/.]+$/, '');
+      setTrackName(nameWithoutExtension);
+    }
+  }, [droppedFile, isOpen]);
 
   if (!isOpen) return null;
 

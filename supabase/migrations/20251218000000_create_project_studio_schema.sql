@@ -142,7 +142,7 @@ CREATE POLICY "Project owners and club members can insert tracks"
       SELECT 1 FROM projects p
       WHERE p.id = project_tracks.project_id
       AND (
-        p.owner_id = auth.uid()
+        p.created_by = auth.uid()
         OR
         (p.club_id IS NOT NULL AND EXISTS (
           SELECT 1 FROM club_members cm
@@ -161,7 +161,7 @@ CREATE POLICY "Project owners and club members can update tracks"
       SELECT 1 FROM projects p
       WHERE p.id = project_tracks.project_id
       AND (
-        p.owner_id = auth.uid()
+        p.created_by = auth.uid()
         OR
         (p.club_id IS NOT NULL AND EXISTS (
           SELECT 1 FROM club_members cm
@@ -180,7 +180,7 @@ CREATE POLICY "Project owners and club members can delete tracks"
       SELECT 1 FROM projects p
       WHERE p.id = project_tracks.project_id
       AND (
-        p.owner_id = auth.uid()
+        p.created_by = auth.uid()
         OR
         (p.club_id IS NOT NULL AND EXISTS (
           SELECT 1 FROM club_members cm
@@ -209,7 +209,7 @@ CREATE POLICY "Project owners and club members can insert takes"
       JOIN projects p ON p.id = pt.project_id
       WHERE pt.id = project_takes.track_id
       AND (
-        p.owner_id = auth.uid()
+        p.created_by = auth.uid()
         OR
         (p.club_id IS NOT NULL AND EXISTS (
           SELECT 1 FROM club_members cm
@@ -229,7 +229,7 @@ CREATE POLICY "Project owners and club members can update takes"
       JOIN projects p ON p.id = pt.project_id
       WHERE pt.id = project_takes.track_id
       AND (
-        p.owner_id = auth.uid()
+        p.created_by = auth.uid()
         OR
         (p.club_id IS NOT NULL AND EXISTS (
           SELECT 1 FROM club_members cm
@@ -249,7 +249,7 @@ CREATE POLICY "Project owners and club members can delete takes"
       JOIN projects p ON p.id = pt.project_id
       WHERE pt.id = project_takes.track_id
       AND (
-        p.owner_id = auth.uid()
+        p.created_by = auth.uid()
         OR
         (p.club_id IS NOT NULL AND EXISTS (
           SELECT 1 FROM club_members cm
@@ -279,7 +279,7 @@ CREATE POLICY "Project owners and club members can insert comments"
       JOIN projects p ON p.id = pt.project_id
       WHERE pt.id = project_track_comments.track_id
       AND (
-        p.owner_id = auth.uid()
+        p.created_by = auth.uid()
         OR
         (p.club_id IS NOT NULL AND EXISTS (
           SELECT 1 FROM club_members cm
@@ -318,7 +318,7 @@ CREATE POLICY "Project owners and club members can insert mixer settings"
       JOIN projects p ON p.id = pt.project_id
       WHERE pt.id = project_mixer_settings.track_id
       AND (
-        p.owner_id = auth.uid()
+        p.created_by = auth.uid()
         OR
         (p.club_id IS NOT NULL AND EXISTS (
           SELECT 1 FROM club_members cm
@@ -338,7 +338,7 @@ CREATE POLICY "Project owners and club members can update mixer settings"
       JOIN projects p ON p.id = pt.project_id
       WHERE pt.id = project_mixer_settings.track_id
       AND (
-        p.owner_id = auth.uid()
+        p.created_by = auth.uid()
         OR
         (p.club_id IS NOT NULL AND EXISTS (
           SELECT 1 FROM club_members cm

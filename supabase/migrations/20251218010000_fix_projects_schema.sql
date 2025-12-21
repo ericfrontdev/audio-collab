@@ -21,8 +21,8 @@ BEGIN
   ) THEN
     -- Copy data from created_by to owner_id if owner_id is null
     UPDATE projects SET owner_id = created_by WHERE owner_id IS NULL;
-    -- Drop created_by column
-    ALTER TABLE projects DROP COLUMN created_by;
+    -- Drop created_by column (policies now use COALESCE so they won't break)
+    ALTER TABLE projects DROP COLUMN created_by CASCADE;
   END IF;
 END $$;
 

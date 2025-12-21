@@ -71,8 +71,6 @@ export function StudioView({ projectId }: StudioViewProps) {
     avatar_url?: string | null
   } | null>(null)
   const [isPortrait, setIsPortrait] = useState(false)
-  const [isDraggingFile, setIsDraggingFile] = useState(false)
-  const [droppedFile, setDroppedFile] = useState<File | null>(null)
   const primaryColor = '#9363f7' // Exact primary button color
 
   // Check orientation on mobile
@@ -348,51 +346,6 @@ export function StudioView({ projectId }: StudioViewProps) {
     [commentModal.trackId]
   )
 
-  // Handle drag and drop for file upload
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDraggingFile(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDraggingFile(false)
-  }, [])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDraggingFile(false)
-
-    // Check if files were dropped
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0]
-      setDroppedFile(file)
-      setIsUploadModalOpen(true)
-    }
-  }, [])
-
-  // Handle spacebar for play/pause
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger if spacebar is pressed and not typing in an input/textarea
-      if (e.code === 'Space' &&
-          e.target instanceof HTMLElement &&
-          !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
-        e.preventDefault() // Prevent page scroll
-        handlePlayPause()
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [handlePlayPause])
-
   // Handle dragging
   useEffect(() => {
     if (!isDraggingPlayhead) return
@@ -600,14 +553,14 @@ export function StudioView({ projectId }: StudioViewProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar: Track List */}
         <div className="w-48 lg:w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
-          <div className="px-2 sm:px-3 py-3.5 border-b border-zinc-800">
+          <div className="px-2 sm:px-3 py-3 border-b border-zinc-800">
             <h2 className="text-sm font-semibold text-white">Tracks</h2>
           </div>
 
           {/* Spacer to align with timeline */}
           {/* <div className="h-10 md:h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0" /> */}
 
-          <div className="flex-1 overflow-y-auto py-2">
+          <div className="flex-1 overflow-y-auto">
             {tracks.length === 0 ? (
               <div className="p-4 text-center">
                 <p className="text-sm text-gray-500 mb-3">No tracks yet</p>
@@ -957,24 +910,13 @@ export function StudioView({ projectId }: StudioViewProps) {
                 {/* Drag & Drop Zone */}
                 <div className="p-4">
                   <div
-                    className={`h-32 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
-                      isDraggingFile
-                        ? 'border-primary bg-primary/10'
-                        : 'border-zinc-800 hover:border-zinc-700'
-                    }`}
+                    className="h-32 border-2 border-dashed border-zinc-800 rounded-lg flex items-center justify-center cursor-pointer hover:border-zinc-700 transition-colors"
                     onClick={() => setIsUploadModalOpen(true)}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
                   >
                     <div className="text-center">
-                      <UploadIcon className={`w-6 h-6 mx-auto mb-2 ${
-                        isDraggingFile ? 'text-primary' : 'text-gray-600'
-                      }`} />
-                      <p className={`text-sm ${
-                        isDraggingFile ? 'text-primary' : 'text-gray-500'
-                      }`}>
-                        {isDraggingFile ? 'Drop file here' : 'Drag and Drop here or choose file'}
+                      <UploadIcon className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">
+                        Drag and Drop here or choose file
                       </p>
                     </div>
                   </div>
@@ -992,12 +934,8 @@ export function StudioView({ projectId }: StudioViewProps) {
         projectId={projectId}
         existingTracks={tracks}
         isOpen={isUploadModalOpen}
-        onClose={() => {
-          setIsUploadModalOpen(false)
-          setDroppedFile(null)
-        }}
+        onClose={() => setIsUploadModalOpen(false)}
         onSuccess={handleUploadSuccess}
-        droppedFile={droppedFile}
       />
 
       {/* Delete Confirmation Dialog */}
