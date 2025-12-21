@@ -186,6 +186,37 @@ export async function toggleLikePost(postId: string) {
   }
 }
 
+export async function updatePost(postId: string, content: string) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    const { error } = await supabase
+      .from('posts')
+      .update({ content })
+      .eq('id', postId)
+      .eq('user_id', user.id)
+
+    if (error) {
+      console.error('Error updating post:', error)
+      return { success: false, error: error.message }
+    }
+
+    revalidatePath('/feed')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error updating post:', error)
+    return { success: false, error: error.message }
+  }
+}
+
 export async function deletePost(postId: string) {
   try {
     const supabase = await createClient()

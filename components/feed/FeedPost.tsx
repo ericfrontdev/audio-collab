@@ -1,21 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
-import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react'
-import { toggleLikePost } from '@/app/actions/feed'
+import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
+import { toggleLikePost, updatePost, deletePost } from '@/app/actions/feed'
 import { toast } from 'react-toastify'
 import type { Post } from '@/lib/types/feed'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface FeedPostProps {
   post: Post
+  currentUserId?: string
 }
 
-export function FeedPost({ post }: FeedPostProps) {
+export function FeedPost({ post, currentUserId }: FeedPostProps) {
+  const router = useRouter()
   const [isLiked, setIsLiked] = useState(post.is_liked_by_user || false)
   const [likesCount, setLikesCount] = useState(post.likes_count || 0)
   const [isLiking, setIsLiking] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState(post.content)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showMenu])
 
   const handleLike = async () => {
     if (isLiking) return
@@ -46,6 +72,64 @@ export function FeedPost({ post }: FeedPostProps) {
       setIsLiking(false)
     }
   }
+
+  const handleEdit = () => {
+    setIsEditing(true)
+    setShowMenu(false)
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditContent(post.content)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) {
+      toast.error('Post cannot be empty')
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      const result = await updatePost(post.id, editContent)
+
+      if (result.success) {
+        toast.success('Post updated successfully!')
+        setIsEditing(false)
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to update post')
+      }
+    } catch (error) {
+      toast.error('Failed to update post')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this post?')) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const result = await deletePost(post.id)
+
+      if (result.success) {
+        toast.success('Post deleted successfully!')
+        router.refresh()
+      } else {
+        toast.error(result.error || 'Failed to delete post')
+      }
+    } catch (error) {
+      toast.error('Failed to delete post')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const isOwnPost = currentUserId === post.user_id
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString)
@@ -105,13 +189,72 @@ export function FeedPost({ post }: FeedPostProps) {
               </span>
             </div>
 
-            <button className="p-1 rounded-full hover:bg-zinc-800 text-gray-500 hover:text-white transition-colors">
-              <MoreHorizontal className="w-5 h-5" />
-            </button>
+            {isOwnPost && (
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-1 rounded-full hover:bg-zinc-800 text-gray-500 hover:text-white transition-colors"
+                >
+                  <MoreHorizontal className="w-5 h-5" />
+                </button>
+
+                {showMenu && (
+                  <div className="absolute right-0 top-8 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg overflow-hidden z-10">
+                    <button
+                      onClick={handleEdit}
+                      className="w-full px-4 py-2 text-left text-white hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Edit post
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="w-full px-4 py-2 text-left text-red-500 hover:bg-zinc-700 transition-colors flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      {isDeleting ? 'Deleting...' : 'Delete post'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Post content */}
-          <p className="text-white whitespace-pre-wrap mb-3">{post.content}</p>
+          {/* Post content - Edit mode or display mode */}
+          {isEditing ? (
+            <div className="mb-3">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                rows={3}
+                maxLength={500}
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-sm text-gray-500">
+                  {editContent.length}/500
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCancelEdit}
+                    className="px-3 py-1 text-sm text-gray-400 hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={isUpdating || !editContent.trim()}
+                    className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {isUpdating ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-white whitespace-pre-wrap mb-3">{post.content}</p>
+          )}
 
           {/* Project link if attached */}
           {post.project && (

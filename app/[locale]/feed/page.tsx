@@ -73,7 +73,9 @@ export default async function FeedPage() {
                     </p>
                   </div>
                 ) : (
-                  posts.map((post) => <FeedPost key={post.id} post={post} />)
+                  posts.map((post) => (
+                    <FeedPost key={post.id} post={post} currentUserId={user.id} />
+                  ))
                 )}
               </div>
             </div>
