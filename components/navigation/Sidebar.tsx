@@ -16,7 +16,7 @@ export function Sidebar({ username }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Home', href: '/feed', icon: Home },
+    { name: 'Feed', href: '/feed', icon: Home },
     { name: 'Explore', href: '/explore', icon: Compass },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },

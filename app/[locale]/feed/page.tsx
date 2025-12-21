@@ -52,7 +52,7 @@ export default async function FeedPage() {
             {/* Header */}
             <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-lg border-b border-zinc-800">
               <div className="px-4 md:px-6 py-4">
-                <h1 className="text-2xl font-bold text-white">Home</h1>
+                <h1 className="text-2xl font-bold text-white">Feed</h1>
               </div>
             </div>
 
