@@ -6,10 +6,12 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { AudioPlayer } from '@/components/ui/AudioPlayer'
 import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, X, Image as ImageIcon, Music } from 'lucide-react'
 import { toggleLikePost, updatePost, deletePost } from '@/app/actions/feed'
+import { uploadMediaToStorage, deleteMediaFromStorage } from '@/lib/storage/uploadMedia'
 import { toast } from 'react-toastify'
 import type { Post } from '@/lib/types/feed'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 interface FeedPostProps {
   post: Post
@@ -170,23 +172,76 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
     }
 
     setIsUpdating(true)
+    let newMediaUrl: string | null | undefined
+    let newMediaType: 'image' | 'audio' | null | undefined
+
     try {
-      const result = await updatePost(
-        post.id,
-        editContent,
-        editImage || undefined,
-        removeCurrentMedia,
-        editAudio || undefined
-      )
+      // Get current user
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        toast.error('Not authenticated')
+        return
+      }
+
+      // Handle media changes
+      if (removeCurrentMedia) {
+        // Delete old media from storage
+        if (post.media_url) {
+          await deleteMediaFromStorage(post.media_url)
+        }
+        newMediaUrl = null
+        newMediaType = null
+      } else if (editImage) {
+        // Delete old media if exists
+        if (post.media_url) {
+          await deleteMediaFromStorage(post.media_url)
+        }
+        // Upload new image
+        const { url, error } = await uploadMediaToStorage(editImage, user.id, 'image')
+        if (error) {
+          toast.error(error)
+          return
+        }
+        newMediaUrl = url
+        newMediaType = 'image'
+      } else if (editAudio) {
+        // Delete old media if exists
+        if (post.media_url) {
+          await deleteMediaFromStorage(post.media_url)
+        }
+        // Upload new audio
+        const { url, error } = await uploadMediaToStorage(editAudio, user.id, 'audio')
+        if (error) {
+          toast.error(error)
+          return
+        }
+        newMediaUrl = url
+        newMediaType = 'audio'
+      }
+
+      // Update post
+      const result = await updatePost(post.id, editContent, newMediaUrl, newMediaType)
 
       if (result.success) {
         toast.success('Post updated successfully!')
         setIsEditing(false)
         router.refresh()
       } else {
+        // Clean up newly uploaded media if post update failed
+        if (newMediaUrl && (editImage || editAudio)) {
+          await deleteMediaFromStorage(newMediaUrl)
+        }
         toast.error(result.error || 'Failed to update post')
       }
     } catch (error) {
+      // Clean up newly uploaded media on error
+      if (newMediaUrl && (editImage || editAudio)) {
+        await deleteMediaFromStorage(newMediaUrl)
+      }
       toast.error('Failed to update post')
     } finally {
       setIsUpdating(false)

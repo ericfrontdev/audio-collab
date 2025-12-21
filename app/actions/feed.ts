@@ -7,8 +7,8 @@ import type { Post } from '@/lib/types/feed'
 export async function createPost(
   content: string,
   projectId?: string,
-  imageFile?: File,
-  audioFile?: File
+  mediaUrl?: string,
+  mediaType?: 'image' | 'audio'
 ) {
   try {
     const supabase = await createClient()
@@ -21,66 +21,14 @@ export async function createPost(
       return { success: false, error: 'Not authenticated' }
     }
 
-    let media_url: string | null = null
-    let media_type: 'image' | 'audio' | 'video' | null = null
-
-    // Upload image if provided
-    if (imageFile) {
-      const fileExt = imageFile.name.split('.').pop()
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('posts')
-        .upload(fileName, imageFile, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError)
-        return { success: false, error: 'Failed to upload image' }
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('posts').getPublicUrl(uploadData.path)
-
-      media_url = publicUrl
-      media_type = 'image'
-    }
-    // Upload audio if provided
-    else if (audioFile) {
-      const fileExt = audioFile.name.split('.').pop()
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('posts')
-        .upload(fileName, audioFile, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-
-      if (uploadError) {
-        console.error('Error uploading audio:', uploadError)
-        return { success: false, error: 'Failed to upload audio' }
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('posts').getPublicUrl(uploadData.path)
-
-      media_url = publicUrl
-      media_type = 'audio'
-    }
-
     const { data: post, error } = await supabase
       .from('posts')
       .insert({
         user_id: user.id,
         content,
         project_id: projectId || null,
-        media_url,
-        media_type,
+        media_url: mediaUrl || null,
+        media_type: mediaType || null,
       })
       .select()
       .single()
@@ -248,9 +196,8 @@ export async function toggleLikePost(postId: string) {
 export async function updatePost(
   postId: string,
   content: string,
-  imageFile?: File,
-  removeMedia?: boolean,
-  audioFile?: File
+  mediaUrl?: string | null,
+  mediaType?: 'image' | 'audio' | null
 ) {
   try {
     const supabase = await createClient()
@@ -263,117 +210,11 @@ export async function updatePost(
       return { success: false, error: 'Not authenticated' }
     }
 
-    let media_url: string | null | undefined = undefined
-    let media_type: 'image' | 'audio' | 'video' | null | undefined = undefined
-
-    // Handle media removal
-    if (removeMedia) {
-      media_url = null
-      media_type = null
-
-      // Get current post to delete old media from storage
-      const { data: currentPost } = await supabase
-        .from('posts')
-        .select('media_url')
-        .eq('id', postId)
-        .eq('user_id', user.id)
-        .single()
-
-      if (currentPost?.media_url) {
-        // Extract file path from URL and delete from storage
-        const urlParts = currentPost.media_url.split('/posts/')
-        if (urlParts.length > 1) {
-          const filePath = urlParts[1]
-          await supabase.storage.from('posts').remove([filePath])
-        }
-      }
-    }
-    // Handle new image upload
-    else if (imageFile) {
-      const fileExt = imageFile.name.split('.').pop()
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`
-
-      // Get current post to delete old media from storage
-      const { data: currentPost } = await supabase
-        .from('posts')
-        .select('media_url')
-        .eq('id', postId)
-        .eq('user_id', user.id)
-        .single()
-
-      if (currentPost?.media_url) {
-        // Extract file path from URL and delete from storage
-        const urlParts = currentPost.media_url.split('/posts/')
-        if (urlParts.length > 1) {
-          const filePath = urlParts[1]
-          await supabase.storage.from('posts').remove([filePath])
-        }
-      }
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('posts')
-        .upload(fileName, imageFile, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError)
-        return { success: false, error: 'Failed to upload image' }
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('posts').getPublicUrl(uploadData.path)
-
-      media_url = publicUrl
-      media_type = 'image'
-    }
-    // Handle new audio upload
-    else if (audioFile) {
-      const fileExt = audioFile.name.split('.').pop()
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`
-
-      // Get current post to delete old media from storage
-      const { data: currentPost } = await supabase
-        .from('posts')
-        .select('media_url')
-        .eq('id', postId)
-        .eq('user_id', user.id)
-        .single()
-
-      if (currentPost?.media_url) {
-        // Extract file path from URL and delete from storage
-        const urlParts = currentPost.media_url.split('/posts/')
-        if (urlParts.length > 1) {
-          const filePath = urlParts[1]
-          await supabase.storage.from('posts').remove([filePath])
-        }
-      }
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('posts')
-        .upload(fileName, audioFile, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-
-      if (uploadError) {
-        console.error('Error uploading audio:', uploadError)
-        return { success: false, error: 'Failed to upload audio' }
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('posts').getPublicUrl(uploadData.path)
-
-      media_url = publicUrl
-      media_type = 'audio'
-    }
-
     const updateData: any = { content }
-    if (media_url !== undefined) updateData.media_url = media_url
-    if (media_type !== undefined) updateData.media_type = media_type
+
+    // Only update media fields if they are provided
+    if (mediaUrl !== undefined) updateData.media_url = mediaUrl
+    if (mediaType !== undefined) updateData.media_type = mediaType
 
     const { error } = await supabase
       .from('posts')

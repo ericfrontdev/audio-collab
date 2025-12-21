@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Image, Music, Sparkles, X } from 'lucide-react'
 import { createPost } from '@/app/actions/feed'
+import { uploadMediaToStorage, deleteMediaFromStorage } from '@/lib/storage/uploadMedia'
 import { toast } from 'react-toastify'
+import { createClient } from '@/lib/supabase/client'
 
 interface CreatePostCardProps {
   userAvatar?: string | null
@@ -104,13 +106,42 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
     }
 
     setIsPosting(true)
+    let uploadedMediaUrl: string | undefined
+    let mediaType: 'image' | 'audio' | undefined
+
     try {
-      const result = await createPost(
-        content,
-        undefined,
-        selectedImage || undefined,
-        selectedAudio || undefined
-      )
+      // Get current user
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        toast.error('Not authenticated')
+        return
+      }
+
+      // Upload media first if exists
+      if (selectedImage) {
+        const { url, error } = await uploadMediaToStorage(selectedImage, user.id, 'image')
+        if (error) {
+          toast.error(error)
+          return
+        }
+        uploadedMediaUrl = url || undefined
+        mediaType = 'image'
+      } else if (selectedAudio) {
+        const { url, error } = await uploadMediaToStorage(selectedAudio, user.id, 'audio')
+        if (error) {
+          toast.error(error)
+          return
+        }
+        uploadedMediaUrl = url || undefined
+        mediaType = 'audio'
+      }
+
+      // Create post with media URL
+      const result = await createPost(content, undefined, uploadedMediaUrl, mediaType)
 
       if (result.success) {
         toast.success('Posted successfully!')
@@ -118,9 +149,17 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
         handleRemoveImage()
         handleRemoveAudio()
       } else {
+        // Clean up uploaded media if post creation failed
+        if (uploadedMediaUrl) {
+          await deleteMediaFromStorage(uploadedMediaUrl)
+        }
         toast.error(result.error || 'Failed to create post')
       }
     } catch (error) {
+      // Clean up uploaded media on error
+      if (uploadedMediaUrl) {
+        await deleteMediaFromStorage(uploadedMediaUrl)
+      }
       toast.error('Failed to create post')
     } finally {
       setIsPosting(false)
