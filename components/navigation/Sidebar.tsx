@@ -31,7 +31,7 @@ export function Sidebar({ username }: SidebarProps) {
       {/* Mobile menu button */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-zinc-900 text-white"
+        className="lg:hidden fixed top-4 right-4 z-50 p-2 rounded-md bg-zinc-900 text-white"
       >
         {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
