@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, X, Image as ImageIcon } from 'lucide-react'
+import { AudioPlayer } from '@/components/ui/AudioPlayer'
+import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, X, Image as ImageIcon, Music } from 'lucide-react'
 import { toggleLikePost, updatePost, deletePost } from '@/app/actions/feed'
 import { toast } from 'react-toastify'
 import type { Post } from '@/lib/types/feed'
@@ -28,9 +29,11 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [editImage, setEditImage] = useState<File | null>(null)
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
-  const [removeCurrentImage, setRemoveCurrentImage] = useState(false)
+  const [editAudio, setEditAudio] = useState<File | null>(null)
+  const [removeCurrentMedia, setRemoveCurrentMedia] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
+  const editAudioInputRef = useRef<HTMLInputElement>(null)
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -84,7 +87,8 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
     setShowMenu(false)
     setEditImage(null)
     setEditImagePreview(null)
-    setRemoveCurrentImage(false)
+    setEditAudio(null)
+    setRemoveCurrentMedia(false)
   }
 
   const handleCancelEdit = () => {
@@ -92,7 +96,8 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
     setEditContent(post.content)
     setEditImage(null)
     setEditImagePreview(null)
-    setRemoveCurrentImage(false)
+    setEditAudio(null)
+    setRemoveCurrentMedia(false)
   }
 
   const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,7 +117,8 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
     }
 
     setEditImage(file)
-    setRemoveCurrentImage(false)
+    setEditAudio(null)
+    setRemoveCurrentMedia(false)
 
     // Create preview
     const reader = new FileReader()
@@ -122,12 +128,38 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
     reader.readAsDataURL(file)
   }
 
-  const handleRemoveEditImage = () => {
+  const handleEditAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('audio/')) {
+      toast.error('Please select an audio file')
+      return
+    }
+
+    // Validate file size (max 20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('Audio file must be less than 20MB')
+      return
+    }
+
+    setEditAudio(file)
     setEditImage(null)
     setEditImagePreview(null)
-    setRemoveCurrentImage(true)
+    setRemoveCurrentMedia(false)
+  }
+
+  const handleRemoveEditMedia = () => {
+    setEditImage(null)
+    setEditImagePreview(null)
+    setEditAudio(null)
+    setRemoveCurrentMedia(true)
     if (editFileInputRef.current) {
       editFileInputRef.current.value = ''
+    }
+    if (editAudioInputRef.current) {
+      editAudioInputRef.current.value = ''
     }
   }
 
@@ -143,7 +175,8 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
         post.id,
         editContent,
         editImage || undefined,
-        removeCurrentImage
+        removeCurrentMedia,
+        editAudio || undefined
       )
 
       if (result.success) {
@@ -315,7 +348,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
             <p className="text-white whitespace-pre-wrap mb-3">{post.content}</p>
           )}
 
-          {/* Post image - Edit mode */}
+          {/* Post media - Edit mode */}
           {isEditing && (
             <>
               <input
@@ -325,8 +358,15 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
                 onChange={handleEditImageSelect}
                 className="hidden"
               />
+              <input
+                ref={editAudioInputRef}
+                type="file"
+                accept="audio/*"
+                onChange={handleEditAudioSelect}
+                className="hidden"
+              />
 
-              {/* Show new image preview, current image, or add button */}
+              {/* Show new image preview, current image, new audio, current audio, or add buttons */}
               {editImagePreview ? (
                 <div className="relative mb-3 rounded-lg overflow-hidden border border-zinc-800">
                   <img
@@ -343,7 +383,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={handleRemoveEditImage}
+                      onClick={handleRemoveEditMedia}
                       className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
                       title="Remove image"
                     >
@@ -351,7 +391,32 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
                     </button>
                   </div>
                 </div>
-              ) : post.media_url && post.media_type === 'image' && !removeCurrentImage ? (
+              ) : editAudio ? (
+                <div className="mb-3 bg-zinc-800 border border-zinc-700 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Music className="w-5 h-5 text-primary flex-shrink-0" />
+                    <span className="text-sm text-white truncate">
+                      {editAudio.name}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => editAudioInputRef.current?.click()}
+                      className="p-1.5 rounded-full hover:bg-zinc-700 text-gray-400 hover:text-white transition-colors flex-shrink-0"
+                      title="Change audio"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleRemoveEditMedia}
+                      className="p-1.5 rounded-full hover:bg-zinc-700 text-gray-400 hover:text-white transition-colors flex-shrink-0"
+                      title="Remove audio"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : post.media_url && post.media_type === 'image' && !removeCurrentMedia ? (
                 <div className="relative mb-3 rounded-lg overflow-hidden border border-zinc-800">
                   <img
                     src={post.media_url}
@@ -367,7 +432,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={handleRemoveEditImage}
+                      onClick={handleRemoveEditMedia}
                       className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
                       title="Remove image"
                     >
@@ -375,14 +440,43 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
                     </button>
                   </div>
                 </div>
+              ) : post.media_url && post.media_type === 'audio' && !removeCurrentMedia ? (
+                <div className="mb-3 relative">
+                  <AudioPlayer src={post.media_url} />
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <button
+                      onClick={() => editAudioInputRef.current?.click()}
+                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+                      title="Change audio"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleRemoveEditMedia}
+                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+                      title="Remove audio"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <button
-                  onClick={() => editFileInputRef.current?.click()}
-                  className="mb-3 w-full p-4 rounded-lg border-2 border-dashed border-zinc-700 hover:border-primary/50 text-zinc-500 hover:text-primary transition-colors flex items-center justify-center gap-2"
-                >
-                  <ImageIcon className="w-5 h-5" />
-                  <span>Add image</span>
-                </button>
+                <div className="mb-3 flex gap-2">
+                  <button
+                    onClick={() => editFileInputRef.current?.click()}
+                    className="flex-1 p-4 rounded-lg border-2 border-dashed border-zinc-700 hover:border-primary/50 text-zinc-500 hover:text-primary transition-colors flex items-center justify-center gap-2"
+                  >
+                    <ImageIcon className="w-5 h-5" />
+                    <span>Add image</span>
+                  </button>
+                  <button
+                    onClick={() => editAudioInputRef.current?.click()}
+                    className="flex-1 p-4 rounded-lg border-2 border-dashed border-zinc-700 hover:border-primary/50 text-zinc-500 hover:text-primary transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Music className="w-5 h-5" />
+                    <span>Add audio</span>
+                  </button>
+                </div>
               )}
             </>
           )}
@@ -395,6 +489,13 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
                 alt="Post image"
                 className="w-full max-h-[500px] object-contain bg-zinc-950"
               />
+            </div>
+          )}
+
+          {/* Post audio - Display mode */}
+          {!isEditing && post.media_url && post.media_type === 'audio' && (
+            <div className="mb-3">
+              <AudioPlayer src={post.media_url} />
             </div>
           )}
 

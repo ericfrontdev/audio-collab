@@ -17,7 +17,9 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
   const [isPosting, setIsPosting] = useState(false)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [selectedAudio, setSelectedAudio] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const audioInputRef = useRef<HTMLInputElement>(null)
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -37,6 +39,14 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
 
     setSelectedImage(file)
 
+    // Remove audio if image is selected
+    if (selectedAudio) {
+      setSelectedAudio(null)
+      if (audioInputRef.current) {
+        audioInputRef.current.value = ''
+      }
+    }
+
     // Create preview
     const reader = new FileReader()
     reader.onloadend = () => {
@@ -45,11 +55,45 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
     reader.readAsDataURL(file)
   }
 
+  const handleAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('audio/')) {
+      toast.error('Please select an audio file')
+      return
+    }
+
+    // Validate file size (max 20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('Audio file must be less than 20MB')
+      return
+    }
+
+    setSelectedAudio(file)
+    // Remove image if audio is selected
+    if (selectedImage) {
+      setSelectedImage(null)
+      setImagePreview(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
   const handleRemoveImage = () => {
     setSelectedImage(null)
     setImagePreview(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveAudio = () => {
+    setSelectedAudio(null)
+    if (audioInputRef.current) {
+      audioInputRef.current.value = ''
     }
   }
 
@@ -61,12 +105,18 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
 
     setIsPosting(true)
     try {
-      const result = await createPost(content, undefined, selectedImage || undefined)
+      const result = await createPost(
+        content,
+        undefined,
+        selectedImage || undefined,
+        selectedAudio || undefined
+      )
 
       if (result.success) {
         toast.success('Posted successfully!')
         setContent('')
         handleRemoveImage()
+        handleRemoveAudio()
       } else {
         toast.error(result.error || 'Failed to create post')
       }
@@ -126,6 +176,25 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
             </div>
           )}
 
+          {/* Audio preview */}
+          {selectedAudio && (
+            <div className="mt-3 bg-zinc-800 border border-zinc-700 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Music className="w-5 h-5 text-primary flex-shrink-0" />
+                <span className="text-sm text-white truncate">
+                  {selectedAudio.name}
+                </span>
+              </div>
+              <button
+                onClick={handleRemoveAudio}
+                className="p-1.5 rounded-full hover:bg-zinc-700 text-gray-400 hover:text-white transition-colors flex-shrink-0"
+                title="Remove audio"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800">
             <div className="flex gap-2">
@@ -136,10 +205,17 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
                 onChange={handleImageSelect}
                 className="hidden"
               />
+              <input
+                ref={audioInputRef}
+                type="file"
+                accept="audio/*"
+                onChange={handleAudioSelect}
+                className="hidden"
+              />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isPosting || !!selectedImage}
+                disabled={isPosting || !!selectedImage || !!selectedAudio}
                 className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Add image"
               >
@@ -147,7 +223,9 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
               </button>
               <button
                 type="button"
-                className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors"
+                onClick={() => audioInputRef.current?.click()}
+                disabled={isPosting || !!selectedAudio || !!selectedImage}
+                className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Add audio"
               >
                 <Music className="w-5 h-5" />

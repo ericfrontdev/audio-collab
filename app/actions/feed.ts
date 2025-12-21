@@ -7,7 +7,8 @@ import type { Post } from '@/lib/types/feed'
 export async function createPost(
   content: string,
   projectId?: string,
-  imageFile?: File
+  imageFile?: File,
+  audioFile?: File
 ) {
   try {
     const supabase = await createClient()
@@ -46,6 +47,30 @@ export async function createPost(
 
       media_url = publicUrl
       media_type = 'image'
+    }
+    // Upload audio if provided
+    else if (audioFile) {
+      const fileExt = audioFile.name.split('.').pop()
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('posts')
+        .upload(fileName, audioFile, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (uploadError) {
+        console.error('Error uploading audio:', uploadError)
+        return { success: false, error: 'Failed to upload audio' }
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('posts').getPublicUrl(uploadData.path)
+
+      media_url = publicUrl
+      media_type = 'audio'
     }
 
     const { data: post, error } = await supabase
@@ -224,7 +249,8 @@ export async function updatePost(
   postId: string,
   content: string,
   imageFile?: File,
-  removeImage?: boolean
+  removeMedia?: boolean,
+  audioFile?: File
 ) {
   try {
     const supabase = await createClient()
@@ -240,12 +266,12 @@ export async function updatePost(
     let media_url: string | null | undefined = undefined
     let media_type: 'image' | 'audio' | 'video' | null | undefined = undefined
 
-    // Handle image removal
-    if (removeImage) {
+    // Handle media removal
+    if (removeMedia) {
       media_url = null
       media_type = null
 
-      // Get current post to delete old image from storage
+      // Get current post to delete old media from storage
       const { data: currentPost } = await supabase
         .from('posts')
         .select('media_url')
@@ -267,7 +293,7 @@ export async function updatePost(
       const fileExt = imageFile.name.split('.').pop()
       const fileName = `${user.id}/${Date.now()}.${fileExt}`
 
-      // Get current post to delete old image from storage
+      // Get current post to delete old media from storage
       const { data: currentPost } = await supabase
         .from('posts')
         .select('media_url')
@@ -302,6 +328,47 @@ export async function updatePost(
 
       media_url = publicUrl
       media_type = 'image'
+    }
+    // Handle new audio upload
+    else if (audioFile) {
+      const fileExt = audioFile.name.split('.').pop()
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`
+
+      // Get current post to delete old media from storage
+      const { data: currentPost } = await supabase
+        .from('posts')
+        .select('media_url')
+        .eq('id', postId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (currentPost?.media_url) {
+        // Extract file path from URL and delete from storage
+        const urlParts = currentPost.media_url.split('/posts/')
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1]
+          await supabase.storage.from('posts').remove([filePath])
+        }
+      }
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('posts')
+        .upload(fileName, audioFile, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (uploadError) {
+        console.error('Error uploading audio:', uploadError)
+        return { success: false, error: 'Failed to upload audio' }
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('posts').getPublicUrl(uploadData.path)
+
+      media_url = publicUrl
+      media_type = 'audio'
     }
 
     const updateData: any = { content }
