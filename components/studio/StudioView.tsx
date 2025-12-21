@@ -411,15 +411,24 @@ export function StudioView({ projectId }: StudioViewProps) {
     }
   }, [])
 
-  // Handle spacebar for play/pause
+  // Handle keyboard shortcuts for playback control
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger if spacebar is pressed and not typing in an input/textarea
-      if (e.code === 'Space' &&
-          e.target instanceof HTMLElement &&
+      // Only trigger if not typing in an input/textarea
+      if (e.target instanceof HTMLElement &&
           !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
-        e.preventDefault() // Prevent page scroll
-        handlePlayPause()
+
+        // Spacebar: play/pause
+        if (e.code === 'Space') {
+          e.preventDefault() // Prevent page scroll
+          handlePlayPause()
+        }
+
+        // Enter: reset playhead to start
+        if (e.code === 'Enter') {
+          e.preventDefault()
+          handleStop()
+        }
       }
     }
 
