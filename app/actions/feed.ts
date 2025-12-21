@@ -53,7 +53,7 @@ export async function getFeedPosts(limit = 20, offset = 0) {
       .select(
         `
         *,
-        user:profiles!posts_user_id_fkey(id, username, avatar_url, display_name),
+        user:profiles!user_id(id, username, avatar_url, display_name),
         project:projects(id, title),
         likes:post_likes(count),
         comments:post_comments(count)
