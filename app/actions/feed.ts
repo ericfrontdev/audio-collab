@@ -4,7 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Post } from '@/lib/types/feed'
 
-export async function createPost(content: string, projectId?: string) {
+export async function createPost(
+  content: string,
+  projectId?: string,
+  imageFile?: File
+) {
   try {
     const supabase = await createClient()
 
@@ -16,12 +20,42 @@ export async function createPost(content: string, projectId?: string) {
       return { success: false, error: 'Not authenticated' }
     }
 
+    let media_url: string | null = null
+    let media_type: 'image' | 'audio' | 'video' | null = null
+
+    // Upload image if provided
+    if (imageFile) {
+      const fileExt = imageFile.name.split('.').pop()
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('posts')
+        .upload(fileName, imageFile, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError)
+        return { success: false, error: 'Failed to upload image' }
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('posts').getPublicUrl(uploadData.path)
+
+      media_url = publicUrl
+      media_type = 'image'
+    }
+
     const { data: post, error } = await supabase
       .from('posts')
       .insert({
         user_id: user.id,
         content,
         project_id: projectId || null,
+        media_url,
+        media_type,
       })
       .select()
       .single()

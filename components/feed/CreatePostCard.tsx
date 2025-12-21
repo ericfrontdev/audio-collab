@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Image, Music, Sparkles } from 'lucide-react'
+import { Image, Music, Sparkles, X } from 'lucide-react'
 import { createPost } from '@/app/actions/feed'
 import { toast } from 'react-toastify'
 
@@ -15,6 +15,43 @@ interface CreatePostCardProps {
 export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
   const [content, setContent] = useState('')
   const [isPosting, setIsPosting] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB')
+      return
+    }
+
+    setSelectedImage(file)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null)
+    setImagePreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const handlePost = async () => {
     if (!content.trim()) {
@@ -24,11 +61,12 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
 
     setIsPosting(true)
     try {
-      const result = await createPost(content)
+      const result = await createPost(content, undefined, selectedImage || undefined)
 
       if (result.success) {
         toast.success('Posted successfully!')
         setContent('')
+        handleRemoveImage()
       } else {
         toast.error(result.error || 'Failed to create post')
       }
@@ -70,12 +108,39 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
             disabled={isPosting}
           />
 
+          {/* Image preview */}
+          {imagePreview && (
+            <div className="relative mt-3 rounded-lg overflow-hidden border border-zinc-800">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-full max-h-96 object-contain bg-zinc-950"
+              />
+              <button
+                onClick={handleRemoveImage}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+                title="Remove image"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800">
             <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
               <button
                 type="button"
-                className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isPosting || !!selectedImage}
+                className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Add image"
               >
                 <Image className="w-5 h-5" />

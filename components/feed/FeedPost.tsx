@@ -264,6 +264,17 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
             <p className="text-white whitespace-pre-wrap mb-3">{post.content}</p>
           )}
 
+          {/* Post image if attached */}
+          {post.media_url && post.media_type === 'image' && !isEditing && (
+            <div className="mb-3 rounded-lg overflow-hidden border border-zinc-800">
+              <img
+                src={post.media_url}
+                alt="Post image"
+                className="w-full max-h-[500px] object-contain bg-zinc-950"
+              />
+            </div>
+          )}
+
           {/* Project link if attached */}
           {post.project && (
             <Link
