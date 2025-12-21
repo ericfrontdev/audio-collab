@@ -47,18 +47,10 @@ export async function getFeedPosts(limit = 20, offset = 0) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    // Get posts with user info, like counts, and comment counts
+    // Get posts first
     const { data: posts, error } = await supabase
       .from('posts')
-      .select(
-        `
-        *,
-        user:profiles!user_id(id, username, avatar_url, display_name),
-        project:projects(id, title),
-        likes:post_likes(count),
-        comments:post_comments(count)
-      `
-      )
+      .select('*')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -67,6 +59,41 @@ export async function getFeedPosts(limit = 20, offset = 0) {
       return { success: false, error: error.message, posts: [] }
     }
 
+    if (!posts || posts.length === 0) {
+      return { success: true, posts: [] }
+    }
+
+    // Get user profiles for all post authors
+    const userIds = [...new Set(posts.map((p) => p.user_id))]
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, display_name')
+      .in('id', userIds)
+
+    // Get projects if any posts reference them
+    const projectIds = posts.map((p) => p.project_id).filter(Boolean)
+    let projects: any[] = []
+    if (projectIds.length > 0) {
+      const { data: projectsData } = await supabase
+        .from('projects')
+        .select('id, title')
+        .in('id', projectIds)
+      projects = projectsData || []
+    }
+
+    // Get like counts
+    const postIds = posts.map((p) => p.id)
+    const { data: likeCounts } = await supabase
+      .from('post_likes')
+      .select('post_id')
+      .in('post_id', postIds)
+
+    // Get comment counts
+    const { data: commentCounts } = await supabase
+      .from('post_comments')
+      .select('post_id')
+      .in('post_id', postIds)
+
     // Get user's likes if authenticated
     let userLikes: string[] = []
     if (user) {
@@ -74,17 +101,27 @@ export async function getFeedPosts(limit = 20, offset = 0) {
         .from('post_likes')
         .select('post_id')
         .eq('user_id', user.id)
+        .in('post_id', postIds)
 
       userLikes = likes?.map((like) => like.post_id) || []
     }
 
-    // Transform posts to include counts and like status
-    const transformedPosts: Post[] = (posts || []).map((post: any) => ({
-      ...post,
-      likes_count: post.likes?.[0]?.count || 0,
-      comments_count: post.comments?.[0]?.count || 0,
-      is_liked_by_user: userLikes.includes(post.id),
-    }))
+    // Transform posts to include all related data
+    const transformedPosts: Post[] = posts.map((post) => {
+      const profile = profiles?.find((p) => p.id === post.user_id)
+      const project = projects.find((p) => p.id === post.project_id)
+      const likes_count = likeCounts?.filter((l) => l.post_id === post.id).length || 0
+      const comments_count = commentCounts?.filter((c) => c.post_id === post.id).length || 0
+
+      return {
+        ...post,
+        user: profile,
+        project,
+        likes_count,
+        comments_count,
+        is_liked_by_user: userLikes.includes(post.id),
+      }
+    })
 
     return { success: true, posts: transformedPosts }
   } catch (error: any) {
