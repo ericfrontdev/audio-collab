@@ -93,6 +93,43 @@ export function StudioView({ projectId }: StudioViewProps) {
     }
   }, [])
 
+  // Unlock audio on mobile on first user interaction
+  useEffect(() => {
+    let unlocked = false
+
+    const unlockAudio = async () => {
+      if (unlocked) return
+
+      // Create a silent audio context and resume it
+      // This unlocks audio playback on mobile browsers
+      try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+        if (AudioContext) {
+          const ctx = new AudioContext()
+          if (ctx.state === 'suspended') {
+            await ctx.resume()
+          }
+          await ctx.close()
+          unlocked = true
+        }
+      } catch (error) {
+        console.debug('Audio unlock failed:', error)
+      }
+    }
+
+    // Listen for first user interaction
+    const events = ['touchstart', 'touchend', 'mousedown', 'keydown']
+    events.forEach(event => {
+      document.addEventListener(event, unlockAudio, { once: true })
+    })
+
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, unlockAudio)
+      })
+    }
+  }, [])
+
   // Load studio data
   const loadStudioData = async () => {
     setIsLoading(true)
@@ -163,7 +200,7 @@ export function StudioView({ projectId }: StudioViewProps) {
       waveformRefs.current.forEach((ref) => ref.pause())
       setIsPlaying(false)
     } else {
-      // Play all waveforms
+      // Play all waveforms (audio context unlocked on first user interaction)
       waveformRefs.current.forEach((ref) => ref.play())
       setIsPlaying(true)
     }
