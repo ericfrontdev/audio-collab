@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
 import { toggleLikePost, updatePost, deletePost } from '@/app/actions/feed'
 import { toast } from 'react-toastify'
@@ -24,6 +25,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
   const [editContent, setEditContent] = useState(post.content)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Close menu when clicking outside
@@ -107,11 +109,13 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
     }
   }
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this post?')) {
-      return
-    }
+  const handleDelete = () => {
+    setShowDeleteConfirm(true)
+    setShowMenu(false)
+  }
 
+  const confirmDelete = async () => {
+    setShowDeleteConfirm(false)
     setIsDeleting(true)
     try {
       const result = await deletePost(post.id)
@@ -127,6 +131,10 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
     } finally {
       setIsDeleting(false)
     }
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false)
   }
 
   const isOwnPost = currentUserId === post.user_id
@@ -307,6 +315,17 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </Card>
   )
 }
