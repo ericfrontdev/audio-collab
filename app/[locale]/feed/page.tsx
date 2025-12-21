@@ -3,6 +3,7 @@ import { CreatePostCard } from '@/components/feed/CreatePostCard'
 import { FeedPost } from '@/components/feed/FeedPost'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { UserProfileCard } from '@/components/cards/UserProfileCard'
+import { QuickActions } from '@/components/cards/QuickActions'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
@@ -82,6 +83,9 @@ export default async function FeedPage() {
           <aside className="hidden xl:block w-96 border-l border-zinc-800 p-6 space-y-6">
             {/* User Profile Card */}
             {profile && <UserProfileCard profile={profile} />}
+
+            {/* Quick Actions */}
+            <QuickActions />
 
             {/* Suggested Clubs */}
             {suggestedClubs && suggestedClubs.length > 0 && (
