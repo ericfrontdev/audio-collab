@@ -307,7 +307,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
   }
 
   return (
-    <Card className="p-4 bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
+    <Card className="p-4 rounded-xl bg-zinc-900/50 border-zinc-800 hover:border-primary/50 transition-colors">
       <div className="flex gap-3">
         {/* Avatar */}
         <Link

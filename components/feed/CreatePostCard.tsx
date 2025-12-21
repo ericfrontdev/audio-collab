@@ -183,7 +183,7 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
   }
 
   return (
-    <Card className="p-4 bg-zinc-900 border-zinc-800">
+    <Card className="p-4 rounded-xl bg-zinc-900/50 border-zinc-800 hover:border-primary/50 transition-colors">
       <div className="flex gap-3">
         {/* Avatar */}
         <div className="flex-shrink-0">
