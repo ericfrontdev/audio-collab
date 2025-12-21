@@ -209,9 +209,10 @@ export function StudioView({ projectId }: StudioViewProps) {
       if (firstRef) {
         const pauseTime = firstRef.getCurrentTime()
 
-        // Synchronize all waveforms to the same position
+        // Synchronize all waveforms to the same position using setTime() for precision
+        // This prevents the cursor from jumping back (known WaveSurfer issue)
         waveformRefs.current.forEach((ref) => {
-          ref.seekTo(pauseTime)
+          ref.setTime(pauseTime)
         })
 
         // Update the displayed time

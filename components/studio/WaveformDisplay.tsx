@@ -17,6 +17,7 @@ export interface WaveformDisplayRef {
   play: () => void;
   pause: () => void;
   seekTo: (time: number) => void;
+  setTime: (time: number) => void;
   getDuration: () => number;
   getCurrentTime: () => number;
   isPlaying: () => boolean;
@@ -58,6 +59,7 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       play: () => wavesurferRef.current?.play(),
       pause: () => wavesurferRef.current?.pause(),
       seekTo: (time: number) => wavesurferRef.current?.seekTo(time / (wavesurferRef.current?.getDuration() || 1)),
+      setTime: (time: number) => wavesurferRef.current?.setTime(time),
       getDuration: () => wavesurferRef.current?.getDuration() || 0,
       getCurrentTime: () => wavesurferRef.current?.getCurrentTime() || 0,
       isPlaying: () => wavesurferRef.current?.isPlaying() || false,
