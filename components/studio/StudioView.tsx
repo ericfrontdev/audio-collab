@@ -197,15 +197,26 @@ export function StudioView({ projectId }: StudioViewProps) {
 
   const handlePlayPause = () => {
     if (isPlaying) {
-      // Pause all waveforms and capture the current time to keep playhead in sync
+      // Mark as paused first to stop timeupdate events from being processed
+      isPlayingRef.current = false
+      setIsPlaying(false)
+
+      // Pause all waveforms
+      waveformRefs.current.forEach((ref) => ref.pause())
+
+      // Capture the current time from the first waveform
       const firstRef = Array.from(waveformRefs.current.values())[0]
       if (firstRef) {
         const pauseTime = firstRef.getCurrentTime()
+
+        // Synchronize all waveforms to the same position
+        waveformRefs.current.forEach((ref) => {
+          ref.seekTo(pauseTime)
+        })
+
+        // Update the displayed time
         setCurrentTime(pauseTime)
       }
-      waveformRefs.current.forEach((ref) => ref.pause())
-      setIsPlaying(false)
-      isPlayingRef.current = false
     } else {
       // Play all waveforms (audio context unlocked on first user interaction)
       waveformRefs.current.forEach((ref) => ref.play())
