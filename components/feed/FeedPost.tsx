@@ -33,6 +33,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
   const [editAudio, setEditAudio] = useState<File | null>(null)
   const [removeCurrentMedia, setRemoveCurrentMedia] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const menuRef = useRef<HTMLDivElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
   const editAudioInputRef = useRef<HTMLInputElement>(null)
@@ -201,9 +202,15 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
           await deleteMediaFromStorage(post.media_url)
         }
         // Upload new image
-        const { url, error } = await uploadMediaToStorage(editImage, user.id, 'image')
+        const { url, error } = await uploadMediaToStorage(
+          editImage,
+          user.id,
+          'image',
+          setUploadProgress
+        )
         if (error) {
           toast.error(error)
+          setUploadProgress(0)
           return
         }
         newMediaUrl = url
@@ -214,9 +221,15 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
           await deleteMediaFromStorage(post.media_url)
         }
         // Upload new audio
-        const { url, error } = await uploadMediaToStorage(editAudio, user.id, 'audio')
+        const { url, error } = await uploadMediaToStorage(
+          editAudio,
+          user.id,
+          'audio',
+          setUploadProgress
+        )
         if (error) {
           toast.error(error)
+          setUploadProgress(0)
           return
         }
         newMediaUrl = url
@@ -229,6 +242,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
       if (result.success) {
         toast.success('Post updated successfully!')
         setIsEditing(false)
+        setUploadProgress(0)
         router.refresh()
       } else {
         // Clean up newly uploaded media if post update failed
@@ -236,6 +250,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
           await deleteMediaFromStorage(newMediaUrl)
         }
         toast.error(result.error || 'Failed to update post')
+        setUploadProgress(0)
       }
     } catch (error) {
       // Clean up newly uploaded media on error
@@ -243,6 +258,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
         await deleteMediaFromStorage(newMediaUrl)
       }
       toast.error('Failed to update post')
+      setUploadProgress(0)
     } finally {
       setIsUpdating(false)
     }
@@ -378,6 +394,22 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
                 rows={3}
                 maxLength={500}
               />
+              {/* Upload progress */}
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-gray-400">Uploading...</span>
+                    <span className="text-xs text-gray-400">{uploadProgress}%</span>
+                  </div>
+                  <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mt-2">
                 <span className="text-sm text-gray-500">
                   {editContent.length}/500

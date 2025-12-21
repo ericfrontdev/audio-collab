@@ -20,6 +20,7 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [selectedAudio, setSelectedAudio] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
 
@@ -123,17 +124,29 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
 
       // Upload media first if exists
       if (selectedImage) {
-        const { url, error } = await uploadMediaToStorage(selectedImage, user.id, 'image')
+        const { url, error } = await uploadMediaToStorage(
+          selectedImage,
+          user.id,
+          'image',
+          setUploadProgress
+        )
         if (error) {
           toast.error(error)
+          setUploadProgress(0)
           return
         }
         uploadedMediaUrl = url || undefined
         mediaType = 'image'
       } else if (selectedAudio) {
-        const { url, error } = await uploadMediaToStorage(selectedAudio, user.id, 'audio')
+        const { url, error } = await uploadMediaToStorage(
+          selectedAudio,
+          user.id,
+          'audio',
+          setUploadProgress
+        )
         if (error) {
           toast.error(error)
+          setUploadProgress(0)
           return
         }
         uploadedMediaUrl = url || undefined
@@ -148,12 +161,14 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
         setContent('')
         handleRemoveImage()
         handleRemoveAudio()
+        setUploadProgress(0)
       } else {
         // Clean up uploaded media if post creation failed
         if (uploadedMediaUrl) {
           await deleteMediaFromStorage(uploadedMediaUrl)
         }
         toast.error(result.error || 'Failed to create post')
+        setUploadProgress(0)
       }
     } catch (error) {
       // Clean up uploaded media on error
@@ -161,6 +176,7 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
         await deleteMediaFromStorage(uploadedMediaUrl)
       }
       toast.error('Failed to create post')
+      setUploadProgress(0)
     } finally {
       setIsPosting(false)
     }
@@ -231,6 +247,22 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
               >
                 <X className="w-4 h-4" />
               </button>
+            </div>
+          )}
+
+          {/* Upload progress */}
+          {uploadProgress > 0 && uploadProgress < 100 && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-400">Uploading...</span>
+                <span className="text-xs text-gray-400">{uploadProgress}%</span>
+              </div>
+              <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
             </div>
           )}
 
