@@ -6,6 +6,36 @@ import { ClubTabs } from '@/components/clubs/ClubTabs';
 import { UserProfileCard } from '@/components/cards/UserProfileCard';
 import { QuickActions } from '@/components/cards/QuickActions';
 
+// Types for club members with profile data
+interface ClubMemberProfile {
+  id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  joined_at: string;
+}
+
+// Types for projects with owner profile and member count
+interface ProjectWithOwner {
+  id: string;
+  club_id: string;
+  name: string;
+  description: string | null;
+  cover_image_url: string | null;
+  status: 'active' | 'archived' | 'completed';
+  created_by: string;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+  owner_profile: {
+    id: string;
+    username: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  member_count: number;
+}
+
 export default async function ClubPage({
   params,
 }: {
@@ -24,102 +54,109 @@ export default async function ClubPage({
     .from('clubs')
     .select('*')
     .eq('slug', slug)
-    .single();
+    .maybeSingle();
 
   if (clubError || !club) {
     notFound();
   }
 
-  // Get member count
-  const { count: memberCount } = await supabase
-    .from('club_members')
-    .select('*', { count: 'exact', head: true })
-    .eq('club_id', club.id);
-
-  // Check if user is member
-  let isMember = false;
-  if (user) {
-    const { data: membership } = await supabase
+  // Run multiple queries in parallel
+  const [
+    { count: memberCount },
+    membershipResult,
+    profileResult,
+    { data: clubMembers },
+    { data: projects },
+  ] = await Promise.all([
+    // Get member count
+    supabase
       .from('club_members')
-      .select('id')
+      .select('*', { count: 'exact', head: true })
+      .eq('club_id', club.id),
+    // Check if user is member
+    user
+      ? supabase
+          .from('club_members')
+          .select('id')
+          .eq('club_id', club.id)
+          .eq('user_id', user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Get user profile if authenticated
+    user
+      ? supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    // Get club members
+    supabase
+      .from('club_members')
+      .select('user_id, joined_at')
       .eq('club_id', club.id)
-      .eq('user_id', user.id)
-      .single();
-
-    isMember = !!membership;
-  }
-
-  // Get user profile if authenticated
-  let userProfile = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
+      .order('joined_at', { ascending: false }),
+    // Get projects for this club
+    supabase
+      .from('projects')
       .select('*')
-      .eq('id', user.id)
-      .single();
+      .eq('club_id', club.id)
+      .order('created_at', { ascending: false }),
+  ]);
 
-    userProfile = profile;
-  }
+  const isMember = !!membershipResult.data;
+  const userProfile = profileResult.data;
 
-  // Get club members
-  const { data: clubMembers } = await supabase
-    .from('club_members')
-    .select('user_id, joined_at')
-    .eq('club_id', club.id)
-    .order('joined_at', { ascending: false });
+  // Run second batch of queries in parallel (depend on first batch)
+  const memberProfilesPromise = clubMembers && clubMembers.length > 0
+    ? supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', clubMembers.map(m => m.user_id))
+    : Promise.resolve({ data: null });
 
-  // Get profiles for all members
-  let formattedMembers: any[] = [];
-  if (clubMembers && clubMembers.length > 0) {
-    const userIds = clubMembers.map(m => m.user_id);
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, avatar_url')
-      .in('id', userIds);
+  const ownerProfilesPromise = projects && projects.length > 0
+    ? supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url')
+        .in('id', projects.map(p => p.owner_id).filter(Boolean))
+    : Promise.resolve({ data: null });
 
-    formattedMembers = clubMembers.map(m => {
-      const profile = profiles?.find(p => p.id === m.user_id);
-      return {
-        id: profile?.id || m.user_id,
-        username: profile?.username || 'unknown',
-        display_name: profile?.display_name,
-        avatar_url: profile?.avatar_url,
-        joined_at: m.joined_at,
-      };
-    });
-  }
+  const memberCountsPromise = projects && projects.length > 0
+    ? supabase
+        .from('collaborators')
+        .select('project_id')
+        .in('project_id', projects.map(p => p.id))
+    : Promise.resolve({ data: null });
 
-  // Get projects for this club
-  const { data: projects } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('club_id', club.id)
-    .order('created_at', { ascending: false });
+  const [
+    { data: memberProfiles },
+    { data: ownerProfiles },
+    { data: memberCounts },
+  ] = await Promise.all([
+    memberProfilesPromise,
+    ownerProfilesPromise,
+    memberCountsPromise,
+  ]);
 
-  // Get owner profiles and member counts for projects
-  let projectsWithDetails: any[] = [];
-  if (projects && projects.length > 0) {
-    const projectIds = projects.map(p => p.id);
-    const ownerIds = projects.map(p => p.owner_id).filter(Boolean);
+  // Format members with profile data
+  const formattedMembers: ClubMemberProfile[] = clubMembers?.map(m => {
+    const profile = memberProfiles?.find(p => p.id === m.user_id);
+    return {
+      id: profile?.id || m.user_id,
+      username: profile?.username || 'unknown',
+      display_name: profile?.display_name ?? null,
+      avatar_url: profile?.avatar_url ?? null,
+      joined_at: m.joined_at,
+    };
+  }) || [];
 
-    // Get owner profiles
-    const { data: ownerProfiles } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, avatar_url')
-      .in('id', ownerIds);
-
-    // Get member counts (using collaborators table since project_members might not exist)
-    const { data: memberCounts } = await supabase
-      .from('collaborators')
-      .select('project_id')
-      .in('project_id', projectIds);
-
-    projectsWithDetails = projects.map(p => ({
-      ...p,
-      owner_profile: ownerProfiles?.find(profile => profile.id === p.owner_id) || null,
-      member_count: memberCounts?.filter(m => m.project_id === p.id).length || 0,
-    }));
-  }
+  // Format projects with owner profiles and member counts
+  const projectsWithDetails: ProjectWithOwner[] = projects?.map(p => ({
+    ...p,
+    owner_profile: ownerProfiles?.find(profile => profile.id === p.owner_id) ?? null,
+    member_count: memberCounts?.filter(m => m.project_id === p.id).length || 0,
+  })) || [];
 
   return (
     <AppLayout>

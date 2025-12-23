@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { AppLayout } from '@/components/layouts/AppLayout';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Users, Music, FolderOpen, UserPlus } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +24,7 @@ export default async function AdminDashboard() {
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   console.log('Admin check:', { userId: user.id, profile, profileError, is_admin: profile?.is_admin });
 
@@ -40,10 +40,26 @@ export default async function AdminDashboard() {
 
   console.log('Admin check passed! Loading dashboard...');
 
+  interface RecentUser {
+    id: string;
+    username: string;
+    display_name: string | null;
+    created_at: string;
+    is_admin: boolean;
+  }
+
+  interface Club {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    created_at: string;
+  }
+
   // Get stats
   let totalUsers = 0, totalProjects = 0, totalClubs = 0, totalMemberships = 0;
-  let recentUsers: any[] = [];
-  let clubs: any[] = [];
+  let recentUsers: RecentUser[] = [];
+  let clubs: Club[] = [];
 
   try {
     const results = await Promise.all([

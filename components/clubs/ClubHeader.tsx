@@ -5,7 +5,7 @@ import { Music, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import type { Club } from '@/types/club';
 
 interface ClubHeaderProps {

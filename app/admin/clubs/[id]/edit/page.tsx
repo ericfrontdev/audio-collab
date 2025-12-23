@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { EditClubForm } from '@/components/admin/EditClubForm';
 
@@ -23,7 +23,7 @@ export default async function EditClubPage({ params }: { params: Promise<{ id: s
     .from('profiles')
     .select('is_admin')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.is_admin) {
     redirect('/');
@@ -34,7 +34,7 @@ export default async function EditClubPage({ params }: { params: Promise<{ id: s
     .from('clubs')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error || !club) {
     redirect('/admin/clubs');

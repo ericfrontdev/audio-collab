@@ -1,12 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import { redirect } from '@/i18n/routing'
 import { createClient } from '@/lib/supabase/server'
 
 export async function login(prevState: any, formData: FormData) {
   const supabase = await createClient()
-  const locale = formData.get('locale') as string || 'en'
+  const locale = (formData.get('locale') as string) || 'en'
 
   const data = {
     email: formData.get('email') as string,
@@ -20,12 +20,12 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  redirect(`/${locale}/dashboard`)
+  redirect(`/feed`)
 }
 
 export async function signup(prevState: any, formData: FormData) {
   const supabase = await createClient()
-  const locale = formData.get('locale') as string || 'en'
+  const locale = (formData.get('locale') as string) || 'en'
 
   const email = formData.get('email') as string
   const displayName = formData.get('display_name') as string
@@ -36,8 +36,8 @@ export async function signup(prevState: any, formData: FormData) {
     options: {
       data: {
         display_name: displayName || email.split('@')[0],
-      }
-    }
+      },
+    },
   }
 
   const { error } = await supabase.auth.signUp(data)
@@ -61,11 +61,13 @@ export async function logout(locale: string = 'en') {
   }
 
   revalidatePath('/', 'layout')
-  redirect(`/${locale}`)
+  redirect('/')
 }
 
 export async function getUser() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   return user
 }

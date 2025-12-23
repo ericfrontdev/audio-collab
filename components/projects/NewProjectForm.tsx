@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
@@ -64,9 +64,10 @@ export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps
       toast.success('Project created successfully!');
       router.push(`/clubs/${clubSlug}`);
       router.refresh();
-    } catch (error: any) {
-      console.error('Error creating project:', error);
-      toast.error(error.message || 'Failed to create project');
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Error creating project:', err);
+      toast.error(err.message || 'Failed to create project');
     } finally {
       setIsLoading(false);
     }

@@ -10,7 +10,7 @@ export default async function AdminTestPage() {
     .from('profiles')
     .select('*')
     .eq('id', user?.id)
-    .single();
+    .maybeSingle();
 
   return (
     <AppLayout>

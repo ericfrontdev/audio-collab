@@ -28,7 +28,7 @@ export async function createStem(prevState: any, formData: FormData) {
     .from('projects')
     .select('owner_id')
     .eq('id', projectId)
-    .single()
+    .maybeSingle()
 
   if (!project) {
     return { error: 'Project not found' }
@@ -40,7 +40,7 @@ export async function createStem(prevState: any, formData: FormData) {
     .select('role')
     .eq('project_id', projectId)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   const canEdit = project.owner_id === user.id || !!collaborator
 
@@ -92,7 +92,7 @@ export async function updateStem(stemId: string, updates: {
     .from('project_stems')
     .select('project_id, created_by')
     .eq('id', stemId)
-    .single()
+    .maybeSingle()
 
   if (!stem) {
     return { error: 'Stem not found' }
@@ -103,14 +103,14 @@ export async function updateStem(stemId: string, updates: {
     .from('projects')
     .select('owner_id')
     .eq('id', stem.project_id)
-    .single()
+    .maybeSingle()
 
   const { data: collaborator } = await supabase
     .from('project_collaborators')
     .select('role')
     .eq('project_id', stem.project_id)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   const canEdit = project?.owner_id === user.id || !!collaborator
 
@@ -144,7 +144,7 @@ export async function deleteStem(stemId: string, projectId: string) {
     .from('project_stems')
     .select('created_by, file_url')
     .eq('id', stemId)
-    .single()
+    .maybeSingle()
 
   if (!stem) {
     return { error: 'Stem not found' }
@@ -196,7 +196,7 @@ export async function createDiscussionMessage(prevState: any, formData: FormData
     .from('projects')
     .select('owner_id, mode')
     .eq('id', projectId)
-    .single()
+    .maybeSingle()
 
   if (!project) {
     return { error: 'Project not found' }
@@ -207,7 +207,7 @@ export async function createDiscussionMessage(prevState: any, formData: FormData
     .select('role')
     .eq('project_id', projectId)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   const canPost = project.owner_id === user.id ||
                   !!collaborator ||
@@ -247,7 +247,7 @@ export async function deleteDiscussionMessage(messageId: string, projectId: stri
     .from('project_discussion_messages')
     .select('author_id')
     .eq('id', messageId)
-    .single()
+    .maybeSingle()
 
   if (!message) {
     return { error: 'Message not found' }
@@ -300,7 +300,7 @@ export async function createTimelineComment(prevState: any, formData: FormData) 
     .from('projects')
     .select('owner_id, mode')
     .eq('id', projectId)
-    .single()
+    .maybeSingle()
 
   if (!project) {
     return { error: 'Project not found' }
@@ -311,7 +311,7 @@ export async function createTimelineComment(prevState: any, formData: FormData) 
     .select('role')
     .eq('project_id', projectId)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   const canComment = project.owner_id === user.id ||
                      !!collaborator ||
@@ -352,7 +352,7 @@ export async function deleteTimelineComment(commentId: string, projectId: string
     .from('project_timeline_comments')
     .select('author_id')
     .eq('id', commentId)
-    .single()
+    .maybeSingle()
 
   if (!comment) {
     return { error: 'Comment not found' }
@@ -402,7 +402,7 @@ export async function createVersion(prevState: any, formData: FormData) {
     .from('projects')
     .select('owner_id')
     .eq('id', projectId)
-    .single()
+    .maybeSingle()
 
   if (!project) {
     return { error: 'Project not found' }
@@ -413,7 +413,7 @@ export async function createVersion(prevState: any, formData: FormData) {
     .select('role')
     .eq('project_id', projectId)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   const canCreate = project.owner_id === user.id || !!collaborator
 
@@ -456,7 +456,7 @@ export async function addCollaborator(projectId: string, userId: string, instrum
     .from('projects')
     .select('owner_id')
     .eq('id', projectId)
-    .single()
+    .maybeSingle()
 
   if (!project) {
     return { error: 'Project not found' }
@@ -496,7 +496,7 @@ export async function removeCollaborator(collaboratorId: string, projectId: stri
     .from('projects')
     .select('owner_id')
     .eq('id', projectId)
-    .single()
+    .maybeSingle()
 
   if (!project) {
     return { error: 'Project not found' }

@@ -4,6 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Post } from '@/lib/types/feed'
 
+interface SupabaseError {
+  message: string;
+}
+
 export async function createPost(
   content: string,
   projectId?: string,
@@ -40,9 +44,10 @@ export async function createPost(
 
     revalidatePath('/feed')
     return { success: true, post }
-  } catch (error: any) {
-    console.error('Error creating post:', error)
-    return { success: false, error: error.message }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error creating post:', err)
+    return { success: false, error: err.message }
   }
 }
 
@@ -79,7 +84,11 @@ export async function getFeedPosts(limit = 20, offset = 0) {
 
     // Get projects if any posts reference them
     const projectIds = posts.map((p) => p.project_id).filter(Boolean)
-    let projects: any[] = []
+    interface ProjectInfo {
+      id: string;
+      title: string;
+    }
+    let projects: ProjectInfo[] = []
     if (projectIds.length > 0) {
       const { data: projectsData } = await supabase
         .from('projects')
@@ -131,9 +140,10 @@ export async function getFeedPosts(limit = 20, offset = 0) {
     })
 
     return { success: true, posts: transformedPosts }
-  } catch (error: any) {
-    console.error('Error fetching posts:', error)
-    return { success: false, error: error.message, posts: [] }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error fetching posts:', err)
+    return { success: false, error: err.message, posts: [] }
   }
 }
 
@@ -155,7 +165,7 @@ export async function toggleLikePost(postId: string) {
       .select('id')
       .eq('post_id', postId)
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (existingLike) {
       // Unlike
@@ -187,9 +197,10 @@ export async function toggleLikePost(postId: string) {
       revalidatePath('/feed')
       return { success: true, liked: true }
     }
-  } catch (error: any) {
-    console.error('Error toggling like:', error)
-    return { success: false, error: error.message }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error toggling like:', err)
+    return { success: false, error: err.message }
   }
 }
 
@@ -210,7 +221,13 @@ export async function updatePost(
       return { success: false, error: 'Not authenticated' }
     }
 
-    const updateData: any = { content }
+    interface UpdateData {
+      content: string;
+      media_url?: string | null;
+      media_type?: 'image' | 'audio' | null;
+    }
+
+    const updateData: UpdateData = { content }
 
     // Only update media fields if they are provided
     if (mediaUrl !== undefined) updateData.media_url = mediaUrl
@@ -229,9 +246,10 @@ export async function updatePost(
 
     revalidatePath('/feed')
     return { success: true }
-  } catch (error: any) {
-    console.error('Error updating post:', error)
-    return { success: false, error: error.message }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error updating post:', err)
+    return { success: false, error: err.message }
   }
 }
 
@@ -260,8 +278,9 @@ export async function deletePost(postId: string) {
 
     revalidatePath('/feed')
     return { success: true }
-  } catch (error: any) {
-    console.error('Error deleting post:', error)
-    return { success: false, error: error.message }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error deleting post:', err)
+    return { success: false, error: err.message }
   }
 }

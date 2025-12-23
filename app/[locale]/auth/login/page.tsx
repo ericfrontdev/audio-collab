@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { useParams } from 'next/navigation';
 import { useActionState } from 'react';
 import Image from 'next/image';
@@ -22,7 +22,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         {/* Logo + Brand */}
         <div className="flex flex-col items-center gap-4">
-          <Link href={`/${locale}`} className="flex items-center gap-3">
+          <Link href={`/`} className="flex items-center gap-3">
             <Image
               src="/images/AC_Logo.webp"
               alt="AudioCollab"
@@ -84,7 +84,7 @@ export default function LoginPage() {
               <div className="text-center text-sm text-muted-foreground">
                 {t('noAccount')}{' '}
                 <Link
-                  href={`/${locale}/auth/signup`}
+                  href={`/auth/signup`}
                   className="font-medium text-primary hover:underline"
                 >
                   {t('signupLink')}

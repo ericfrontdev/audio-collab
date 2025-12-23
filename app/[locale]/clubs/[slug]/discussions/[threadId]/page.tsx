@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { Link, redirect } from '@/i18n/routing'
 import ReplyForm from '@/components/clubs/ReplyForm'
 
 export default async function DiscussionThreadPage({
@@ -15,7 +15,7 @@ export default async function DiscussionThreadPage({
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/${locale}/auth/login`)
+    redirect(`/auth/login`)
   }
 
   // Fetch club
@@ -23,7 +23,7 @@ export default async function DiscussionThreadPage({
     .from('clubs')
     .select('*')
     .eq('slug', slug)
-    .single()
+    .maybeSingle()
 
   if (!club) {
     notFound()
@@ -35,7 +35,7 @@ export default async function DiscussionThreadPage({
     .select('id')
     .eq('club_id', club.id)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   const isMember = !!membership
 
@@ -50,7 +50,7 @@ export default async function DiscussionThreadPage({
       )
     `)
     .eq('id', threadId)
-    .single()
+    .maybeSingle()
 
   if (!thread) {
     notFound()
@@ -75,7 +75,7 @@ export default async function DiscussionThreadPage({
         {/* Breadcrumb */}
         <div className="mb-6">
           <Link
-            href={`/${locale}/clubs/${slug}?tab=discussions`}
+            href={`/clubs/${slug}?tab=discussions`}
             className="text-sm text-primary hover:text-primary/90 flex items-center"
           >
             <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

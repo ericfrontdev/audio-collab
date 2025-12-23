@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Home, Compass, Bell, MessageCircle, Music, Users, User, Settings, Menu, X } from 'lucide-react';

@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import { redirect } from '@/i18n/routing'
 import { createClient } from '@/lib/supabase/server'
 
 export async function createProject(prevState: any, formData: FormData) {
@@ -54,7 +54,7 @@ export async function createProject(prevState: any, formData: FormData) {
   }
 
   revalidatePath(`/${locale}/projects`)
-  redirect(`/${locale}/projects/${project.id}`)
+  redirect(`/projects/${project.id}`)
 }
 
 export async function updateProject(projectId: string, prevState: any, formData: FormData) {
@@ -72,7 +72,7 @@ export async function updateProject(projectId: string, prevState: any, formData:
     .from('projects')
     .select('owner_id')
     .eq('id', projectId)
-    .single()
+    .maybeSingle()
 
   if (!project || project.owner_id !== user.id) {
     return { error: 'Not authorized' }
@@ -113,7 +113,7 @@ export async function deleteProject(projectId: string, locale: string = 'en') {
     .from('projects')
     .select('owner_id')
     .eq('id', projectId)
-    .single()
+    .maybeSingle()
 
   if (!project || project.owner_id !== user.id) {
     return { error: 'Not authorized' }
@@ -129,5 +129,5 @@ export async function deleteProject(projectId: string, locale: string = 'en') {
   }
 
   revalidatePath(`/${locale}/projects`)
-  redirect(`/${locale}/projects`)
+  redirect(`/projects`)
 }

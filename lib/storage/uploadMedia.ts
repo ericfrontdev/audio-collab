@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/client'
 
+interface SupabaseError {
+  message: string;
+}
+
 export async function uploadMediaToStorage(
   file: File,
   userId: string,
@@ -43,10 +47,11 @@ export async function uploadMediaToStorage(
     } = supabase.storage.from('posts').getPublicUrl(uploadData.path)
 
     return { url: publicUrl, error: null }
-  } catch (error: any) {
-    console.error(`Error uploading ${mediaType}:`, error)
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error(`Error uploading ${mediaType}:`, err)
     if (onProgress) onProgress(0)
-    return { url: null, error: error.message || `Failed to upload ${mediaType}` }
+    return { url: null, error: err.message || `Failed to upload ${mediaType}` }
   }
 }
 

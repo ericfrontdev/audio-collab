@@ -11,7 +11,7 @@ export async function isAdmin(): Promise<boolean> {
     .from('profiles')
     .select('role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   return profile?.role === 'admin'
 }
@@ -37,7 +37,7 @@ export async function getUserRole(): Promise<'user' | 'admin' | null> {
     .from('profiles')
     .select('role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   return profile?.role || 'user'
 }

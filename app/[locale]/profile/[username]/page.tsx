@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Music, Link as LinkIcon, Instagram, Youtube, Users } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { AppLayout } from '@/components/layouts/AppLayout';
 
 export default async function ProfilePage({
@@ -21,7 +21,7 @@ export default async function ProfilePage({
     .from('profiles')
     .select('*')
     .eq('username', username.toLowerCase())
-    .single();
+    .maybeSingle();
 
   if (error || !profile) {
     notFound();
@@ -46,13 +46,25 @@ export default async function ProfilePage({
     .limit(6); // Show first 6 projects
 
   // Fetch user's clubs
+  interface ClubInfo {
+    id: string;
+    name: string;
+    slug: string;
+    genre: string | null;
+    avatar_url: string | null;
+  }
+
+  interface UserClub extends ClubInfo {
+    joined_at: string;
+  }
+
   const { data: clubMemberships } = await supabase
     .from('club_members')
     .select('club_id, joined_at')
     .eq('user_id', profile.id)
     .order('joined_at', { ascending: false });
 
-  let userClubs: any[] = [];
+  let userClubs: UserClub[] = [];
   if (clubMemberships && clubMemberships.length > 0) {
     const clubIds = clubMemberships.map(m => m.club_id);
     const { data: clubs } = await supabase
@@ -65,7 +77,7 @@ export default async function ProfilePage({
       return {
         ...club,
         joined_at: m.joined_at,
-      };
+      } as UserClub;
     }).filter(c => c.id); // Remove any nulls
   }
 

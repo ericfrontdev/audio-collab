@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { AppLayout } from '@/components/layouts/AppLayout';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Users, Music, FolderOpen, UserPlus } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +24,7 @@ export default async function AdminDashboard() {
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   console.log('Admin check:', { userId: user.id, profile, profileError, is_admin: profile?.is_admin });
 
@@ -41,12 +41,27 @@ export default async function AdminDashboard() {
   console.log('Admin check passed! Loading dashboard...');
 
   // Temporarily skip queries to isolate the issue
+  interface User {
+    id: string;
+    username: string;
+    email: string;
+    created_at: string;
+  }
+
+  interface Club {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    created_at: string;
+  }
+
   const totalUsers = 0;
   const totalProjects = 0;
   const totalClubs = 0;
   const totalMemberships = 0;
-  const recentUsers: any[] = [];
-  const clubs: any[] = [];
+  const recentUsers: User[] = [];
+  const clubs: Club[] = [];
 
   console.log('About to render JSX...');
 

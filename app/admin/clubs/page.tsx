@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { AppLayout } from '@/components/layouts/AppLayout';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Pencil, Trash2, Users } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +23,7 @@ export default async function AdminClubsPage() {
     .from('profiles')
     .select('is_admin')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.is_admin) {
     redirect('/');

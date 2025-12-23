@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { Link, useRouter } from '@/i18n/routing';
 import { Music2, FolderOpen, PlusCircle, Settings } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 
 interface QuickActionsProps {
@@ -75,14 +74,20 @@ export function QuickActions({ clubId, isMember }: QuickActionsProps = {}) {
 
           if ('onClick' in action) {
             return (
-              <div key={action.name} onClick={action.onClick} className="cursor-pointer">
+              <button
+                key={action.name}
+                type="button"
+                onClick={action.onClick}
+                className="text-left"
+                aria-label={action.name}
+              >
                 {content}
-              </div>
+              </button>
             );
           }
 
           return (
-            <Link key={action.name} href={action.href}>
+            <Link key={action.name} href={action.href} aria-label={action.name}>
               {content}
             </Link>
           );

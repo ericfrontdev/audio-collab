@@ -41,7 +41,7 @@ export async function createTrack(
       .from('projects')
       .select('id, owner_id, club_id')
       .eq('id', projectId)
-      .single();
+      .maybeSingle();
 
     if (!project) {
       return { success: false, error: 'Project not found' };
@@ -57,7 +57,7 @@ export async function createTrack(
         .select('id')
         .eq('club_id', project.club_id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       isMember = !!clubMembership;
     }
@@ -88,9 +88,10 @@ export async function createTrack(
 
     revalidatePath(`/[locale]/projects/${projectId}/studio`);
     return { success: true, track };
-  } catch (error: any) {
-    console.error('Error creating track:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error creating track:', err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -116,16 +117,17 @@ export async function updateTrack(
       .from('project_tracks')
       .select('project_id')
       .eq('id', trackId)
-      .single();
+      .maybeSingle();
 
     if (track) {
       revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
     }
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Error updating track:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error updating track:', err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -143,7 +145,7 @@ export async function deleteTrack(
       .from('project_tracks')
       .select('project_id')
       .eq('id', trackId)
-      .single();
+      .maybeSingle();
 
     if (!track) {
       return { success: false, error: 'Track not found' };
@@ -186,9 +188,10 @@ export async function deleteTrack(
 
     revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
     return { success: true };
-  } catch (error: any) {
-    console.error('Error deleting track:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error deleting track:', err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -219,10 +222,17 @@ async function extractWaveformData(audioBuffer: ArrayBuffer): Promise<number[]> 
 /**
  * Upload audio file to storage and create take record
  */
+interface SupabaseError {
+  code?: string;
+  details?: string;
+  hint?: string;
+  message: string;
+}
+
 export async function uploadTake(
   trackId: string,
   formData: FormData
-): Promise<{ success: boolean; take?: ProjectTake; error?: string; errorDetails?: any }> {
+): Promise<{ success: boolean; take?: ProjectTake; error?: string; errorDetails?: SupabaseError }> {
   try {
     const supabase = await createClient();
 
@@ -237,7 +247,7 @@ export async function uploadTake(
       .from('project_tracks')
       .select('project_id')
       .eq('id', trackId)
-      .single();
+      .maybeSingle();
 
     if (!track) {
       return { success: false, error: 'Track not found' };
@@ -248,7 +258,7 @@ export async function uploadTake(
       .from('projects')
       .select('id, owner_id, club_id')
       .eq('id', track.project_id)
-      .single();
+      .maybeSingle();
 
     if (!project) {
       return { success: false, error: 'Project not found' };
@@ -264,7 +274,7 @@ export async function uploadTake(
         .select('id')
         .eq('club_id', project.club_id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       isMember = !!clubMembership;
     }
@@ -349,16 +359,17 @@ export async function uploadTake(
 
     revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
     return { success: true, take };
-  } catch (error: any) {
-    console.error('Error uploading take:', error);
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error uploading take:', err);
     return {
       success: false,
-      error: error.message,
+      error: err.message,
       errorDetails: {
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-        message: error.message,
+        code: err.code,
+        details: err.details,
+        hint: err.hint,
+        message: err.message,
       }
     };
   }
@@ -386,17 +397,18 @@ export async function setActiveTake(
       .from('project_takes')
       .select('track_id, project_tracks(project_id)')
       .eq('id', takeId)
-      .single();
+      .maybeSingle();
 
     if (take && take.project_tracks) {
-      const projectId = (take.project_tracks as any).project_id;
-      revalidatePath(`/[locale]/projects/${projectId}/studio`);
+      const projectTracks = take.project_tracks as { project_id: string };
+      revalidatePath(`/[locale]/projects/${projectTracks.project_id}/studio`);
     }
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Error setting active take:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error setting active take:', err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -414,7 +426,7 @@ export async function deleteTake(
       .from('project_takes')
       .select('track_id, audio_url, project_tracks(project_id)')
       .eq('id', takeId)
-      .single();
+      .maybeSingle();
 
     if (!take) {
       return { success: false, error: 'Take not found' };
@@ -447,14 +459,15 @@ export async function deleteTake(
     if (error) throw error;
 
     if (take.project_tracks) {
-      const projectId = (take.project_tracks as any).project_id;
-      revalidatePath(`/[locale]/projects/${projectId}/studio`);
+      const projectTracks = take.project_tracks as { project_id: string };
+      revalidatePath(`/[locale]/projects/${projectTracks.project_id}/studio`);
     }
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Error deleting take:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error deleting take:', err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -498,7 +511,7 @@ export async function addTrackComment(
       .from('profiles')
       .select('id, username, display_name, avatar_url')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     return {
       success: true,
@@ -507,9 +520,10 @@ export async function addTrackComment(
         profile: profile || null,
       }
     };
-  } catch (error: any) {
-    console.error('Error adding comment:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error adding comment:', err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -527,7 +541,7 @@ export async function deleteComment(
       .from('project_track_comments')
       .select('track_id, project_tracks(project_id)')
       .eq('id', commentId)
-      .single();
+      .maybeSingle();
 
     const { error } = await supabase
       .from('project_track_comments')
@@ -537,14 +551,15 @@ export async function deleteComment(
     if (error) throw error;
 
     if (comment && comment.project_tracks) {
-      const projectId = (comment.project_tracks as any).project_id;
-      revalidatePath(`/[locale]/projects/${projectId}/studio`);
+      const projectTracks = comment.project_tracks as { project_id: string };
+      revalidatePath(`/[locale]/projects/${projectTracks.project_id}/studio`);
     }
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Error deleting comment:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error deleting comment:', err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -576,16 +591,17 @@ export async function updateMixerSettings(
       .from('project_tracks')
       .select('project_id')
       .eq('id', trackId)
-      .single();
+      .maybeSingle();
 
     if (track) {
       revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
     }
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Error updating mixer settings:', error);
-    return { success: false, error: error.message };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error updating mixer settings:', err);
+    return { success: false, error: err.message };
   }
 }
 
@@ -662,8 +678,9 @@ export async function getProjectStudioData(projectId: string) {
     }));
 
     return { success: true, tracks: tracksWithDetails };
-  } catch (error: any) {
-    console.error('Error fetching studio data:', error);
-    return { success: false, error: error.message, tracks: [] };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error fetching studio data:', err);
+    return { success: false, error: err.message, tracks: [] };
   }
 }

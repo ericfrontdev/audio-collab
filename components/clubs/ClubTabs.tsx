@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { MessageCircle, Music, Users as UsersIcon, Info, CheckCircle2, Calendar, PlusCircle, Folder } from 'lucide-react';
 import type { Club } from '@/types/club';
 import type { Project } from '@/types/project';

@@ -13,7 +13,7 @@ import {
   ArrowLeft,
   Trash2,
 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/routing'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { UploadTrackModal } from './UploadTrackModal'
@@ -33,10 +33,56 @@ interface StudioViewProps {
 }
 
 // Extended track type with comments and takes
+interface TakeWithUploader {
+  id: string;
+  track_id: string;
+  audio_url: string;
+  duration: number;
+  waveform_data: number[] | null;
+  file_size: number | null;
+  file_format: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  uploader?: {
+    id: string;
+    username: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
+interface CommentWithProfile {
+  id: string;
+  track_id: string;
+  user_id: string;
+  timestamp: number;
+  text: string;
+  created_at: string;
+  updated_at: string;
+  profile?: {
+    id: string;
+    username: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+}
+
+interface MixerSettings {
+  id: string;
+  track_id: string;
+  volume: number;
+  pan: number;
+  solo: boolean;
+  mute: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 interface TrackWithDetails extends ProjectTrack {
-  takes?: any[]
-  comments?: any[]
-  mixer_settings?: any
+  takes?: TakeWithUploader[];
+  comments?: CommentWithProfile[];
+  mixer_settings?: MixerSettings | null;
 }
 
 export function StudioView({ projectId }: StudioViewProps) {
@@ -104,7 +150,10 @@ export function StudioView({ projectId }: StudioViewProps) {
       // Create a silent audio context and resume it
       // This unlocks audio playback on mobile browsers
       try {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+        type WindowWithWebkit = typeof window & {
+          webkitAudioContext?: typeof AudioContext;
+        };
+        const AudioContext = window.AudioContext || (window as WindowWithWebkit).webkitAudioContext
         if (AudioContext) {
           const ctx = new AudioContext()
           if (ctx.state === 'suspended') {
@@ -136,7 +185,7 @@ export function StudioView({ projectId }: StudioViewProps) {
     setIsLoading(true)
     const result = await getProjectStudioData(projectId)
     if (result.success && result.tracks) {
-      setTracks(result.tracks as any)
+      setTracks(result.tracks as TrackWithDetails[])
       if (result.tracks.length > 0 && !selectedTrackId) {
         setSelectedTrackId(result.tracks[0].id)
       }
@@ -159,7 +208,7 @@ export function StudioView({ projectId }: StudioViewProps) {
           .from('profiles')
           .select('avatar_url')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
         setCurrentUser(profile)
       }
     }
@@ -715,9 +764,9 @@ export function StudioView({ projectId }: StudioViewProps) {
                         </div>
                         {(() => {
                           const activeTake =
-                            (track as any).takes?.find(
-                              (t: any) => t.is_active
-                            ) || (track as any).takes?.[0]
+                            track.takes?.find(
+                              (t) => t.is_active
+                            ) || track.takes?.[0]
                           const uploader = activeTake?.uploader
                           if (uploader) {
                             return (
@@ -898,8 +947,8 @@ export function StudioView({ projectId }: StudioViewProps) {
                 <div className="py-4 space-y-3">
                   {tracks.map((track) => {
                     const activeTake =
-                      (track as any).takes?.find((t: any) => t.is_active) ||
-                      (track as any).takes?.[0]
+                      track.takes?.find((t) => t.is_active) ||
+                      track.takes?.[0]
 
                     return (
                       <div
@@ -956,7 +1005,7 @@ export function StudioView({ projectId }: StudioViewProps) {
                               />
                               {/* Comment bubbles */}
                               {maxDuration > 0 &&
-                                (track as any).comments?.map((comment: any) => (
+                                track.comments?.map((comment) => (
                                   <div
                                     key={comment.id}
                                     className="absolute z-20 group"

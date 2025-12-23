@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { redirect } from '@/i18n/routing'
 import { revalidatePath } from 'next/cache'
 
 export async function createClub(prevState: any, formData: FormData) {
@@ -18,7 +18,7 @@ export async function createClub(prevState: any, formData: FormData) {
     .from('profiles')
     .select('role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (profile?.role !== 'admin') {
     return { error: 'Unauthorized: Admin access required' }
@@ -43,7 +43,7 @@ export async function createClub(prevState: any, formData: FormData) {
 
   revalidatePath(`/${locale}/admin/clubs`)
   revalidatePath(`/${locale}/clubs`)
-  redirect(`/${locale}/admin/clubs`)
+  redirect(`/admin/clubs`)
 }
 
 export async function joinClub(clubId: string, locale: string) {
@@ -51,7 +51,7 @@ export async function joinClub(clubId: string, locale: string) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/${locale}/auth/login`)
+    redirect(`/auth/login`)
   }
 
   // Check if already a member
@@ -60,7 +60,7 @@ export async function joinClub(clubId: string, locale: string) {
     .select('id')
     .eq('club_id', clubId)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (existingMember) {
     return { error: 'Already a member' }
@@ -87,7 +87,7 @@ export async function leaveClub(clubId: string, locale: string) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/${locale}/auth/login`)
+    redirect(`/auth/login`)
   }
 
   const { error } = await supabase
@@ -109,7 +109,7 @@ export async function addProjectToClub(clubId: string, projectId: string, locale
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/${locale}/auth/login`)
+    redirect(`/auth/login`)
   }
 
   // Check if user is a member
@@ -118,7 +118,7 @@ export async function addProjectToClub(clubId: string, projectId: string, locale
     .select('id')
     .eq('club_id', clubId)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!member) {
     return { error: 'You must be a member to add projects' }
@@ -147,7 +147,7 @@ export async function createDiscussion(prevState: any, formData: FormData) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/${locale}/auth/login`)
+    redirect(`/auth/login`)
   }
 
   // Get club by slug
@@ -155,7 +155,7 @@ export async function createDiscussion(prevState: any, formData: FormData) {
     .from('clubs')
     .select('id')
     .eq('slug', slug)
-    .single()
+    .maybeSingle()
 
   if (!club) {
     return { error: 'Club not found' }
@@ -167,7 +167,7 @@ export async function createDiscussion(prevState: any, formData: FormData) {
     .select('id')
     .eq('club_id', club.id)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!member) {
     return { error: 'You must be a member to create discussions' }
@@ -189,7 +189,7 @@ export async function createDiscussion(prevState: any, formData: FormData) {
   }
 
   revalidatePath(`/${locale}/clubs/${slug}`)
-  redirect(`/${locale}/clubs/${slug}?tab=discussions`)
+  redirect(`/clubs/${slug}?tab=discussions`)
 }
 
 export async function replyToDiscussion(prevState: any, formData: FormData) {
@@ -200,7 +200,7 @@ export async function replyToDiscussion(prevState: any, formData: FormData) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/${locale}/auth/login`)
+    redirect(`/auth/login`)
   }
 
   // Get thread and club info
@@ -208,7 +208,7 @@ export async function replyToDiscussion(prevState: any, formData: FormData) {
     .from('club_threads')
     .select('club_id')
     .eq('id', threadId)
-    .single()
+    .maybeSingle()
 
   if (!thread) {
     return { error: 'Discussion not found' }
@@ -220,7 +220,7 @@ export async function replyToDiscussion(prevState: any, formData: FormData) {
     .select('id')
     .eq('club_id', thread.club_id)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!member) {
     return { error: 'You must be a member to reply' }
@@ -241,7 +241,7 @@ export async function replyToDiscussion(prevState: any, formData: FormData) {
   }
 
   revalidatePath(`/${locale}/clubs/${clubSlug}/discussions/${threadId}`)
-  redirect(`/${locale}/clubs/${clubSlug}/discussions/${threadId}`)
+  redirect(`/clubs/${clubSlug}/discussions/${threadId}`)
 }
 
 export async function participateInChallenge(challengeId: string, clubId: string, locale: string) {
@@ -249,7 +249,7 @@ export async function participateInChallenge(challengeId: string, clubId: string
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/${locale}/auth/login`)
+    redirect(`/auth/login`)
   }
 
   // Check if user is a member of the club
@@ -258,7 +258,7 @@ export async function participateInChallenge(challengeId: string, clubId: string
     .select('id')
     .eq('club_id', clubId)
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!member) {
     return { error: 'You must be a member of the club to participate' }
@@ -271,7 +271,7 @@ export async function participateInChallenge(challengeId: string, clubId: string
     .eq('kind', 'challenge')
     .eq('challenge_id', challengeId)
     .eq('owner_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (existingEntry) {
     return { error: 'You have already participated in this challenge', projectId: existingEntry.id }
@@ -282,7 +282,7 @@ export async function participateInChallenge(challengeId: string, clubId: string
     .from('club_challenges')
     .select('title')
     .eq('id', challengeId)
-    .single()
+    .maybeSingle()
 
   // Create the challenge project
   const { data: project, error } = await supabase

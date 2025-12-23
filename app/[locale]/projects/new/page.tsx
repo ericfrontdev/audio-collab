@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { NewProjectForm } from '@/components/projects/NewProjectForm';
@@ -30,7 +30,7 @@ export default async function NewProjectPage({
     .from('clubs')
     .select('*')
     .eq('id', params.club)
-    .single();
+    .maybeSingle();
 
   if (clubError || !club) {
     redirect('/clubs');
@@ -42,7 +42,7 @@ export default async function NewProjectPage({
     .select('id')
     .eq('club_id', club.id)
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!membership) {
     redirect(`/clubs/${club.slug}`);

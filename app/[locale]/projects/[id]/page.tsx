@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect, notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 export default async function ProjectDetailPage({
   params,
@@ -15,7 +15,7 @@ export default async function ProjectDetailPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/${locale}/auth/login`);
+    redirect(`/auth/login`);
   }
 
   // Verify project exists
@@ -23,12 +23,12 @@ export default async function ProjectDetailPage({
     .from('projects')
     .select('id')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error || !project) {
     notFound();
   }
 
-  // Redirect to studio
+  // Redirect to studio (using Next.js redirect with locale)
   redirect(`/${locale}/projects/${id}/studio`);
 }

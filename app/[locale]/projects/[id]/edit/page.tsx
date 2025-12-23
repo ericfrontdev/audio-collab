@@ -3,8 +3,8 @@
 import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { updateProject } from '@/app/actions/projects'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useParams } from 'next/navigation'
+import { Link, useRouter } from '@/i18n/routing'
 import { createClient } from '@/lib/supabase/client'
 
 export default function EditProjectPage() {
@@ -30,7 +30,7 @@ export default function EditProjectPage() {
         .from('projects')
         .select('*')
         .eq('id', projectId)
-        .single()
+        .maybeSingle()
 
       if (fetchError) {
         setError(fetchError.message)
@@ -45,9 +45,9 @@ export default function EditProjectPage() {
 
   useEffect(() => {
     if (state?.success) {
-      router.push(`/${locale}/projects/${projectId}`)
+      router.push(`/projects/${projectId}`)
     }
-  }, [state, locale, projectId, router])
+  }, [state, projectId, router])
 
   if (loading) {
     return (
@@ -83,7 +83,7 @@ export default function EditProjectPage() {
                 {t('title')}
               </h1>
               <Link
-                href={`/${locale}/projects/${projectId}`}
+                href={`/projects/${projectId}`}
                 className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               >
                 {tCreate('cancel')}
@@ -215,7 +215,7 @@ export default function EditProjectPage() {
 
               <div className="flex justify-end space-x-3">
                 <Link
-                  href={`/${locale}/projects/${projectId}`}
+                  href={`/projects/${projectId}`}
                   className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
                 >
                   {tCreate('cancel')}

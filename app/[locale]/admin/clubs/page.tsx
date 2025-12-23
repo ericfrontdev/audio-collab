@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth'
 import { getTranslations } from 'next-intl/server'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
+import { redirect } from '@/i18n/routing'
+import { Link } from '@/i18n/routing'
 
 export default async function AdminClubsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -18,6 +18,21 @@ export default async function AdminClubsPage({ params }: { params: Promise<{ loc
     `)
     .order('name')
 
+  // Batch fetch project counts for all clubs
+  let projectCounts: Map<string, number> = new Map()
+  if (clubs && clubs.length > 0) {
+    const clubIds = clubs.map(c => c.id)
+    const { data: projects } = await supabase
+      .from('projects')
+      .select('club_id')
+      .in('club_id', clubIds)
+
+    // Count projects per club
+    projects?.forEach(project => {
+      projectCounts.set(project.club_id, (projectCounts.get(project.club_id) || 0) + 1)
+    })
+  }
+
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,7 +42,7 @@ export default async function AdminClubsPage({ params }: { params: Promise<{ loc
             <p className="mt-2 text-muted-foreground">{t('subtitle')}</p>
           </div>
           <Link
-            href={`/${locale}/admin/clubs/new`}
+            href={`/admin/clubs/new`}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90"
           >
             <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,17 +116,17 @@ export default async function AdminClubsPage({ params }: { params: Promise<{ loc
                       {club.club_members?.[0]?.count || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                      -
+                      {projectCounts.get(club.id) || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                       <Link
-                        href={`/${locale}/clubs/${club.slug}`}
+                        href={`/clubs/${club.slug}`}
                         className="text-primary hover:text-primary/90"
                       >
                         {t('table.view')}
                       </Link>
                       <Link
-                        href={`/${locale}/admin/clubs/${club.id}/edit`}
+                        href={`/admin/clubs/${club.id}/edit`}
                         className="text-primary hover:text-primary/90"
                       >
                         {t('table.edit')}

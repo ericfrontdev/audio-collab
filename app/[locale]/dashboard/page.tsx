@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/server';
 import { logout } from '@/app/actions/auth';
 
@@ -13,7 +13,7 @@ export default async function DashboardPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/${locale}/auth/login`);
+    redirect(`/auth/login`);
   }
 
   // Get user profile
@@ -21,7 +21,7 @@ export default async function DashboardPage({ params }: Props) {
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   const handleLogout = logout.bind(null, locale);
 

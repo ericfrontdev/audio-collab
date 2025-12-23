@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
@@ -134,9 +134,10 @@ export function CreateClubForm() {
       toast.success('Club created successfully!');
       router.push('/admin/clubs');
       router.refresh();
-    } catch (error: any) {
-      console.error('Error creating club:', error);
-      toast.error(error.message || 'Failed to create club');
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Error creating club:', err);
+      toast.error(err.message || 'Failed to create club');
     } finally {
       setIsLoading(false);
     }

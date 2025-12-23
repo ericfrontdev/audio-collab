@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { CreateClubForm } from '@/components/admin/CreateClubForm';
@@ -20,7 +20,7 @@ export default async function NewClubPage() {
     .from('profiles')
     .select('is_admin')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.is_admin) {
     redirect('/');

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { AppLayout } from '@/components/layouts/AppLayout';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { Music, Users, Calendar, Folder, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -43,7 +43,7 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
                 Manage and collaborate on your music projects
               </p>
             </div>
-            <Link href={`/${locale}/projects/new`}>
+            <Link href={`/projects/new`}>
               <Button className="flex items-center gap-2">
                 <PlusCircle className="w-4 h-4" />
                 New Project
@@ -63,8 +63,7 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
           {projects && projects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map((project) => (
-                <Link key={project.id} href={`/${locale}/projects/${project.id}`}>
-                  <div className="group rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden hover:border-primary/50 transition-all duration-300">
+                <div key={project.id} className="group rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden hover:border-primary/50 transition-all duration-300">
                     {/* Project Cover Image */}
                     <div className="relative h-40 bg-gradient-to-br from-primary/20 to-purple-600/20">
                       {project.cover_url ? (
@@ -105,9 +104,11 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
 
                     {/* Project Info */}
                     <div className="p-4">
-                      <h3 className="text-base font-bold text-white mb-1 group-hover:text-primary transition-colors line-clamp-1">
-                        {project.title}
-                      </h3>
+                      <Link href={`/projects/${project.id}`} prefetch={false}>
+                        <h3 className="text-base font-bold text-white mb-1 hover:text-primary transition-colors line-clamp-1 cursor-pointer">
+                          {project.title}
+                        </h3>
+                      </Link>
 
                       {project.description && (
                         <p className="text-sm text-gray-400 mb-3 line-clamp-2">
@@ -125,8 +126,7 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
+                </div>
               ))}
             </div>
           ) : (
@@ -136,7 +136,7 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
               <p className="text-gray-400 mb-6 text-lg">
                 Create your first project to start collaborating
               </p>
-              <Link href={`/${locale}/projects/new`}>
+              <Link href={`/projects/new`}>
                 <Button className="flex items-center gap-2 mx-auto">
                   <PlusCircle className="w-4 h-4" />
                   Create Your First Project

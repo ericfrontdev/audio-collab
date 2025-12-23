@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { useTranslations } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
-import Link from 'next/link'
-import { redirect } from 'next/navigation'
+import { Link } from '@/i18n/routing'
+import { redirect } from '@/i18n/routing'
 
 export default async function ProjectsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -13,7 +13,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/${locale}/auth/login`)
+    redirect(`/auth/login`)
   }
 
   // Fetch user's personal projects only
@@ -62,7 +62,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
             </h1>
           </div>
           <Link
-            href={`/${locale}/projects/new`}
+            href={`/projects/new`}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
           >
             {t('newProject')}
@@ -96,7 +96,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
             </h3>
             <div className="mt-6">
               <Link
-                href={`/${locale}/projects/new`}
+                href={`/projects/new`}
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 {t('newProject')}
@@ -108,7 +108,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
             {projects?.map((project) => (
               <Link
                 key={project.id}
-                href={`/${locale}/projects/${project.id}`}
+                href={`/projects/${project.id}`}
                 className="block"
               >
                 <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200">
@@ -195,7 +195,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
               {challengeProjects.map((project: any) => (
                 <Link
                   key={project.id}
-                  href={`/${locale}/projects/${project.id}`}
+                  href={`/projects/${project.id}`}
                   className="block"
                 >
                   <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow duration-200 border-l-4 border-purple-500">
@@ -220,7 +220,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
                                 in {project.club_challenges.clubs.name}
                               </span>
                               <Link
-                                href={`/${locale}/clubs/${project.club_challenges.clubs.slug}/challenges/${project.club_challenges.id}`}
+                                href={`/clubs/${project.club_challenges.clubs.slug}/challenges/${project.club_challenges.id}`}
                                 className="text-xs text-primary hover:text-primary/90"
                                 onClick={(e) => e.stopPropagation()}
                               >

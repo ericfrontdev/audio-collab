@@ -9,8 +9,8 @@ import { toggleLikePost, updatePost, deletePost } from '@/app/actions/feed'
 import { uploadMediaToStorage, deleteMediaFromStorage } from '@/lib/storage/uploadMedia'
 import { toast } from 'react-toastify'
 import type { Post } from '@/lib/types/feed'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { Link } from '@/i18n/routing'
+import { useRouter } from '@/i18n/routing'
 import { createClient } from '@/lib/supabase/client'
 
 interface FeedPostProps {

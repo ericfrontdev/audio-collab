@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/routing'
 import { deleteProject } from '@/app/actions/projects'
 
 interface ProjectHeaderProps {
@@ -108,7 +108,7 @@ export default function ProjectHeader({ project, isOwner, canEdit, locale }: Pro
               {/* Studio button (available to all project members) */}
               {canEdit && (
                 <Link
-                  href={`/${locale}/projects/${project.id}/studio`}
+                  href={`/projects/${project.id}/studio`}
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                 >
                   <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,7 +122,7 @@ export default function ProjectHeader({ project, isOwner, canEdit, locale }: Pro
               {isOwner && (
                 <>
                   <Link
-                    href={`/${locale}/projects/${project.id}/edit`}
+                    href={`/projects/${project.id}/edit`}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
                   >
                     <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -154,7 +154,7 @@ export default function ProjectHeader({ project, isOwner, canEdit, locale }: Pro
           {/* Back Link */}
           <div className="mt-6">
             <Link
-              href={`/${locale}/projects`}
+              href={`/projects`}
               className="inline-flex items-center text-sm text-primary hover:text-primary/90"
             >
               <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

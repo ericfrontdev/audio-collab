@@ -11,7 +11,7 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
       .from('profiles')
       .select('username')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
     username = profile?.username;
   }
 

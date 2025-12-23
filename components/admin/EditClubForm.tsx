@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
@@ -127,9 +127,10 @@ export function EditClubForm({ club }: { club: Club }) {
       toast.success('Club updated successfully!');
       router.push('/admin/clubs');
       router.refresh();
-    } catch (error: any) {
-      console.error('Error updating club:', error);
-      toast.error(error.message || 'Failed to update club');
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Error updating club:', err);
+      toast.error(err.message || 'Failed to update club');
     } finally {
       setIsLoading(false);
     }

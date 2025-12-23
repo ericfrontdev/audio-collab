@@ -136,7 +136,15 @@ export function UploadTrackModal({
       console.log('Upload result:', uploadResult);
 
       if (!uploadResult.success) {
-        console.error('Upload failed with details:', (uploadResult as any).errorDetails);
+        interface UploadResultWithDetails {
+          errorDetails?: {
+            code?: string;
+            details?: string;
+            hint?: string;
+            message: string;
+          };
+        }
+        console.error('Upload failed with details:', (uploadResult as UploadResultWithDetails).errorDetails);
         throw new Error(uploadResult.error || 'Failed to upload audio');
       }
 
@@ -156,9 +164,10 @@ export function UploadTrackModal({
       // Call success callback and close modal
       onSuccess();
       onClose();
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast.error(error.message || 'Failed to upload audio');
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Upload error:', err);
+      toast.error(err.message || 'Failed to upload audio');
       setUploadProgress(0);
     } finally {
       setIsUploading(false);

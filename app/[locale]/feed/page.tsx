@@ -5,10 +5,15 @@ import { AppLayout } from '@/components/layouts/AppLayout'
 import { UserProfileCard } from '@/components/cards/UserProfileCard'
 import { QuickActions } from '@/components/cards/QuickActions'
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { redirect } from '@/i18n/routing'
 import { Heart } from 'lucide-react'
 
-export default async function FeedPage() {
+export default async function FeedPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}) {
+  const { locale } = await params
   const supabase = await createClient()
 
   const {
@@ -16,7 +21,7 @@ export default async function FeedPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/auth/login')
+    redirect(`/auth/login`)
   }
 
   // Get user profile
@@ -40,7 +45,11 @@ export default async function FeedPage() {
   const { data: suggestedClubs } = await supabase
     .from('clubs')
     .select('id, name, slug, image_url, genre')
-    .not('id', 'in', `(${userClubIds.join(',') || 'null'})`)
+    .not(
+      'id',
+      'in',
+      `(${userClubIds.length > 0 ? userClubIds.map((id) => `'${id}'`).join(',') : 'null'})`
+    )
     .limit(3)
 
   return (

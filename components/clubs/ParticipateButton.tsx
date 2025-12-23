@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/routing'
 import { participateInChallenge } from '@/app/actions/clubs'
 
 export default function ParticipateButton({
@@ -25,16 +25,22 @@ export default function ParticipateButton({
   async function handleParticipate() {
     setLoading(true)
     const result = await participateInChallenge(challengeId, clubId, locale)
-    if (result.projectId) {
-      router.push(`/${locale}/projects/${result.projectId}`)
-    }
     setLoading(false)
+
+    if (result.error) {
+      console.error('Error participating:', result.error)
+      return
+    }
+
+    if (result.projectId) {
+      router.push(`/projects/${result.projectId}`)
+    }
   }
 
   if (hasParticipated && userEntryId) {
     return (
       <button
-        onClick={() => router.push(`/${locale}/projects/${userEntryId}`)}
+        onClick={() => router.push(`/projects/${userEntryId}`)}
         className="px-6 py-3 border border-primary text-primary rounded-md font-medium hover:bg-primary/10"
       >
         View My Entry
