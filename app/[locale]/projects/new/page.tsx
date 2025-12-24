@@ -1,14 +1,17 @@
-import { redirect } from '@/i18n/routing';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { NewProjectForm } from '@/components/projects/NewProjectForm';
 
 export default async function NewProjectPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ club?: string }>;
 }) {
-  const params = await searchParams;
+  const { locale } = await params;
+  const searchParamsData = await searchParams;
   const supabase = await createClient();
 
   // Get current user
@@ -17,23 +20,23 @@ export default async function NewProjectPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/auth/login');
+    redirect(`/${locale}/auth/login`);
   }
 
   // If no club specified, redirect to clubs page
-  if (!params.club) {
-    redirect('/clubs');
+  if (!searchParamsData.club) {
+    redirect(`/${locale}/clubs`);
   }
 
   // Get club info
   const { data: club, error: clubError } = await supabase
     .from('clubs')
     .select('*')
-    .eq('id', params.club)
+    .eq('id', searchParamsData.club)
     .maybeSingle();
 
   if (clubError || !club) {
-    redirect('/clubs');
+    redirect(`/${locale}/clubs`);
   }
 
   // Check if user is a member of the club
@@ -45,7 +48,7 @@ export default async function NewProjectPage({
     .maybeSingle();
 
   if (!membership) {
-    redirect(`/clubs/${club.slug}`);
+    redirect(`/${locale}/clubs/${club.slug}`);
   }
 
   return (

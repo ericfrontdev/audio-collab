@@ -1,4 +1,4 @@
-import { redirect } from '@/i18n/routing';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { CreateClubForm } from '@/components/admin/CreateClubForm';

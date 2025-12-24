@@ -5,7 +5,7 @@ import { AppLayout } from '@/components/layouts/AppLayout'
 import { UserProfileCard } from '@/components/cards/UserProfileCard'
 import { QuickActions } from '@/components/cards/QuickActions'
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from '@/i18n/routing'
+import { redirect } from 'next/navigation'
 import { Heart } from 'lucide-react'
 
 export default async function FeedPage({
@@ -21,7 +21,7 @@ export default async function FeedPage({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   // Get user profile

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
-import { Link, redirect } from '@/i18n/routing'
+import { notFound, redirect } from 'next/navigation'
+import { Link } from '@/i18n/routing'
 import ParticipateButton from '@/components/clubs/ParticipateButton'
 
 export default async function ChallengePage({
@@ -15,7 +15,7 @@ export default async function ChallengePage({
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   // Fetch club

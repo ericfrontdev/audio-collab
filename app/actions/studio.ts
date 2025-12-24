@@ -400,8 +400,12 @@ export async function setActiveTake(
       .maybeSingle();
 
     if (take && take.project_tracks) {
-      const projectTracks = take.project_tracks as { project_id: string };
-      revalidatePath(`/[locale]/projects/${projectTracks.project_id}/studio`);
+      const projectTracks = Array.isArray(take.project_tracks)
+        ? take.project_tracks[0]
+        : take.project_tracks;
+      if (projectTracks && 'project_id' in projectTracks) {
+        revalidatePath(`/[locale]/projects/${projectTracks.project_id}/studio`);
+      }
     }
 
     return { success: true };
@@ -459,8 +463,12 @@ export async function deleteTake(
     if (error) throw error;
 
     if (take.project_tracks) {
-      const projectTracks = take.project_tracks as { project_id: string };
-      revalidatePath(`/[locale]/projects/${projectTracks.project_id}/studio`);
+      const projectTracks = Array.isArray(take.project_tracks)
+        ? take.project_tracks[0]
+        : take.project_tracks;
+      if (projectTracks && 'project_id' in projectTracks) {
+        revalidatePath(`/[locale]/projects/${projectTracks.project_id}/studio`);
+      }
     }
 
     return { success: true };
@@ -551,8 +559,12 @@ export async function deleteComment(
     if (error) throw error;
 
     if (comment && comment.project_tracks) {
-      const projectTracks = comment.project_tracks as { project_id: string };
-      revalidatePath(`/[locale]/projects/${projectTracks.project_id}/studio`);
+      const projectTracks = Array.isArray(comment.project_tracks)
+        ? comment.project_tracks[0]
+        : comment.project_tracks;
+      if (projectTracks && 'project_id' in projectTracks) {
+        revalidatePath(`/[locale]/projects/${projectTracks.project_id}/studio`);
+      }
     }
 
     return { success: true };

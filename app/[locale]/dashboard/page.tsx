@@ -1,4 +1,4 @@
-import { redirect } from '@/i18n/routing';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { logout } from '@/app/actions/auth';
 
@@ -13,7 +13,7 @@ export default async function DashboardPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/auth/login`);
+    redirect(`/${locale}/auth/login`);
   }
 
   // Get user profile

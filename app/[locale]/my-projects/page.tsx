@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from '@/i18n/routing';
+import { redirect } from 'next/navigation';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { Link } from '@/i18n/routing';
 import { Music, Users, Calendar, Folder, PlusCircle } from 'lucide-react';
@@ -16,7 +16,7 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/auth/login');
+    redirect(`/${locale}/auth/login`);
   }
 
   // Get user's projects

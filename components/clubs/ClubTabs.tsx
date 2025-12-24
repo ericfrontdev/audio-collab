@@ -29,7 +29,7 @@ interface ProjectWithDetails extends Project {
     username: string;
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
 }
 
 interface ClubTabsProps {
@@ -152,24 +152,26 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects }
                         )}
 
                         {/* Creator Info */}
-                        <div className="flex items-center gap-2 mb-3">
-                          {project.owner_profile.avatar_url ? (
-                            <Image
-                              src={project.owner_profile.avatar_url}
-                              alt={project.owner_profile.username}
-                              width={20}
-                              height={20}
-                              className="rounded-full"
-                            />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center">
-                              <Music className="w-3 h-3 text-zinc-600" />
-                            </div>
-                          )}
-                          <span className="text-xs text-gray-500">
-                            by {project.owner_profile.display_name || project.owner_profile.username}
-                          </span>
-                        </div>
+                        {project.owner_profile && (
+                          <div className="flex items-center gap-2 mb-3">
+                            {project.owner_profile.avatar_url ? (
+                              <Image
+                                src={project.owner_profile.avatar_url}
+                                alt={project.owner_profile.username}
+                                width={20}
+                                height={20}
+                                className="rounded-full"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center">
+                                <Music className="w-3 h-3 text-zinc-600" />
+                              </div>
+                            )}
+                            <span className="text-xs text-gray-500">
+                              by {project.owner_profile.display_name || project.owner_profile.username}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Meta Info */}
                         <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-zinc-800">

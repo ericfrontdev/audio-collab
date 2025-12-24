@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/auth'
 import { getTranslations } from 'next-intl/server'
-import { redirect } from '@/i18n/routing'
+import { redirect } from 'next/navigation'
 import { Link } from '@/i18n/routing'
 
 export default async function AdminClubsPage({ params }: { params: Promise<{ locale: string }> }) {

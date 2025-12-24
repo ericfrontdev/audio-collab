@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from '@/i18n/routing'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 export async function createProject(prevState: any, formData: FormData) {
@@ -54,7 +54,7 @@ export async function createProject(prevState: any, formData: FormData) {
   }
 
   revalidatePath(`/${locale}/projects`)
-  redirect(`/projects/${project.id}`)
+  redirect(`/${locale}/projects/${project.id}`)
 }
 
 export async function updateProject(projectId: string, prevState: any, formData: FormData) {
@@ -129,5 +129,5 @@ export async function deleteProject(projectId: string, locale: string = 'en') {
   }
 
   revalidatePath(`/${locale}/projects`)
-  redirect(`/projects`)
+  redirect(`/${locale}/projects`)
 }

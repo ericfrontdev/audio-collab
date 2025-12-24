@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from '@/i18n/routing';
+import { redirect } from 'next/navigation';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { Link } from '@/i18n/routing';
 import { Users, Music, FolderOpen, UserPlus } from 'lucide-react';
@@ -7,7 +7,8 @@ import { Users, Music, FolderOpen, UserPlus } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const supabase = await createClient();
 
   // Get current user
@@ -16,7 +17,7 @@ export default async function AdminDashboard() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/auth/login');
+    redirect(`/${locale}/auth/login`);
   }
 
   // Check if user is admin
@@ -30,12 +31,12 @@ export default async function AdminDashboard() {
 
   if (profileError) {
     console.log('Profile error:', profileError);
-    redirect('/');
+    redirect(`/${locale}/`);
   }
 
   if (!profile || profile.is_admin !== true) {
     console.log('Not admin, redirecting...', { profile });
-    redirect('/');
+    redirect(`/${locale}/`);
   }
 
   console.log('Admin check passed! Loading dashboard...');
@@ -45,6 +46,9 @@ export default async function AdminDashboard() {
     id: string;
     username: string;
     email: string;
+    display_name: string | null;
+    role: string | null;
+    is_admin: boolean | null;
     created_at: string;
   }
 
@@ -53,6 +57,7 @@ export default async function AdminDashboard() {
     name: string;
     slug: string;
     description: string | null;
+    genre: string;
     created_at: string;
   }
 

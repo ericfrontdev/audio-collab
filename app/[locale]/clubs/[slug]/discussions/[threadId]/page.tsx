@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
-import { Link, redirect } from '@/i18n/routing'
+import { notFound, redirect } from 'next/navigation'
+import { Link } from '@/i18n/routing'
 import ReplyForm from '@/components/clubs/ReplyForm'
 
 export default async function DiscussionThreadPage({
@@ -15,7 +15,7 @@ export default async function DiscussionThreadPage({
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   // Fetch club

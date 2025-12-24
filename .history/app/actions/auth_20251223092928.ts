@@ -20,7 +20,7 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  redirect(`/${locale}/feed`)
+  redirect(`/feed`)
 }
 
 export async function signup(prevState: any, formData: FormData) {
@@ -47,7 +47,7 @@ export async function signup(prevState: any, formData: FormData) {
   }
 
   revalidatePath('/', 'layout')
-  redirect(`/${locale}/onboarding`)
+  redirect(`/onboarding`)
 }
 
 export async function logout(locale: string = 'en') {
@@ -61,7 +61,7 @@ export async function logout(locale: string = 'en') {
   }
 
   revalidatePath('/', 'layout')
-  redirect(`/${locale}/`)
+  redirect(`/${locale}`)
 }
 
 export async function getUser() {

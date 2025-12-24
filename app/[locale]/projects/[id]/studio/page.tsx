@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { notFound } from 'next/navigation';
-import { redirect } from '@/i18n/routing';
+import { notFound, redirect } from 'next/navigation';
 import { StudioView } from '@/components/studio/StudioView';
 
 export default async function ProjectStudioPage({
@@ -17,7 +16,7 @@ export default async function ProjectStudioPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/auth/login`);
+    redirect(`/${locale}/auth/login`);
   }
 
   // Fetch project to verify it exists
@@ -48,7 +47,7 @@ export default async function ProjectStudioPage({
 
   if (!isMember) {
     // User doesn't have access
-    redirect(`/clubs`);
+    redirect(`/${locale}/clubs`);
   }
 
   return <StudioView projectId={id} />;

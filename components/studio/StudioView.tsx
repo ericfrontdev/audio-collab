@@ -150,8 +150,8 @@ export function StudioView({ projectId }: StudioViewProps) {
       // Create a silent audio context and resume it
       // This unlocks audio playback on mobile browsers
       try {
-        type WindowWithWebkit = typeof window & {
-          webkitAudioContext?: typeof AudioContext;
+        type WindowWithWebkit = Window & typeof globalThis & {
+          webkitAudioContext?: typeof window.AudioContext;
         };
         const AudioContext = window.AudioContext || (window as WindowWithWebkit).webkitAudioContext
         if (AudioContext) {
@@ -442,7 +442,7 @@ export function StudioView({ projectId }: StudioViewProps) {
         // Add comment to local state instead of reloading everything
         setTracks((prevTracks) =>
           prevTracks.map((track) => {
-            if (track.id === commentModal.trackId) {
+            if (track.id === commentModal.trackId && result.comment) {
               return {
                 ...track,
                 comments: [...(track.comments || []), result.comment],

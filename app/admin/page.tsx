@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from '@/i18n/routing';
+import { redirect } from 'next/navigation';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { Link } from '@/i18n/routing';
 import { Users, Music, FolderOpen, UserPlus } from 'lucide-react';
@@ -53,6 +53,7 @@ export default async function AdminDashboard() {
     name: string;
     slug: string;
     description: string | null;
+    genre: string;
     created_at: string;
   }
 

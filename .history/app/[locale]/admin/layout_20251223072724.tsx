@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { Link } from '@/i18n/routing'
+import Link from 'next/link'
 
 export default async function AdminLayout({
   children,
@@ -15,7 +15,7 @@ export default async function AdminLayout({
   try {
     await requireAdmin()
   } catch {
-    redirect(`/${locale}/`)
+    redirect(`/${locale}`)
   }
 
   return (
@@ -29,7 +29,7 @@ export default async function AdminLayout({
             </h2>
             <nav className="space-y-1">
               <Link
-                href={`/admin`}
+                href={`/${locale}/admin`}
                 className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <svg
@@ -49,7 +49,7 @@ export default async function AdminLayout({
               </Link>
 
               <Link
-                href={`/admin/clubs`}
+                href={`/${locale}/admin/clubs`}
                 className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <svg
@@ -69,7 +69,7 @@ export default async function AdminLayout({
               </Link>
 
               <Link
-                href={`/admin/users`}
+                href={`/${locale}/admin/users`}
                 className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <svg
@@ -89,7 +89,7 @@ export default async function AdminLayout({
               </Link>
 
               <Link
-                href={`/admin/projects`}
+                href={`/${locale}/admin/projects`}
                 className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <svg
@@ -111,7 +111,7 @@ export default async function AdminLayout({
 
             <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
               <Link
-                href={`/`}
+                href={`/${locale}`}
                 className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <svg

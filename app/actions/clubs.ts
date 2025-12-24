@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from '@/i18n/routing'
+import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
 export async function createClub(prevState: any, formData: FormData) {
@@ -43,7 +43,7 @@ export async function createClub(prevState: any, formData: FormData) {
 
   revalidatePath(`/${locale}/admin/clubs`)
   revalidatePath(`/${locale}/clubs`)
-  redirect(`/admin/clubs`)
+  redirect(`/${locale}/admin/clubs`)
 }
 
 export async function joinClub(clubId: string, locale: string) {
@@ -51,7 +51,7 @@ export async function joinClub(clubId: string, locale: string) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   // Check if already a member
@@ -87,7 +87,7 @@ export async function leaveClub(clubId: string, locale: string) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   const { error } = await supabase
@@ -109,7 +109,7 @@ export async function addProjectToClub(clubId: string, projectId: string, locale
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   // Check if user is a member
@@ -147,7 +147,7 @@ export async function createDiscussion(prevState: any, formData: FormData) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   // Get club by slug
@@ -189,7 +189,7 @@ export async function createDiscussion(prevState: any, formData: FormData) {
   }
 
   revalidatePath(`/${locale}/clubs/${slug}`)
-  redirect(`/clubs/${slug}?tab=discussions`)
+  redirect(`/${locale}/clubs/${slug}?tab=discussions`)
 }
 
 export async function replyToDiscussion(prevState: any, formData: FormData) {
@@ -200,7 +200,7 @@ export async function replyToDiscussion(prevState: any, formData: FormData) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   // Get thread and club info
@@ -241,7 +241,7 @@ export async function replyToDiscussion(prevState: any, formData: FormData) {
   }
 
   revalidatePath(`/${locale}/clubs/${clubSlug}/discussions/${threadId}`)
-  redirect(`/clubs/${clubSlug}/discussions/${threadId}`)
+  redirect(`/${locale}/clubs/${clubSlug}/discussions/${threadId}`)
 }
 
 export async function participateInChallenge(challengeId: string, clubId: string, locale: string) {
@@ -249,7 +249,7 @@ export async function participateInChallenge(challengeId: string, clubId: string
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   // Check if user is a member of the club

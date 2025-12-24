@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { useTranslations } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
-import { redirect } from '@/i18n/routing'
+import { redirect } from 'next/navigation'
 
 export default async function ProjectsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -13,7 +13,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/auth/login`)
+    redirect(`/${locale}/auth/login`)
   }
 
   // Fetch user's personal projects only

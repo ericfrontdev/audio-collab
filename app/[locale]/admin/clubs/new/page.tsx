@@ -1,9 +1,10 @@
-import { redirect } from '@/i18n/routing';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { CreateClubForm } from '@/components/admin/CreateClubForm';
 
-export default async function NewClubPage() {
+export default async function NewClubPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const supabase = await createClient();
 
   // Get current user
@@ -12,7 +13,7 @@ export default async function NewClubPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/auth/login');
+    redirect(`/${locale}/auth/login`);
   }
 
   // Check if user is admin
@@ -23,7 +24,7 @@ export default async function NewClubPage() {
     .maybeSingle();
 
   if (!profile?.is_admin) {
-    redirect('/');
+    redirect(`/${locale}/`);
   }
 
   return (
