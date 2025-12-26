@@ -17,11 +17,15 @@ export default function JoinLeaveButton({
   const [loading, setLoading] = useState(false)
 
   async function handleClick() {
+    console.log('🔵 Join/Leave button clicked')
     setLoading(true)
     try {
+      console.log('🔵 Calling action:', isMember ? 'leaveClub' : 'joinClub')
       const result = isMember
         ? await leaveClub(clubId, locale)
         : await joinClub(clubId, locale)
+
+      console.log('🔵 Action result:', result)
 
       if (result?.error) {
         console.error('Error:', result.error)

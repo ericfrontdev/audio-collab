@@ -20,7 +20,13 @@ export default function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleLogout = async () => {
-    await logout(locale)
+    console.log('🔵 Logout clicked')
+    try {
+      await logout(locale)
+      console.log('🔵 Logout completed')
+    } catch (error) {
+      console.error('🔵 Logout error:', error)
+    }
   }
 
   const switchLocale = (newLocale: string) => {

@@ -4,8 +4,8 @@ import Image from 'next/image';
 import { Music, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, useParams } from 'next/navigation';
+import { joinClub, leaveClub } from '@/app/actions/clubs';
 import type { Club } from '@/types/club';
 
 interface ClubHeaderProps {
@@ -19,6 +19,8 @@ export function ClubHeader({ club, memberCount, isMember, userId }: ClubHeaderPr
   const [isLoading, setIsLoading] = useState(false);
   const [currentIsMember, setCurrentIsMember] = useState(isMember);
   const router = useRouter();
+  const params = useParams();
+  const locale = params.locale as string || 'en';
 
   const handleJoinLeave = async () => {
     if (!userId) {
@@ -27,31 +29,33 @@ export function ClubHeader({ club, memberCount, isMember, userId }: ClubHeaderPr
     }
 
     setIsLoading(true);
-    const supabase = createClient();
 
-    if (currentIsMember) {
-      // Leave club
-      await supabase
-        .from('club_members')
-        .delete()
-        .eq('club_id', club.id)
-        .eq('user_id', userId);
-
-      setCurrentIsMember(false);
-    } else {
-      // Join club
-      await supabase
-        .from('club_members')
-        .insert({
-          club_id: club.id,
-          user_id: userId,
-        });
-
-      setCurrentIsMember(true);
+    try {
+      if (currentIsMember) {
+        // Leave club
+        const result = await leaveClub(club.id, locale);
+        if (result?.error) {
+          console.error('Error leaving club:', result.error);
+          alert(result.error);
+        } else {
+          setCurrentIsMember(false);
+        }
+      } else {
+        // Join club
+        const result = await joinClub(club.id, locale);
+        if (result?.error) {
+          console.error('Error joining club:', result.error);
+          alert(result.error);
+        } else {
+          setCurrentIsMember(true);
+        }
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      alert('An error occurred');
     }
 
     setIsLoading(false);
-    router.refresh();
   };
 
   return (

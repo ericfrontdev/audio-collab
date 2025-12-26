@@ -12,9 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { MUSICAL_ROLES, GENRES, type Profile } from '@/types/profile';
-import { updateProfile } from '@/app/actions/profile';
-import { createClient } from '@/lib/supabase/client';
+import { updateProfile, getCurrentProfile } from '@/app/actions/profile';
 import { Music, Upload, X } from 'lucide-react';
+import { Sidebar } from '@/components/navigation/Sidebar';
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -49,65 +49,45 @@ export default function EditProfilePage() {
 
   // Load current profile data
   useEffect(() => {
-    const supabase = createClient();
+    loadProfileData();
+  }, [router]);
 
-    // Use onAuthStateChange instead of getSession to avoid hanging
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!session?.user) {
-        router.push('/auth/login');
+  const loadProfileData = async () => {
+    try {
+      setIsLoading(true);
+
+      const result = await getCurrentProfile();
+
+      if (result.error || !result.profile) {
+        if (result.error === 'Not authenticated') {
+          router.push('/auth/login');
+          return;
+        }
+        setError(result.error || 'Failed to load profile');
+        setIsLoading(false);
         return;
       }
 
-      const user = session.user;
-      await loadProfileData(user.id);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [router]);
-
-  const loadProfileData = async (userId: string) => {
-    try {
-      const supabase = createClient();
-      const user = { id: userId };
-
-        console.log('🔵 User ID:', user.id);
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        console.log('🔵 Profile data:', profileData);
-        console.log('🔵 Profile error:', profileError);
-
-        if (profileError || !profileData) {
-          console.error('🔵 Failed to load profile. Error:', profileError, 'Data:', profileData);
-          setError('Failed to load profile');
-          setIsLoading(false);
-          return;
-        }
-
-        setProfile(profileData);
-        setDisplayName(profileData.display_name || '');
-        setBio(profileData.bio || '');
-        setSelectedRoles(profileData.musical_roles || []);
-        setSelectedGenres(profileData.genres || []);
-        setSoundcloudUrl(profileData.soundcloud_url || '');
-        setInstagramUrl(profileData.instagram_url || '');
-        setTwitterUrl(profileData.twitter_url || '');
-        setYoutubeUrl(profileData.youtube_url || '');
-        setWebsiteUrl(profileData.website_url || '');
-        setIsPublic(profileData.is_public);
-        setAvatarPreview(profileData.avatar_url || '');
-        setBannerPreview(profileData.banner_url || '');
-        setIsLoading(false);
-      } catch (err) {
-        console.error('🔵 Error loading profile:', err);
-        setError('An unexpected error occurred');
-        setIsLoading(false);
-      }
+      const profileData = result.profile;
+      setProfile(profileData);
+      setDisplayName(profileData.display_name || '');
+      setBio(profileData.bio || '');
+      setSelectedRoles(profileData.musical_roles || []);
+      setSelectedGenres(profileData.genres || []);
+      setSoundcloudUrl(profileData.soundcloud_url || '');
+      setInstagramUrl(profileData.instagram_url || '');
+      setTwitterUrl(profileData.twitter_url || '');
+      setYoutubeUrl(profileData.youtube_url || '');
+      setWebsiteUrl(profileData.website_url || '');
+      setIsPublic(profileData.is_public);
+      setAvatarPreview(profileData.avatar_url || '');
+      setBannerPreview(profileData.banner_url || '');
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Error loading profile:', err);
+      setError('An unexpected error occurred');
+      setIsLoading(false);
+    }
   };
 
   const toggleRole = (role: string) => {
@@ -218,23 +198,36 @@ export default function EditProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="min-h-screen bg-black">
+        <Sidebar username={profile?.username} />
+        <main className="lg:ml-64">
+          <div className="flex min-h-screen items-center justify-center">
+            <div className="text-muted-foreground">Loading...</div>
+          </div>
+        </main>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-destructive">Profile not found</div>
+      <div className="min-h-screen bg-black">
+        <Sidebar />
+        <main className="lg:ml-64">
+          <div className="flex min-h-screen items-center justify-center">
+            <div className="text-destructive">Profile not found</div>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-black">
+      <Sidebar username={profile.username} />
+      <main className="lg:ml-64">
+        <div className="py-8">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">{t('title')}</CardTitle>
@@ -531,7 +524,9 @@ export default function EditProfilePage() {
             </form>
           </CardContent>
         </Card>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

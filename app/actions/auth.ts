@@ -61,7 +61,7 @@ export async function logout(locale: string = 'en') {
   }
 
   revalidatePath('/', 'layout')
-  redirect(`/${locale}/`)
+  redirect(`/${locale}/auth/login`)
 }
 
 export async function getUser() {

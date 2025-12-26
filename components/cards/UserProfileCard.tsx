@@ -2,8 +2,9 @@
 
 import Image from 'next/image'
 import { Link } from '@/i18n/routing'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from '@/i18n/routing'
+import { useParams } from 'next/navigation'
+import { logout } from '@/app/actions/auth'
 import {
   Music,
   CheckCircle2,
@@ -29,17 +30,20 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
   const followingCount = 482
   const followersCount = 12500
   const router = useRouter()
+  const params = useParams()
+  const locale = params.locale as string
 
   const handleCardClick = () => {
     router.push(`/profile/${profile.username}`)
   }
 
-  const supabase = createClient()
-
   const handleLogout = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    await supabase.auth.signOut()
-    router.push('/auth/login') // ou router.refresh()
+    try {
+      await logout(locale)
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
   }
 
   return (

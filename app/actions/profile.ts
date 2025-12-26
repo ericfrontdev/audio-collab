@@ -3,6 +3,35 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+export async function getCurrentProfile() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (!user || authError) {
+    return { error: 'Not authenticated', profile: null }
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profileError) {
+    return { error: profileError.message, profile: null }
+  }
+
+  if (!profile) {
+    return { error: 'Profile not found', profile: null }
+  }
+
+  return { error: null, profile }
+}
+
 export async function createProfile(formData: FormData) {
   const supabase = await createClient()
 

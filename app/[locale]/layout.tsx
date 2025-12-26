@@ -4,7 +4,6 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/server';
-import Navigation from '@/components/Navigation';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -54,15 +53,11 @@ export default async function LocaleLayout({ children, params }: Props) {
     console.log('Supabase not available, rendering without auth');
   }
 
-  // Hide navigation on landing page for now
-  const isLandingPage = true;
-
   return (
     <html lang={locale} className="dark">
       <body>
         <NextIntlClientProvider messages={messages}>
           <AuthProvider initialUser={user} initialProfile={profile}>
-            {!isLandingPage && <Navigation />}
             {children}
             <ToastContainer position="bottom-right" theme="dark" />
           </AuthProvider>
