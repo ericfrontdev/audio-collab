@@ -6,13 +6,11 @@ import { Link, useRouter, usePathname } from '@/i18n/routing'
 import Image from 'next/image'
 import { logout } from '@/app/actions/auth'
 import { useState } from 'react'
+import { useUser } from '@/lib/store'
 
-interface NavigationProps {
-  user: any
-  isAdmin?: boolean
-}
-
-export default function Navigation({ user, isAdmin = false }: NavigationProps) {
+export default function Navigation() {
+  const user = useUser()
+  const isAdmin = user?.is_admin || false
   const t = useTranslations('nav')
   const tCommon = useTranslations('common')
   const params = useParams()

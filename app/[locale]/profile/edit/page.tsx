@@ -49,45 +49,66 @@ export default function EditProfilePage() {
 
   // Load current profile data
   useEffect(() => {
-    const loadProfile = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+    const supabase = createClient();
 
-      if (!user) {
+    // Use onAuthStateChange instead of getSession to avoid hanging
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!session?.user) {
         router.push('/auth/login');
         return;
       }
 
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
+      const user = session.user;
+      await loadProfileData(user.id);
+    });
 
-      if (profileError || !profileData) {
-        setError('Failed to load profile');
-        setIsLoading(false);
-        return;
-      }
-
-      setProfile(profileData);
-      setDisplayName(profileData.display_name || '');
-      setBio(profileData.bio || '');
-      setSelectedRoles(profileData.musical_roles || []);
-      setSelectedGenres(profileData.genres || []);
-      setSoundcloudUrl(profileData.soundcloud_url || '');
-      setInstagramUrl(profileData.instagram_url || '');
-      setTwitterUrl(profileData.twitter_url || '');
-      setYoutubeUrl(profileData.youtube_url || '');
-      setWebsiteUrl(profileData.website_url || '');
-      setIsPublic(profileData.is_public);
-      setAvatarPreview(profileData.avatar_url || '');
-      setBannerPreview(profileData.banner_url || '');
-      setIsLoading(false);
+    return () => {
+      subscription.unsubscribe();
     };
-
-    loadProfile();
   }, [router]);
+
+  const loadProfileData = async (userId: string) => {
+    try {
+      const supabase = createClient();
+      const user = { id: userId };
+
+        console.log('🔵 User ID:', user.id);
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        console.log('🔵 Profile data:', profileData);
+        console.log('🔵 Profile error:', profileError);
+
+        if (profileError || !profileData) {
+          console.error('🔵 Failed to load profile. Error:', profileError, 'Data:', profileData);
+          setError('Failed to load profile');
+          setIsLoading(false);
+          return;
+        }
+
+        setProfile(profileData);
+        setDisplayName(profileData.display_name || '');
+        setBio(profileData.bio || '');
+        setSelectedRoles(profileData.musical_roles || []);
+        setSelectedGenres(profileData.genres || []);
+        setSoundcloudUrl(profileData.soundcloud_url || '');
+        setInstagramUrl(profileData.instagram_url || '');
+        setTwitterUrl(profileData.twitter_url || '');
+        setYoutubeUrl(profileData.youtube_url || '');
+        setWebsiteUrl(profileData.website_url || '');
+        setIsPublic(profileData.is_public);
+        setAvatarPreview(profileData.avatar_url || '');
+        setBannerPreview(profileData.banner_url || '');
+        setIsLoading(false);
+      } catch (err) {
+        console.error('🔵 Error loading profile:', err);
+        setError('An unexpected error occurred');
+        setIsLoading(false);
+      }
+  };
 
   const toggleRole = (role: string) => {
     setSelectedRoles(prev =>

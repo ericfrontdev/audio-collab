@@ -131,3 +131,66 @@ export async function deleteProject(projectId: string, locale: string = 'en') {
   revalidatePath(`/${locale}/projects`)
   redirect(`/${locale}/projects`)
 }
+
+export async function joinProject(projectId: string, locale: string = 'en') {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect(`/${locale}/auth/login`)
+  }
+
+  // Check if project exists
+  const { data: project } = await supabase
+    .from('projects')
+    .select('id, mode, club_id')
+    .eq('id', projectId)
+    .maybeSingle()
+
+  if (!project) {
+    return { error: 'Project not found' }
+  }
+
+  // Check if already a member
+  const { data: existingMember } = await supabase
+    .from('project_members')
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (existingMember) {
+    return { error: 'Already a member of this project' }
+  }
+
+  // For club projects, verify user is a club member
+  if (project.club_id) {
+    const { data: clubMember } = await supabase
+      .from('club_members')
+      .select('id')
+      .eq('club_id', project.club_id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!clubMember) {
+      return { error: 'You must be a member of the club to join this project' }
+    }
+  }
+
+  // Add user as collaborator
+  const { error } = await supabase
+    .from('project_members')
+    .insert({
+      project_id: projectId,
+      user_id: user.id,
+      role: 'collaborator'
+    })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/${locale}/projects/${projectId}`)
+  return { success: true }
+}

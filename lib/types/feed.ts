@@ -5,6 +5,10 @@ export interface Post {
   media_url: string | null
   media_type: 'image' | 'audio' | 'video' | null
   project_id: string | null
+  link_url: string | null
+  link_title: string | null
+  link_description: string | null
+  link_image: string | null
   created_at: string
   updated_at: string
   // Joined data

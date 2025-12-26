@@ -7,7 +7,7 @@ interface SupabaseError {
 export async function uploadMediaToStorage(
   file: File,
   userId: string,
-  mediaType: 'image' | 'audio',
+  mediaType: 'image' | 'audio' | 'video',
   onProgress?: (progress: number) => void
 ): Promise<{ url: string | null; error: string | null }> {
   try {

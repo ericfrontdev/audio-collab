@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/server';
 import Navigation from '@/components/Navigation';
+import { AuthProvider } from '@/components/providers/AuthProvider';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "../globals.css";
@@ -32,21 +33,21 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   // Get user for navigation (handle Supabase connection errors)
   let user = null;
-  let isAdmin = false;
+  let profile = null;
 
   try {
     const supabase = await createClient();
     const { data: { user: authUser } } = await supabase.auth.getUser();
     user = authUser;
 
-    // Check if user is admin
+    // Get user profile if user exists
     if (user) {
-      const { data: profile } = await supabase
+      const { data: userProfile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('*')
         .eq('id', user.id)
         .maybeSingle();
-      isAdmin = profile?.role === 'admin';
+      profile = userProfile;
     }
   } catch (error) {
     // Supabase not available (e.g., on landing page without DB connection)
@@ -60,9 +61,11 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale} className="dark">
       <body>
         <NextIntlClientProvider messages={messages}>
-          {!isLandingPage && <Navigation user={user} isAdmin={isAdmin} />}
-          {children}
-          <ToastContainer position="bottom-right" theme="dark" />
+          <AuthProvider initialUser={user} initialProfile={profile}>
+            {!isLandingPage && <Navigation />}
+            {children}
+            <ToastContainer position="bottom-right" theme="dark" />
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

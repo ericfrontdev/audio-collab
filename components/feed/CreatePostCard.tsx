@@ -3,9 +3,10 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Image, Music, Sparkles, X } from 'lucide-react'
+import { Paperclip, Link as LinkIcon, X, Music, Loader2, ExternalLink } from 'lucide-react'
 import { createPost } from '@/app/actions/feed'
 import { uploadMediaToStorage, deleteMediaFromStorage } from '@/lib/storage/uploadMedia'
+import { fetchLinkMetadata, type LinkMetadata } from '@/app/actions/linkPreview'
 import { toast } from 'react-toastify'
 import { createClient } from '@/lib/supabase/client'
 
@@ -20,68 +21,67 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [selectedAudio, setSelectedAudio] = useState<File | null>(null)
+  const [selectedVideo, setSelectedVideo] = useState<File | null>(null)
+  const [videoPreview, setVideoPreview] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [linkMetadata, setLinkMetadata] = useState<LinkMetadata | null>(null)
+  const [showLinkDialog, setShowLinkDialog] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+  const [isFetchingLink, setIsFetchingLink] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const audioInputRef = useRef<HTMLInputElement>(null)
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file')
-      return
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB')
-      return
-    }
-
-    setSelectedImage(file)
-
-    // Remove audio if image is selected
-    if (selectedAudio) {
-      setSelectedAudio(null)
-      if (audioInputRef.current) {
-        audioInputRef.current.value = ''
+    // Detect media type
+    if (file.type.startsWith('image/')) {
+      // Validate file size (max 5MB for images)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('L\'image doit faire moins de 5 Mo')
+        return
       }
-    }
 
-    // Create preview
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
+      setSelectedImage(file)
+      setSelectedAudio(null)
 
-  const handleAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    } else if (file.type.startsWith('audio/')) {
+      // Validate file size (max 20MB for audio)
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error('Le fichier audio doit faire moins de 20 Mo')
+        return
+      }
 
-    // Validate file type
-    if (!file.type.startsWith('audio/')) {
-      toast.error('Please select an audio file')
-      return
-    }
-
-    // Validate file size (max 20MB)
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error('Audio file must be less than 20MB')
-      return
-    }
-
-    setSelectedAudio(file)
-    // Remove image if audio is selected
-    if (selectedImage) {
+      setSelectedAudio(file)
       setSelectedImage(null)
       setImagePreview(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+    } else if (file.type.startsWith('video/')) {
+      // Validate file size (max 50MB for video)
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error('La vidéo doit faire moins de 50 Mo')
+        return
       }
+
+      setSelectedVideo(file)
+      setSelectedImage(null)
+      setSelectedAudio(null)
+      setImagePreview(null)
+
+      // Create video preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setVideoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    } else {
+      toast.error('Veuillez sélectionner une image, un fichier audio ou une vidéo')
+      return
     }
   }
 
@@ -95,9 +95,48 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
 
   const handleRemoveAudio = () => {
     setSelectedAudio(null)
-    if (audioInputRef.current) {
-      audioInputRef.current.value = ''
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
+  }
+
+  const handleRemoveVideo = () => {
+    setSelectedVideo(null)
+    setVideoPreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleFetchLinkPreview = async () => {
+    if (!linkUrl.trim()) {
+      toast.error('Veuillez entrer une URL')
+      return
+    }
+
+    setIsFetchingLink(true)
+
+    try {
+      const result = await fetchLinkMetadata(linkUrl.trim())
+
+      if (result.success && result.metadata) {
+        setLinkMetadata(result.metadata)
+        setShowLinkDialog(false)
+        setLinkUrl('')
+        toast.success('Lien ajouté!')
+      } else {
+        toast.error(result.error || 'Impossible de récupérer le lien')
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la récupération du lien')
+    } finally {
+      setIsFetchingLink(false)
+    }
+  }
+
+  const handleRemoveLink = () => {
+    setLinkMetadata(null)
+    setLinkUrl('')
   }
 
   const handlePost = async () => {
@@ -108,7 +147,7 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
 
     setIsPosting(true)
     let uploadedMediaUrl: string | undefined
-    let mediaType: 'image' | 'audio' | undefined
+    let mediaType: 'image' | 'audio' | 'video' | undefined
 
     try {
       // Get current user
@@ -151,16 +190,41 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
         }
         uploadedMediaUrl = url || undefined
         mediaType = 'audio'
+      } else if (selectedVideo) {
+        const { url, error } = await uploadMediaToStorage(
+          selectedVideo,
+          user.id,
+          'video',
+          setUploadProgress
+        )
+        if (error) {
+          toast.error(error)
+          setUploadProgress(0)
+          return
+        }
+        uploadedMediaUrl = url || undefined
+        mediaType = 'video'
       }
 
-      // Create post with media URL
-      const result = await createPost(content, undefined, uploadedMediaUrl, mediaType)
+      // Create post with media URL and link metadata
+      const result = await createPost(
+        content,
+        undefined,
+        uploadedMediaUrl,
+        mediaType,
+        linkMetadata?.url || undefined,
+        linkMetadata?.title || undefined,
+        linkMetadata?.description || undefined,
+        linkMetadata?.image || undefined
+      )
 
       if (result.success) {
         toast.success('Posted successfully!')
         setContent('')
         handleRemoveImage()
         handleRemoveAudio()
+        handleRemoveVideo()
+        handleRemoveLink()
         setUploadProgress(0)
       } else {
         // Clean up uploaded media if post creation failed
@@ -250,6 +314,69 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
             </div>
           )}
 
+          {/* Video preview */}
+          {videoPreview && (
+            <div className="relative mt-3 rounded-lg overflow-hidden border border-zinc-800">
+              <video
+                src={videoPreview}
+                controls
+                className="w-full max-h-96 bg-zinc-950"
+              />
+              <button
+                onClick={handleRemoveVideo}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+                title="Remove video"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Link preview */}
+          {linkMetadata && (
+            <div className="relative mt-3 border border-zinc-800 rounded-lg overflow-hidden hover:border-zinc-700 transition-colors group">
+              <a
+                href={linkMetadata.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                {linkMetadata.image && (
+                  <div className="relative w-full h-48 bg-zinc-950">
+                    <img
+                      src={linkMetadata.image}
+                      alt={linkMetadata.title || 'Link preview'}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="p-3 bg-zinc-900/50">
+                  {linkMetadata.title && (
+                    <h4 className="font-semibold text-white text-sm line-clamp-2 mb-1">
+                      {linkMetadata.title}
+                    </h4>
+                  )}
+                  {linkMetadata.description && (
+                    <p className="text-gray-400 text-xs line-clamp-2 mb-2">
+                      {linkMetadata.description}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-1 text-gray-500 text-xs">
+                    <ExternalLink className="w-3 h-3" />
+                    <span className="truncate">{new URL(linkMetadata.url).hostname}</span>
+                  </div>
+                </div>
+              </a>
+              <button
+                onClick={handleRemoveLink}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
+                title="Remove link"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Upload progress */}
           {uploadProgress > 0 && uploadProgress < 100 && (
             <div className="mt-3">
@@ -268,45 +395,33 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
 
           {/* Actions */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800">
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
-                onChange={handleImageSelect}
-                className="hidden"
-              />
-              <input
-                ref={audioInputRef}
-                type="file"
-                accept="audio/*"
-                onChange={handleAudioSelect}
+                accept="image/*,audio/*,video/*"
+                onChange={handleMediaSelect}
                 className="hidden"
               />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isPosting || !!selectedImage || !!selectedAudio}
-                className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Add image"
+                disabled={isPosting || !!selectedImage || !!selectedAudio || !!selectedVideo}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-zinc-800/50 text-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Add media"
               >
-                <Image className="w-5 h-5" />
+                <Paperclip className="w-5 h-5" />
+                <span className="text-sm font-medium">Média</span>
               </button>
               <button
                 type="button"
-                onClick={() => audioInputRef.current?.click()}
-                disabled={isPosting || !!selectedAudio || !!selectedImage}
-                className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Add audio"
+                onClick={() => setShowLinkDialog(true)}
+                disabled={isPosting || !!linkMetadata}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-zinc-800/50 text-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Add link"
               >
-                <Music className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                className="p-2 rounded-full hover:bg-primary/10 text-primary transition-colors"
-                title="AI enhance"
-              >
-                <Sparkles className="w-5 h-5" />
+                <LinkIcon className="w-5 h-5" />
+                <span className="text-sm font-medium">Lien</span>
               </button>
             </div>
 
@@ -325,7 +440,7 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
               <Button
                 onClick={handlePost}
                 disabled={!content.trim() || isPosting}
-                className="px-6"
+                className="px-6 text-white"
               >
                 {isPosting ? 'Posting...' : 'Post'}
               </Button>
@@ -333,6 +448,57 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
           </div>
         </div>
       </div>
+
+      {/* Link Dialog */}
+      {showLinkDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowLinkDialog(false)}>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-white mb-4">Ajouter un lien</h3>
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleFetchLinkPreview()
+                } else if (e.key === 'Escape') {
+                  setShowLinkDialog(false)
+                  setLinkUrl('')
+                }
+              }}
+              placeholder="https://example.com"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+              autoFocus
+            />
+            <div className="flex items-center justify-end gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowLinkDialog(false)
+                  setLinkUrl('')
+                }}
+                className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Annuler
+              </button>
+              <Button
+                onClick={handleFetchLinkPreview}
+                disabled={isFetchingLink || !linkUrl.trim()}
+                className="px-4 py-2 text-white"
+              >
+                {isFetchingLink ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Chargement...
+                  </>
+                ) : (
+                  'Ajouter'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }

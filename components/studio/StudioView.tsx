@@ -1,113 +1,88 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Plus,
-  Share2,
-  Upload as UploadIcon,
-  X,
-  ArrowLeft,
-  Trash2,
-} from 'lucide-react'
-import { useRouter } from '@/i18n/routing'
-import Image from 'next/image'
+import { useState, useEffect, useCallback } from 'react'
+import { Upload as UploadIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UploadTrackModal } from './UploadTrackModal'
-import {
-  getProjectStudioData,
-  deleteTrack,
-  addTrackComment,
-} from '@/app/actions/studio'
-import { ProjectTrack, ProjectTrackComment } from '@/lib/types/studio'
+import { getProjectStudioData, deleteTrack, addTrackComment } from '@/app/actions/studio'
+import { ProjectTrack } from '@/lib/types/studio'
 import { toast } from 'react-toastify'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { WaveformDisplay, WaveformDisplayRef } from './WaveformDisplay'
 import { AddCommentModal } from './AddCommentModal'
+import { TransportControls } from './TransportControls'
+import { TrackList } from './TrackList'
+import { TimelineRuler } from './TimelineRuler'
+import { WaveformTrack } from './WaveformTrack'
+import { useStudioPlayback } from './hooks/useStudioPlayback'
+import { useStudioTracks } from './hooks/useStudioTracks'
+import { useStudioTimeline } from './hooks/useStudioTimeline'
 
 interface StudioViewProps {
   projectId: string
 }
 
-// Extended track type with comments and takes
 interface TakeWithUploader {
-  id: string;
-  track_id: string;
-  audio_url: string;
-  duration: number;
-  waveform_data: number[] | null;
-  file_size: number | null;
-  file_format: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  id: string
+  track_id: string
+  audio_url: string
+  duration: number
+  waveform_data: number[] | null
+  file_size: number | null
+  file_format: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
   uploader?: {
-    id: string;
-    username: string;
-    display_name: string | null;
-    avatar_url: string | null;
-  } | null;
+    id: string
+    username: string
+    display_name: string | null
+    avatar_url: string | null
+  } | null
 }
 
 interface CommentWithProfile {
-  id: string;
-  track_id: string;
-  user_id: string;
-  timestamp: number;
-  text: string;
-  created_at: string;
-  updated_at: string;
+  id: string
+  track_id: string
+  user_id: string
+  timestamp: number
+  text: string
+  created_at: string
+  updated_at: string
   profile?: {
-    id: string;
-    username: string;
-    display_name: string | null;
-    avatar_url: string | null;
-  } | null;
+    id: string
+    username: string
+    display_name: string | null
+    avatar_url: string | null
+  } | null
 }
 
 interface MixerSettings {
-  id: string;
-  track_id: string;
-  volume: number;
-  pan: number;
-  solo: boolean;
-  mute: boolean;
-  created_at: string;
-  updated_at: string;
+  id: string
+  track_id: string
+  volume: number
+  pan: number
+  solo: boolean
+  mute: boolean
+  created_at: string
+  updated_at: string
 }
 
 interface TrackWithDetails extends ProjectTrack {
-  takes?: TakeWithUploader[];
-  comments?: CommentWithProfile[];
-  mixer_settings?: MixerSettings | null;
+  takes?: TakeWithUploader[]
+  comments?: CommentWithProfile[]
+  mixer_settings?: MixerSettings | null
 }
 
 export function StudioView({ projectId }: StudioViewProps) {
-  const router = useRouter()
   const [tracks, setTracks] = useState<TrackWithDetails[]>([])
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [maxDuration, setMaxDuration] = useState(0)
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean
     trackId: string
     trackName: string
   }>({ isOpen: false, trackId: '', trackName: '' })
-  const waveformRefs = useRef<Map<string, WaveformDisplayRef>>(new Map())
-  const [trackVolumes, setTrackVolumes] = useState<Map<string, number>>(
-    new Map()
-  )
-  const [trackMutes, setTrackMutes] = useState<Set<string>>(new Set())
-  const [trackSolos, setTrackSolos] = useState<Set<string>>(new Set())
-  const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false)
-  const timelineRef = useRef<HTMLDivElement>(null)
-  const isPlayingRef = useRef(false)
   const [commentModal, setCommentModal] = useState<{
     isOpen: boolean
     trackId: string
@@ -120,12 +95,21 @@ export function StudioView({ projectId }: StudioViewProps) {
   const [isPortrait, setIsPortrait] = useState(false)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
   const [droppedFile, setDroppedFile] = useState<File | null>(null)
-  const primaryColor = '#9363f7' // Exact primary button color
+  const primaryColor = '#9363f7'
+
+  // Custom hooks
+  const playback = useStudioPlayback()
+  const trackControls = useStudioTracks(playback.waveformRefs)
+  const timeline = useStudioTimeline({
+    maxDuration: playback.maxDuration,
+    waveformRefs: playback.waveformRefs,
+    setCurrentTime: playback.setCurrentTime,
+  })
 
   // Check orientation on mobile
   useEffect(() => {
     const checkOrientation = () => {
-      const isMobile = window.innerWidth < 768 // md breakpoint
+      const isMobile = window.innerWidth < 768
       const isPortraitMode = window.innerHeight > window.innerWidth
       setIsPortrait(isMobile && isPortraitMode)
     }
@@ -137,46 +121,6 @@ export function StudioView({ projectId }: StudioViewProps) {
     return () => {
       window.removeEventListener('resize', checkOrientation)
       window.removeEventListener('orientationchange', checkOrientation)
-    }
-  }, [])
-
-  // Unlock audio on mobile on first user interaction
-  useEffect(() => {
-    let unlocked = false
-
-    const unlockAudio = async () => {
-      if (unlocked) return
-
-      // Create a silent audio context and resume it
-      // This unlocks audio playback on mobile browsers
-      try {
-        type WindowWithWebkit = Window & typeof globalThis & {
-          webkitAudioContext?: typeof window.AudioContext;
-        };
-        const AudioContext = window.AudioContext || (window as WindowWithWebkit).webkitAudioContext
-        if (AudioContext) {
-          const ctx = new AudioContext()
-          if (ctx.state === 'suspended') {
-            await ctx.resume()
-          }
-          await ctx.close()
-          unlocked = true
-        }
-      } catch (error) {
-        console.debug('Audio unlock failed:', error)
-      }
-    }
-
-    // Listen for first user interaction
-    const events = ['touchstart', 'touchend', 'mousedown', 'keydown']
-    events.forEach(event => {
-      document.addEventListener(event, unlockAudio, { once: true })
-    })
-
-    return () => {
-      events.forEach(event => {
-        document.removeEventListener(event, unlockAudio)
-      })
     }
   }, [])
 
@@ -196,7 +140,6 @@ export function StudioView({ projectId }: StudioViewProps) {
   useEffect(() => {
     loadStudioData()
 
-    // Load current user profile
     const loadUserProfile = async () => {
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
@@ -229,7 +172,6 @@ export function StudioView({ projectId }: StudioViewProps) {
 
     const result = await deleteTrack(trackId)
     if (result.success) {
-      // Remove track from local state without reloading
       setTracks((prevTracks) => prevTracks.filter((t) => t.id !== trackId))
       if (selectedTrackId === trackId) {
         setSelectedTrackId(null)
@@ -244,180 +186,12 @@ export function StudioView({ projectId }: StudioViewProps) {
     setDeleteConfirmation({ isOpen: false, trackId: '', trackName: '' })
   }
 
-  const handlePlayPause = () => {
-    if (isPlaying) {
-      // Mark as paused first to stop timeupdate events from being processed
-      isPlayingRef.current = false
-      setIsPlaying(false)
-
-      // Pause all waveforms
-      waveformRefs.current.forEach((ref) => ref.pause())
-
-      // Capture the current time from the first waveform
-      const firstRef = Array.from(waveformRefs.current.values())[0]
-      if (firstRef) {
-        const pauseTime = firstRef.getCurrentTime()
-
-        // Synchronize all waveforms to the same position using setTime() for precision
-        // This prevents the cursor from jumping back (known WaveSurfer issue)
-        waveformRefs.current.forEach((ref) => {
-          ref.setTime(pauseTime)
-        })
-
-        // Update the displayed time
-        setCurrentTime(pauseTime)
-      }
-    } else {
-      // Play all waveforms (audio context unlocked on first user interaction)
-      waveformRefs.current.forEach((ref) => ref.play())
-      setIsPlaying(true)
-      isPlayingRef.current = true
-    }
-  }
-
-  const handleStop = () => {
-    waveformRefs.current.forEach((ref) => {
-      ref.pause()
-      ref.seekTo(0)
-    })
-    setIsPlaying(false)
-    isPlayingRef.current = false
-    setCurrentTime(0)
-  }
-
-  const handleVolumeChange = useCallback((trackId: string, volume: number) => {
-    const waveformRef = waveformRefs.current.get(trackId)
-    if (waveformRef) {
-      waveformRef.setVolume(volume / 100)
-      setTrackVolumes((prev) => {
-        const newMap = new Map(prev)
-        newMap.set(trackId, volume)
-        return newMap
-      })
-    }
-  }, [])
-
-  const handleMuteToggle = useCallback((trackId: string) => {
-    const waveformRef = waveformRefs.current.get(trackId)
-    if (waveformRef) {
-      setTrackMutes((prev) => {
-        const newMutes = new Set(prev)
-        if (newMutes.has(trackId)) {
-          newMutes.delete(trackId)
-          waveformRef.setMute(false)
-        } else {
-          newMutes.add(trackId)
-          waveformRef.setMute(true)
-        }
-        return newMutes
-      })
-    }
-  }, [])
-
-  const handleSoloToggle = useCallback(
-    (trackId: string) => {
-      setTrackSolos((prev) => {
-        const newSolos = new Set(prev)
-        if (newSolos.has(trackId)) {
-          // Unsolo this track
-          newSolos.delete(trackId)
-        } else {
-          // Solo this track
-          newSolos.add(trackId)
-        }
-
-        // Update mutes based on solo state
-        // If any tracks are soloed, mute all non-soloed tracks
-        if (newSolos.size > 0) {
-          waveformRefs.current.forEach((ref, id) => {
-            if (newSolos.has(id)) {
-              ref.setMute(false)
-            } else {
-              ref.setMute(true)
-            }
-          })
-        } else {
-          // No tracks soloed, restore original mute states
-          waveformRefs.current.forEach((ref, id) => {
-            ref.setMute(trackMutes.has(id))
-          })
-        }
-
-        return newSolos
-      })
-    },
-    [trackMutes]
-  )
-
-  const handleWaveformReady = useCallback((duration: number) => {
-    setMaxDuration((prev) => Math.max(prev, duration))
-  }, [])
-
-  const handleTimeUpdate = useCallback((time: number) => {
-    // Only update currentTime when actually playing to prevent playhead from jumping back on pause
-    if (isPlayingRef.current) {
-      setCurrentTime(time)
-    }
-  }, [])
-
-  // Handle timeline seek (click and drag)
-  const handleTimelineSeek = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!timelineRef.current) return
-
-      const rect = timelineRef.current.getBoundingClientRect()
-      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
-      const percentage = x / rect.width
-      const newTime = percentage * maxDuration
-
-      // Seek all waveforms
-      waveformRefs.current.forEach((ref) => {
-        ref.seekTo(newTime)
-      })
-
-      setCurrentTime(newTime)
-    },
-    [maxDuration]
-  )
-
-  const handleTimelineMouseDown = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      setIsDraggingPlayhead(true)
-      handleTimelineSeek(e)
-    },
-    [handleTimelineSeek]
-  )
-
-  const handleTimelineTouchStart = useCallback(
-    (e: React.TouchEvent<HTMLDivElement>) => {
-      if (!timelineRef.current || e.touches.length === 0) return
-      setIsDraggingPlayhead(true)
-
-      const rect = timelineRef.current.getBoundingClientRect()
-      const x = Math.max(
-        0,
-        Math.min(e.touches[0].clientX - rect.left, rect.width)
-      )
-      const percentage = x / rect.width
-      const newTime = percentage * maxDuration
-
-      // Seek all waveforms
-      waveformRefs.current.forEach((ref) => {
-        ref.seekTo(newTime)
-      })
-
-      setCurrentTime(newTime)
-    },
-    [maxDuration]
-  )
-
-  // Handle waveform click to add comment
   const handleWaveformClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>, trackId: string) => {
       const rect = e.currentTarget.getBoundingClientRect()
       const x = e.clientX - rect.left
       const percentage = x / rect.width
-      const timestamp = percentage * maxDuration
+      const timestamp = percentage * playback.maxDuration
 
       setCommentModal({
         isOpen: true,
@@ -426,20 +200,14 @@ export function StudioView({ projectId }: StudioViewProps) {
         position: { x: e.clientX, y: e.clientY },
       })
     },
-    [maxDuration]
+    [playback.maxDuration]
   )
 
-  // Handle comment submission
   const handleCommentSubmit = useCallback(
     async (text: string, timestamp: number) => {
-      const result = await addTrackComment(
-        commentModal.trackId,
-        timestamp,
-        text
-      )
+      const result = await addTrackComment(commentModal.trackId, timestamp, text)
       if (result.success && result.comment) {
         toast.success('Comment added!')
-        // Add comment to local state instead of reloading everything
         setTracks((prevTracks) =>
           prevTracks.map((track) => {
             if (track.id === commentModal.trackId && result.comment) {
@@ -458,7 +226,6 @@ export function StudioView({ projectId }: StudioViewProps) {
     [commentModal.trackId]
   )
 
-  // Handle drag and drop for file upload
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -476,116 +243,12 @@ export function StudioView({ projectId }: StudioViewProps) {
     e.stopPropagation()
     setIsDraggingFile(false)
 
-    // Check if files were dropped
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0]
       setDroppedFile(file)
       setIsUploadModalOpen(true)
     }
   }, [])
-
-  // Handle keyboard shortcuts for playback control
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only trigger if not typing in an input/textarea
-      if (e.target instanceof HTMLElement &&
-          !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
-
-        // Spacebar: play/pause
-        if (e.code === 'Space') {
-          e.preventDefault() // Prevent page scroll
-          handlePlayPause()
-        }
-
-        // Enter: reset playhead to start
-        if (e.code === 'Enter') {
-          e.preventDefault()
-          handleStop()
-        }
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [handlePlayPause])
-
-  // Handle dragging
-  useEffect(() => {
-    if (!isDraggingPlayhead) return
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!timelineRef.current) return
-
-      const rect = timelineRef.current.getBoundingClientRect()
-      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
-      const percentage = x / rect.width
-      const newTime = percentage * maxDuration
-
-      waveformRefs.current.forEach((ref) => {
-        ref.seekTo(newTime)
-      })
-
-      setCurrentTime(newTime)
-    }
-
-    const handleMouseUp = () => {
-      setIsDraggingPlayhead(false)
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [isDraggingPlayhead, maxDuration])
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins.toString().padStart(2, '0')}:${secs
-      .toString()
-      .padStart(2, '0')}`
-  }
-
-  // Generate timeline markers and ticks based on max duration
-  const getTimelineData = (duration: number) => {
-    if (duration === 0) return { markers: [], ticks: [] }
-
-    // Determine interval for major markers
-    let majorInterval: number
-    if (duration <= 60) {
-      majorInterval = 10 // Every 10 seconds
-    } else if (duration <= 180) {
-      majorInterval = 30 // Every 30 seconds
-    } else if (duration <= 600) {
-      majorInterval = 60 // Every minute
-    } else {
-      majorInterval = 120 // Every 2 minutes
-    }
-
-    const markers: Array<{ time: number; label: string; position: number }> = []
-    const ticks: Array<{ time: number; position: number; major: boolean }> = []
-
-    // Generate major markers
-    for (let time = 0; time <= duration; time += majorInterval) {
-      const position = (time / duration) * 100
-      markers.push({ time, label: formatTime(time), position })
-    }
-
-    // Generate tick marks every second
-    for (let time = 0; time <= duration; time += 1) {
-      const position = (time / duration) * 100
-      const major = time % 10 === 0
-      ticks.push({ time, position, major })
-    }
-
-    return { markers, ticks }
-  }
 
   if (isLoading) {
     return (
@@ -600,7 +263,7 @@ export function StudioView({ projectId }: StudioViewProps) {
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950">
-      {/* Portrait Mode Warning - Mobile Only */}
+      {/* Portrait Mode Warning */}
       {isPortrait && (
         <div className="fixed inset-0 z-[100] bg-zinc-950 flex items-center justify-center p-6">
           <div className="text-center max-w-sm">
@@ -623,247 +286,44 @@ export function StudioView({ projectId }: StudioViewProps) {
                 </svg>
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-3">
-              Rotation requise
-            </h2>
+            <h2 className="text-2xl font-bold text-white mb-3">Rotation requise</h2>
             <p className="text-gray-400 text-lg mb-2">
-              Veuillez tourner votre appareil en mode paysage pour utiliser le
-              studio.
+              Veuillez tourner votre appareil en mode paysage pour utiliser le studio.
             </p>
             <p className="text-gray-500 text-sm">
-              Le studio nécessite plus d'espace horizontal pour afficher
-              correctement les waveforms et la timeline.
+              Le studio nécessite plus d'espace horizontal pour afficher correctement les
+              waveforms et la timeline.
             </p>
           </div>
         </div>
       )}
 
       {/* Header with Transport Controls */}
-      <div className="flex items-center justify-between px-2 sm:px-3 lg:px-6 py-2 sm:py-3 border-b border-zinc-800 bg-zinc-900/80">
-        {/* Left: Back button + Project info */}
-        <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 min-w-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-            className="gap-1 sm:gap-2 flex-shrink-0"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Back</span>
-          </Button>
-          <div className="h-6 w-px bg-zinc-700 hidden lg:block" />
-          <h1 className="text-sm lg:text-lg font-semibold text-white truncate">
-            Audio Track
-          </h1>
-          <span className="text-xs text-gray-400 hidden lg:inline">
-            Saved just now
-          </span>
-        </div>
+      <TransportControls
+        isPlaying={playback.isPlaying}
+        currentTime={playback.currentTime}
+        hasTracksLoaded={tracks.length > 0}
+        onPlayPause={playback.handlePlayPause}
+        onStop={playback.handleStop}
+      />
 
-        {/* Center: Transport Controls */}
-        <div className="flex items-center gap-1 md:gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-8 h-8 p-0 hidden sm:flex"
-            onClick={handleStop}
-            disabled={tracks.length === 0}
-          >
-            <SkipBack className="w-4 h-4 text-gray-400" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-10 h-10 p-0 bg-primary hover:bg-primary/90"
-            onClick={handlePlayPause}
-            disabled={tracks.length === 0}
-          >
-            {isPlaying ? (
-              <Pause className="w-5 h-5 text-white" />
-            ) : (
-              <Play className="w-5 h-5 text-white ml-0.5" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-8 h-8 p-0 hidden sm:flex"
-            disabled={tracks.length === 0}
-          >
-            <SkipForward className="w-4 h-4 text-gray-400" />
-          </Button>
-
-          <div className="ml-2 md:ml-4 font-mono text-white text-sm md:text-lg">
-            {formatTime(currentTime)}
-          </div>
-        </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            className="hidden lg:flex"
-          >
-            <Share2 className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Share</span>
-          </Button>
-          <Button size="sm">
-            <UploadIcon className="w-4 h-4 lg:mr-2" />
-            <span className="hidden lg:inline">Export</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Studio Layout: 3 Columns */}
+      {/* Main Studio Layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar: Track List */}
-        <div className="w-48 lg:w-64 border-r border-zinc-800 bg-zinc-900/50 flex flex-col flex-shrink-0">
-          <div className="px-2 sm:px-3 py-3.5 border-b border-zinc-800">
-            <h2 className="text-sm font-semibold text-white">Tracks</h2>
-          </div>
-
-          {/* Spacer to align with timeline */}
-          {/* <div className="h-10 md:h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0" /> */}
-
-          <div className="flex-1 overflow-y-auto py-2">
-            {tracks.length === 0 ? (
-              <div className="p-4 text-center">
-                <p className="text-sm text-gray-500 mb-3">No tracks yet</p>
-              </div>
-            ) : (
-              <div className="p-2 space-y-1">
-                {tracks.map((track) => (
-                  <div
-                    key={track.id}
-                    className={`relative group rounded-lg transition-colors h-28 ${
-                      selectedTrackId === track.id
-                        ? 'bg-zinc-800'
-                        : 'hover:bg-zinc-800/50'
-                    }`}
-                  >
-                    <div
-                      onClick={() => setSelectedTrackId(track.id)}
-                      className="w-full h-full text-left px-2 sm:px-3 py-2 flex flex-col justify-center"
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div
-                            className="w-2 h-2 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: track.color }}
-                          />
-                          <span
-                            className={`text-sm font-medium truncate ${
-                              selectedTrackId === track.id
-                                ? 'text-white'
-                                : 'text-gray-400'
-                            }`}
-                          >
-                            {track.name}
-                          </span>
-                        </div>
-                        {(() => {
-                          const activeTake =
-                            track.takes?.find(
-                              (t) => t.is_active
-                            ) || track.takes?.[0]
-                          const uploader = activeTake?.uploader
-                          if (uploader) {
-                            return (
-                              <span className="text-[10px] text-gray-400 bg-zinc-800 px-2 py-0.5 rounded-full flex-shrink-0 mr-6">
-                                @
-                                {uploader.username ||
-                                  uploader.display_name ||
-                                  'unknown'}
-                              </span>
-                            )
-                          }
-                          return null
-                        })()}
-                      </div>
-                      {/* Volume Slider */}
-                      <div
-                        className="mb-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={trackVolumes.get(track.id) || 80}
-                          onChange={(e) =>
-                            handleVolumeChange(track.id, Number(e.target.value))
-                          }
-                          className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-primary"
-                          style={{
-                            background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${
-                              trackVolumes.get(track.id) || 80
-                            }%, #3f3f46 ${
-                              trackVolumes.get(track.id) || 80
-                            }%, #3f3f46 100%)`,
-                          }}
-                        />
-                      </div>
-                      {/* M and S Buttons */}
-                      <div
-                        className="flex gap-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleMuteToggle(track.id)
-                          }}
-                          className={`flex-1 px-2 py-1 text-xs font-bold rounded transition-colors ${
-                            trackMutes.has(track.id)
-                              ? 'bg-yellow-600 text-white'
-                              : 'bg-zinc-800 text-gray-400 hover:bg-zinc-700'
-                          }`}
-                        >
-                          M
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleSoloToggle(track.id)
-                          }}
-                          className={`flex-1 px-2 py-1 text-xs font-bold rounded transition-colors ${
-                            trackSolos.has(track.id)
-                              ? 'bg-green-600 text-white'
-                              : 'bg-zinc-800 text-gray-400 hover:bg-zinc-700'
-                          }`}
-                        >
-                          S
-                        </button>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteTrack(track.id, track.name)
-                      }}
-                      className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
-                      title="Delete track"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="p-2 sm:p-4 border-t border-zinc-800">
-            <Button
-              onClick={() => setIsUploadModalOpen(true)}
-              className="w-full text-xs sm:text-sm"
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
-              Add Track
-            </Button>
-          </div>
-        </div>
+        <TrackList
+          tracks={tracks}
+          selectedTrackId={selectedTrackId}
+          trackVolumes={trackControls.trackVolumes}
+          trackMutes={trackControls.trackMutes}
+          trackSolos={trackControls.trackSolos}
+          primaryColor={primaryColor}
+          onTrackSelect={setSelectedTrackId}
+          onVolumeChange={trackControls.handleVolumeChange}
+          onMuteToggle={trackControls.handleMuteToggle}
+          onSoloToggle={trackControls.handleSoloToggle}
+          onDeleteTrack={handleDeleteTrack}
+          onAddTrack={() => setIsUploadModalOpen(true)}
+        />
 
         {/* Center: Timeline & Waveforms */}
         <div className="flex-1 flex flex-col bg-zinc-950">
@@ -873,204 +333,63 @@ export function StudioView({ projectId }: StudioViewProps) {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-900 flex items-center justify-center">
                   <UploadIcon className="w-8 h-8 text-gray-600" />
                 </div>
-                <h3 className="text-lg font-medium text-white mb-2">
-                  No tracks yet
-                </h3>
+                <h3 className="text-lg font-medium text-white mb-2">No tracks yet</h3>
                 <p className="text-gray-400 mb-6">
                   Upload your first audio track to get started
                 </p>
                 <Button onClick={() => setIsUploadModalOpen(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
+                  <UploadIcon className="w-4 h-4 mr-2" />
                   Upload Track
                 </Button>
               </div>
             </div>
           ) : (
             <div className="flex-1 flex flex-col overflow-hidden relative">
-              {/* Single unified playhead - spans entire height */}
+              {/* Single unified playhead */}
               <div className="absolute inset-0 pointer-events-none z-40">
-                {maxDuration > 0 && (
+                {playback.maxDuration > 0 && (
                   <div
                     className="absolute top-0 bottom-0 w-0.5 bg-white"
                     style={{
-                      left: `${(currentTime / maxDuration) * 100}%`,
+                      left: `${(playback.currentTime / playback.maxDuration) * 100}%`,
                     }}
                   />
                 )}
               </div>
 
               {/* Timeline Ruler */}
-              <div
-                ref={timelineRef}
-                className="h-10 md:h-12 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0 relative cursor-pointer select-none touch-none"
-                onMouseDown={handleTimelineMouseDown}
-                onTouchStart={handleTimelineTouchStart}
-                style={{ cursor: isDraggingPlayhead ? 'grabbing' : 'pointer' }}
-              >
-                <div className="h-full relative">
-                  {(() => {
-                    const { markers, ticks } = getTimelineData(maxDuration)
-                    return (
-                      <>
-                        {/* Tick marks */}
-                        {ticks.map((tick, i) => (
-                          <div
-                            key={i}
-                            className="absolute top-0 w-px bg-zinc-700/50"
-                            style={{
-                              left: `${tick.position}%`,
-                              height: tick.major ? '16px' : '8px',
-                              backgroundColor: tick.major
-                                ? '#71717a'
-                                : '#52525b',
-                            }}
-                          />
-                        ))}
-                        {/* Time markers */}
-                        {markers.map((marker, i) => (
-                          <span
-                            key={i}
-                            className="absolute top-6 text-xs text-gray-500 -translate-x-1/2"
-                            style={{ left: `${marker.position}%` }}
-                          >
-                            {marker.label}
-                          </span>
-                        ))}
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
+              <TimelineRuler
+                ref={timeline.timelineRef}
+                maxDuration={playback.maxDuration}
+                isDragging={timeline.isDraggingPlayhead}
+                onMouseDown={timeline.handleTimelineMouseDown}
+                onTouchStart={timeline.handleTimelineTouchStart}
+              />
 
               {/* Tracks & Waveforms */}
               <div className="flex-1 overflow-auto relative">
                 <div className="py-4 space-y-3">
-                  {tracks.map((track) => {
-                    const activeTake =
-                      track.takes?.find((t) => t.is_active) ||
-                      track.takes?.[0]
-
-                    return (
-                      <div
-                        key={track.id}
-                        className={`rounded-lg border overflow-hidden cursor-pointer hover:border-zinc-700 transition-colors ${
-                          selectedTrackId === track.id
-                            ? 'border-primary'
-                            : 'border-zinc-800'
-                        }`}
-                        onClick={() => setSelectedTrackId(track.id)}
-                      >
-                        <div className="h-28 bg-zinc-900/30 py-2 relative">
-                          {activeTake ? (
-                            <>
-                              <div
-                                className={`relative ${
-                                  trackMutes.has(track.id) ? 'opacity-30' : ''
-                                }`}
-                              >
-                                <WaveformDisplay
-                                  ref={(ref) => {
-                                    if (ref) {
-                                      waveformRefs.current.set(track.id, ref)
-                                    } else {
-                                      waveformRefs.current.delete(track.id)
-                                    }
-                                  }}
-                                  audioUrl={activeTake.audio_url}
-                                  trackId={track.id}
-                                  trackColor={primaryColor}
-                                  height={96}
-                                  onReady={handleWaveformReady}
-                                  onTimeUpdate={handleTimeUpdate}
-                                />
-                              </div>
-                              {/* Muted overlay */}
-                              {trackMutes.has(track.id) && (
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-                                  <div className="bg-zinc-900/80 px-3 py-1 rounded-full border border-zinc-700">
-                                    <span className="text-xs text-gray-400 font-medium">
-                                      🔇 Muted
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                              {/* Click overlay for adding comments */}
-                              <div
-                                className="absolute inset-0 cursor-text z-10"
-                                onClick={(e) => {
-                                  e.stopPropagation() // Prevent track selection
-                                  handleWaveformClick(e, track.id)
-                                }}
-                                title="Click to add a comment"
-                              />
-                              {/* Comment bubbles */}
-                              {maxDuration > 0 &&
-                                track.comments?.map((comment) => (
-                                  <div
-                                    key={comment.id}
-                                    className="absolute z-20 group"
-                                    style={{
-                                      left: `${
-                                        (comment.timestamp / maxDuration) * 100
-                                      }%`,
-                                      bottom: '8px',
-                                      transform: 'translateX(-50%)',
-                                    }}
-                                    onClick={(e) => e.stopPropagation()} // Prevent click from triggering add comment
-                                  >
-                                    {/* Avatar bubble */}
-                                    <div className="relative">
-                                      {comment.profile?.avatar_url ? (
-                                        <Image
-                                          src={comment.profile.avatar_url}
-                                          alt={
-                                            comment.profile.username || 'User'
-                                          }
-                                          width={20}
-                                          height={20}
-                                          className="rounded-full border border-white shadow-lg hover:scale-110 transition-transform cursor-pointer"
-                                        />
-                                      ) : (
-                                        <div className="w-5 h-5 rounded-full border border-white shadow-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-semibold hover:scale-110 transition-transform cursor-pointer">
-                                          {comment.profile?.username?.[0]?.toUpperCase() ||
-                                            '?'}
-                                        </div>
-                                      )}
-
-                                      {/* Tooltip */}
-                                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-30">
-                                        <div className="bg-zinc-900 text-white text-xs px-3 py-2 rounded-lg shadow-xl border border-zinc-700 whitespace-nowrap max-w-xs">
-                                          <div className="font-semibold mb-1">
-                                            @
-                                            {comment.profile?.username ||
-                                              comment.profile?.display_name ||
-                                              'Unknown'}
-                                          </div>
-                                          <div className="text-gray-300 max-w-[250px] break-words whitespace-normal">
-                                            {comment.text}
-                                          </div>
-                                          <div className="text-gray-500 text-[10px] mt-1">
-                                            {formatTime(comment.timestamp)}
-                                          </div>
-                                          {/* Arrow pointing down */}
-                                          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-zinc-700" />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                            </>
-                          ) : (
-                            <div className="h-full flex items-center justify-center">
-                              <span className="text-gray-600 text-sm">
-                                No audio uploaded
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {tracks.map((track) => (
+                    <WaveformTrack
+                      key={track.id}
+                      track={track}
+                      isSelected={selectedTrackId === track.id}
+                      isMuted={trackControls.trackMutes.has(track.id)}
+                      maxDuration={playback.maxDuration}
+                      primaryColor={primaryColor}
+                      onTrackSelect={setSelectedTrackId}
+                      onWaveformClick={handleWaveformClick}
+                      onWaveformReady={playback.handleWaveformReady}
+                      onTimeUpdate={playback.handleTimeUpdate}
+                      waveformRef={(ref) => {
+                        if (ref) {
+                          playback.waveformRefs.current.set(track.id, ref)
+                        } else {
+                          playback.waveformRefs.current.delete(track.id)
+                        }
+                      }}
+                    />
+                  ))}
                 </div>
 
                 {/* Drag & Drop Zone */}
@@ -1087,13 +406,19 @@ export function StudioView({ projectId }: StudioViewProps) {
                     onDrop={handleDrop}
                   >
                     <div className="text-center">
-                      <UploadIcon className={`w-6 h-6 mx-auto mb-2 ${
-                        isDraggingFile ? 'text-primary' : 'text-gray-600'
-                      }`} />
-                      <p className={`text-sm ${
-                        isDraggingFile ? 'text-primary' : 'text-gray-500'
-                      }`}>
-                        {isDraggingFile ? 'Drop file here' : 'Drag and Drop here or choose file'}
+                      <UploadIcon
+                        className={`w-6 h-6 mx-auto mb-2 ${
+                          isDraggingFile ? 'text-primary' : 'text-gray-600'
+                        }`}
+                      />
+                      <p
+                        className={`text-sm ${
+                          isDraggingFile ? 'text-primary' : 'text-gray-500'
+                        }`}
+                      >
+                        {isDraggingFile
+                          ? 'Drop file here'
+                          : 'Drag and Drop here or choose file'}
                       </p>
                     </div>
                   </div>
@@ -1102,8 +427,6 @@ export function StudioView({ projectId }: StudioViewProps) {
             </div>
           )}
         </div>
-
-        {/* Right Sidebar removed - using long-press popup instead */}
       </div>
 
       {/* Upload Modal */}

@@ -18,13 +18,24 @@ export default function JoinLeaveButton({
 
   async function handleClick() {
     setLoading(true)
-    if (isMember) {
-      await leaveClub(clubId, locale)
-    } else {
-      await joinClub(clubId, locale)
+    try {
+      const result = isMember
+        ? await leaveClub(clubId, locale)
+        : await joinClub(clubId, locale)
+
+      if (result?.error) {
+        console.error('Error:', result.error)
+        alert(result.error)
+        setLoading(false)
+        return
+      }
+
+      window.location.reload()
+    } catch (error) {
+      console.error('Unexpected error:', error)
+      alert('Une erreur est survenue')
+      setLoading(false)
     }
-    setLoading(false)
-    window.location.reload()
   }
 
   return (

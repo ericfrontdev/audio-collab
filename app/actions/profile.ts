@@ -19,6 +19,17 @@ export async function createProfile(formData: FormData) {
     return { error: 'Not authenticated' }
   }
 
+  // Check if profile already exists for this user
+  const { data: existingProfile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (existingProfile) {
+    return { error: 'Profile already exists for this account' }
+  }
+
   // Extract form data
   const username = formData.get('username') as string
   const displayName = formData.get('display_name') as string
@@ -80,7 +91,14 @@ export async function createProfile(formData: FormData) {
   if (error) {
     // Check for unique constraint violation
     if (error.code === '23505') {
-      return { error: 'Username already taken' }
+      // Check which constraint was violated
+      if (error.message.includes('profiles_pkey') || error.message.includes('duplicate key value violates unique constraint "profiles_pkey"')) {
+        return { error: 'Profile already exists for this account' }
+      }
+      if (error.message.includes('profiles_username_key') || error.message.includes('username')) {
+        return { error: 'Username already taken' }
+      }
+      return { error: 'This username or profile already exists' }
     }
     return { error: error.message }
   }

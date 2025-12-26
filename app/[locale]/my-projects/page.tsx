@@ -19,11 +19,20 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
     redirect(`/${locale}/auth/login`);
   }
 
-  // Get user's projects
+  // Get user's projects (owned or joined)
+  // First get all project IDs where user is a member
+  const { data: memberships } = await supabase
+    .from('project_members')
+    .select('project_id')
+    .eq('user_id', user.id);
+
+  const memberProjectIds = memberships?.map(m => m.project_id) || [];
+
+  // Get all projects where user is owner OR member
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
     .select('*')
-    .eq('owner_id', user.id)
+    .or(`owner_id.eq.${user.id},id.in.(${memberProjectIds.length > 0 ? memberProjectIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
     .order('created_at', { ascending: false });
 
   const formatDate = (dateString: string) => {

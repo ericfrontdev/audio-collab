@@ -3,15 +3,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { AudioPlayer } from '@/components/ui/AudioPlayer'
-import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, X, Image as ImageIcon, Music } from 'lucide-react'
-import { toggleLikePost, updatePost, deletePost } from '@/app/actions/feed'
-import { uploadMediaToStorage, deleteMediaFromStorage } from '@/lib/storage/uploadMedia'
-import { toast } from 'react-toastify'
+import { MoreHorizontal, Edit, Trash2, Send } from 'lucide-react'
 import type { Post } from '@/lib/types/feed'
 import { Link } from '@/i18n/routing'
 import { useRouter } from '@/i18n/routing'
-import { createClient } from '@/lib/supabase/client'
+import { PostContent } from './PostContent'
+import { PostActions } from './PostActions'
+import { Comment } from './Comment'
+import { usePostLike } from './hooks/usePostLike'
+import { usePostEditor } from './hooks/usePostEditor'
+import { useComments } from './hooks/useComments'
 
 interface FeedPostProps {
   post: Post
@@ -20,23 +21,26 @@ interface FeedPostProps {
 
 export function FeedPost({ post, currentUserId }: FeedPostProps) {
   const router = useRouter()
-  const [isLiked, setIsLiked] = useState(post.is_liked_by_user || false)
-  const [likesCount, setLikesCount] = useState(post.likes_count || 0)
-  const [isLiking, setIsLiking] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editContent, setEditContent] = useState(post.content)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [editImage, setEditImage] = useState<File | null>(null)
-  const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
-  const [editAudio, setEditAudio] = useState<File | null>(null)
-  const [removeCurrentMedia, setRemoveCurrentMedia] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
   const menuRef = useRef<HTMLDivElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
   const editAudioInputRef = useRef<HTMLInputElement>(null)
+
+  // Custom hooks for managing different aspects of the post
+  const { isLiked, likesCount, isLiking, handleLike } = usePostLike(
+    post.is_liked_by_user || false,
+    post.likes_count || 0,
+    post.id
+  )
+
+  const editor = usePostEditor(post, () => router.refresh())
+
+  const commentManager = useComments(post.id)
+
+  // Initialize comments count from post
+  useEffect(() => {
+    commentManager.initializeCommentsCount(post.comments_count || 0)
+  }, [post.comments_count])
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -55,241 +59,14 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
     }
   }, [showMenu])
 
-  const handleLike = async () => {
-    if (isLiking) return
-
-    setIsLiking(true)
-    const previousLiked = isLiked
-    const previousCount = likesCount
-
-    // Optimistic update
-    setIsLiked(!isLiked)
-    setLikesCount(isLiked ? likesCount - 1 : likesCount + 1)
-
-    try {
-      const result = await toggleLikePost(post.id)
-
-      if (!result.success) {
-        // Revert on error
-        setIsLiked(previousLiked)
-        setLikesCount(previousCount)
-        toast.error('Failed to like post')
-      }
-    } catch (error) {
-      // Revert on error
-      setIsLiked(previousLiked)
-      setLikesCount(previousCount)
-      toast.error('Failed to like post')
-    } finally {
-      setIsLiking(false)
-    }
-  }
-
-  const handleEdit = () => {
-    setIsEditing(true)
-    setShowMenu(false)
-    setEditImage(null)
-    setEditImagePreview(null)
-    setEditAudio(null)
-    setRemoveCurrentMedia(false)
-  }
-
-  const handleCancelEdit = () => {
-    setIsEditing(false)
-    setEditContent(post.content)
-    setEditImage(null)
-    setEditImagePreview(null)
-    setEditAudio(null)
-    setRemoveCurrentMedia(false)
-  }
-
-  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file')
-      return
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB')
-      return
-    }
-
-    setEditImage(file)
-    setEditAudio(null)
-    setRemoveCurrentMedia(false)
-
-    // Create preview
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setEditImagePreview(reader.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const handleEditAudioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validate file type
-    if (!file.type.startsWith('audio/')) {
-      toast.error('Please select an audio file')
-      return
-    }
-
-    // Validate file size (max 20MB)
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error('Audio file must be less than 20MB')
-      return
-    }
-
-    setEditAudio(file)
-    setEditImage(null)
-    setEditImagePreview(null)
-    setRemoveCurrentMedia(false)
-  }
-
-  const handleRemoveEditMedia = () => {
-    setEditImage(null)
-    setEditImagePreview(null)
-    setEditAudio(null)
-    setRemoveCurrentMedia(true)
-    if (editFileInputRef.current) {
-      editFileInputRef.current.value = ''
-    }
-    if (editAudioInputRef.current) {
-      editAudioInputRef.current.value = ''
-    }
-  }
-
-  const handleSaveEdit = async () => {
-    if (!editContent.trim()) {
-      toast.error('Post cannot be empty')
-      return
-    }
-
-    setIsUpdating(true)
-    let newMediaUrl: string | null | undefined
-    let newMediaType: 'image' | 'audio' | null | undefined
-
-    try {
-      // Get current user
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        toast.error('Not authenticated')
-        return
-      }
-
-      // Handle media changes
-      if (removeCurrentMedia) {
-        // Delete old media from storage
-        if (post.media_url) {
-          await deleteMediaFromStorage(post.media_url)
-        }
-        newMediaUrl = null
-        newMediaType = null
-      } else if (editImage) {
-        // Delete old media if exists
-        if (post.media_url) {
-          await deleteMediaFromStorage(post.media_url)
-        }
-        // Upload new image
-        const { url, error } = await uploadMediaToStorage(
-          editImage,
-          user.id,
-          'image',
-          setUploadProgress
-        )
-        if (error) {
-          toast.error(error)
-          setUploadProgress(0)
-          return
-        }
-        newMediaUrl = url
-        newMediaType = 'image'
-      } else if (editAudio) {
-        // Delete old media if exists
-        if (post.media_url) {
-          await deleteMediaFromStorage(post.media_url)
-        }
-        // Upload new audio
-        const { url, error } = await uploadMediaToStorage(
-          editAudio,
-          user.id,
-          'audio',
-          setUploadProgress
-        )
-        if (error) {
-          toast.error(error)
-          setUploadProgress(0)
-          return
-        }
-        newMediaUrl = url
-        newMediaType = 'audio'
-      }
-
-      // Update post
-      const result = await updatePost(post.id, editContent, newMediaUrl, newMediaType)
-
-      if (result.success) {
-        toast.success('Post updated successfully!')
-        setIsEditing(false)
-        setUploadProgress(0)
-        router.refresh()
-      } else {
-        // Clean up newly uploaded media if post update failed
-        if (newMediaUrl && (editImage || editAudio)) {
-          await deleteMediaFromStorage(newMediaUrl)
-        }
-        toast.error(result.error || 'Failed to update post')
-        setUploadProgress(0)
-      }
-    } catch (error) {
-      // Clean up newly uploaded media on error
-      if (newMediaUrl && (editImage || editAudio)) {
-        await deleteMediaFromStorage(newMediaUrl)
-      }
-      toast.error('Failed to update post')
-      setUploadProgress(0)
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
-  const handleDelete = () => {
-    setShowDeleteConfirm(true)
+  const handleEditClick = () => {
+    editor.handleEdit()
     setShowMenu(false)
   }
 
-  const confirmDelete = async () => {
-    setShowDeleteConfirm(false)
-    setIsDeleting(true)
-    try {
-      const result = await deletePost(post.id)
-
-      if (result.success) {
-        toast.success('Post deleted successfully!')
-        router.refresh()
-      } else {
-        toast.error(result.error || 'Failed to delete post')
-      }
-    } catch (error) {
-      toast.error('Failed to delete post')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
-  const cancelDelete = () => {
-    setShowDeleteConfirm(false)
+  const handleDeleteClick = () => {
+    editor.handleDelete()
+    setShowMenu(false)
   }
 
   const isOwnPost = currentUserId === post.user_id
@@ -310,10 +87,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
     <Card className="p-4 rounded-xl bg-zinc-900/50 border-zinc-800 hover:border-primary/50 transition-colors">
       <div className="flex gap-3">
         {/* Avatar */}
-        <Link
-          href={`/profile/${post.user?.username}`}
-          className="flex-shrink-0"
-        >
+        <Link href={`/profile/${post.user?.username}`} className="flex-shrink-0">
           {post.user?.avatar_url ? (
             <img
               src={post.user.avatar_url}
@@ -347,9 +121,7 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
                 @{post.user?.username}
               </Link>
               <span className="text-gray-500">·</span>
-              <span className="text-gray-500 text-sm">
-                {formatTimeAgo(post.created_at)}
-              </span>
+              <span className="text-gray-500 text-sm">{formatTimeAgo(post.created_at)}</span>
             </div>
 
             {isOwnPost && (
@@ -364,19 +136,19 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
                 {showMenu && (
                   <div className="absolute right-0 top-8 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg overflow-hidden z-10">
                     <button
-                      onClick={handleEdit}
+                      onClick={handleEditClick}
                       className="w-full px-4 py-2 text-left text-white hover:bg-zinc-700 transition-colors flex items-center gap-2"
                     >
                       <Edit className="w-4 h-4" />
                       Edit post
                     </button>
                     <button
-                      onClick={handleDelete}
-                      disabled={isDeleting}
+                      onClick={handleDeleteClick}
+                      disabled={editor.isDeleting}
                       className="w-full px-4 py-2 text-left text-red-500 hover:bg-zinc-700 transition-colors flex items-center gap-2"
                     >
                       <Trash2 className="w-4 h-4" />
-                      {isDeleting ? 'Deleting...' : 'Delete post'}
+                      {editor.isDeleting ? 'Deleting...' : 'Delete post'}
                     </button>
                   </div>
                 )}
@@ -385,268 +157,181 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
           </div>
 
           {/* Post content - Edit mode or display mode */}
-          {isEditing ? (
+          {editor.isEditing ? (
             <div className="mb-3">
               <textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
+                value={editor.editContent}
+                onChange={(e) => editor.setEditContent(e.target.value)}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-white resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                 rows={3}
                 maxLength={500}
               />
-              {/* Upload progress */}
-              {uploadProgress > 0 && uploadProgress < 100 && (
+              {editor.uploadProgress > 0 && editor.uploadProgress < 100 && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-gray-400">Uploading...</span>
-                    <span className="text-xs text-gray-400">{uploadProgress}%</span>
+                    <span className="text-xs text-gray-400">{editor.uploadProgress}%</span>
                   </div>
                   <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
+                      style={{ width: `${editor.uploadProgress}%` }}
                     />
                   </div>
                 </div>
               )}
 
               <div className="flex items-center justify-between mt-2">
-                <span className="text-sm text-gray-500">
-                  {editContent.length}/500
-                </span>
+                <span className="text-sm text-gray-500">{editor.editContent.length}/500</span>
                 <div className="flex gap-2">
                   <button
-                    onClick={handleCancelEdit}
+                    onClick={editor.handleCancelEdit}
                     className="px-3 py-1 text-sm text-gray-400 hover:text-white transition-colors"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={handleSaveEdit}
-                    disabled={isUpdating || !editContent.trim()}
+                    onClick={editor.handleSaveEdit}
+                    disabled={editor.isUpdating || !editor.editContent.trim()}
                     className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
-                    {isUpdating ? 'Saving...' : 'Save'}
+                    {editor.isUpdating ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               </div>
             </div>
           ) : (
-            <p className="text-white whitespace-pre-wrap mb-3">{post.content}</p>
-          )}
-
-          {/* Post media - Edit mode */}
-          {isEditing && (
-            <>
-              <input
-                ref={editFileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleEditImageSelect}
-                className="hidden"
-              />
-              <input
-                ref={editAudioInputRef}
-                type="file"
-                accept="audio/*"
-                onChange={handleEditAudioSelect}
-                className="hidden"
-              />
-
-              {/* Show new image preview, current image, new audio, current audio, or add buttons */}
-              {editImagePreview ? (
-                <div className="relative mb-3 rounded-lg overflow-hidden border border-zinc-800">
-                  <img
-                    src={editImagePreview}
-                    alt="New image preview"
-                    className="w-full max-h-[500px] object-contain bg-zinc-950"
-                  />
-                  <div className="absolute top-2 right-2 flex gap-2">
-                    <button
-                      onClick={() => editFileInputRef.current?.click()}
-                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
-                      title="Change image"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleRemoveEditMedia}
-                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
-                      title="Remove image"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : editAudio ? (
-                <div className="mb-3 bg-zinc-800 border border-zinc-700 rounded-lg p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Music className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="text-sm text-white truncate">
-                      {editAudio.name}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => editAudioInputRef.current?.click()}
-                      className="p-1.5 rounded-full hover:bg-zinc-700 text-gray-400 hover:text-white transition-colors flex-shrink-0"
-                      title="Change audio"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleRemoveEditMedia}
-                      className="p-1.5 rounded-full hover:bg-zinc-700 text-gray-400 hover:text-white transition-colors flex-shrink-0"
-                      title="Remove audio"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : post.media_url && post.media_type === 'image' && !removeCurrentMedia ? (
-                <div className="relative mb-3 rounded-lg overflow-hidden border border-zinc-800">
-                  <img
-                    src={post.media_url}
-                    alt="Current image"
-                    className="w-full max-h-[500px] object-contain bg-zinc-950"
-                  />
-                  <div className="absolute top-2 right-2 flex gap-2">
-                    <button
-                      onClick={() => editFileInputRef.current?.click()}
-                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
-                      title="Change image"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleRemoveEditMedia}
-                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
-                      title="Remove image"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : post.media_url && post.media_type === 'audio' && !removeCurrentMedia ? (
-                <div className="mb-3 relative">
-                  <AudioPlayer src={post.media_url} />
-                  <div className="absolute top-2 right-2 flex gap-2">
-                    <button
-                      onClick={() => editAudioInputRef.current?.click()}
-                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
-                      title="Change audio"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleRemoveEditMedia}
-                      className="p-2 rounded-full bg-black/70 hover:bg-black text-white transition-colors"
-                      title="Remove audio"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mb-3 flex gap-2">
-                  <button
-                    onClick={() => editFileInputRef.current?.click()}
-                    className="flex-1 p-4 rounded-lg border-2 border-dashed border-zinc-700 hover:border-primary/50 text-zinc-500 hover:text-primary transition-colors flex items-center justify-center gap-2"
-                  >
-                    <ImageIcon className="w-5 h-5" />
-                    <span>Add image</span>
-                  </button>
-                  <button
-                    onClick={() => editAudioInputRef.current?.click()}
-                    className="flex-1 p-4 rounded-lg border-2 border-dashed border-zinc-700 hover:border-primary/50 text-zinc-500 hover:text-primary transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Music className="w-5 h-5" />
-                    <span>Add audio</span>
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Post image - Display mode */}
-          {!isEditing && post.media_url && post.media_type === 'image' && (
-            <div className="mb-3 rounded-lg overflow-hidden border border-zinc-800">
-              <img
-                src={post.media_url}
-                alt="Post image"
-                className="w-full max-h-[500px] object-contain bg-zinc-950"
-              />
-            </div>
-          )}
-
-          {/* Post audio - Display mode */}
-          {!isEditing && post.media_url && post.media_type === 'audio' && (
-            <div className="mb-3">
-              <AudioPlayer src={post.media_url} />
-            </div>
-          )}
-
-          {/* Project link if attached */}
-          {post.project && (
-            <Link
-              href={`/projects/${post.project.id}`}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-sm text-white mb-3 transition-colors"
-            >
-              <span>🎵</span>
-              <span>{post.project.title}</span>
-            </Link>
+            <PostContent
+              content={post.content}
+              mediaUrl={post.media_url}
+              mediaType={post.media_type}
+              project={post.project}
+              linkUrl={post.link_url}
+              linkTitle={post.link_title}
+              linkDescription={post.link_description}
+              linkImage={post.link_image}
+            />
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-6 text-gray-500">
-            <button className="flex items-center gap-2 hover:text-primary transition-colors group">
-              <div className="p-2 rounded-full group-hover:bg-primary/10 transition-colors">
-                <MessageCircle className="w-5 h-5" />
-              </div>
-              <span className="text-sm">{post.comments_count || 0}</span>
-            </button>
+          <PostActions
+            likesCount={likesCount}
+            commentsCount={commentManager.commentsCount}
+            isLiked={isLiked}
+            isLiking={isLiking}
+            onLike={handleLike}
+            onToggleComments={commentManager.handleToggleCommentInput}
+          />
 
-            <button
-              onClick={handleLike}
-              disabled={isLiking}
-              className={`flex items-center gap-2 transition-colors group ${
-                isLiked
-                  ? 'text-red-500'
-                  : 'text-gray-500 hover:text-red-500'
-              }`}
-            >
-              <div
-                className={`p-2 rounded-full transition-colors ${
-                  isLiked
-                    ? 'bg-red-500/10'
-                    : 'group-hover:bg-red-500/10'
-                }`}
-              >
-                <Heart
-                  className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`}
-                />
-              </div>
-              <span className="text-sm">{likesCount}</span>
-            </button>
+          {/* Comment input - appears when user clicks comment button */}
+          {commentManager.showCommentInput && (
+            <div className="mt-4 pt-4 border-t border-zinc-800">
+              <div className="flex gap-3">
+                {currentUserId && (
+                  <div className="flex-shrink-0">
+                    {post.user?.avatar_url ? (
+                      <img
+                        src={post.user.avatar_url}
+                        alt="Your avatar"
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                        <span className="text-primary font-semibold text-sm">
+                          {post.user?.username?.[0]?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            <button className="flex items-center gap-2 hover:text-primary transition-colors group">
-              <div className="p-2 rounded-full group-hover:bg-primary/10 transition-colors">
-                <Share2 className="w-5 h-5" />
+                <div className="flex-1">
+                  <div className="relative">
+                    <textarea
+                      value={commentManager.commentText}
+                      onChange={(e) => commentManager.setCommentText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                          commentManager.handleSubmitComment()
+                        }
+                      }}
+                      placeholder="Write a comment..."
+                      className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 pr-12 text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-gray-500"
+                      rows={2}
+                      maxLength={500}
+                    />
+                    <button
+                      onClick={commentManager.handleSubmitComment}
+                      disabled={commentManager.isSubmittingComment || !commentManager.commentText.trim()}
+                      className="absolute right-2 bottom-2 p-2 text-primary hover:text-primary/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Send comment"
+                    >
+                      <Send className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-end mt-1">
+                    <span className="text-xs text-gray-500">{commentManager.commentText.length}/500</span>
+                  </div>
+                </div>
               </div>
-            </button>
-          </div>
+
+              {/* Display comments */}
+              {commentManager.comments.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  {commentManager.comments.map((comment) => (
+                    <Comment
+                      key={comment.id}
+                      comment={comment}
+                      postId={post.id}
+                      currentUserId={currentUserId}
+                      onUpdate={commentManager.handleCommentUpdate}
+                      onDelete={commentManager.handleCommentDelete}
+                      onLike={commentManager.handleCommentLike}
+                      onReplyUpdate={commentManager.handleReplyUpdate}
+                      onReplyDelete={commentManager.handleReplyDelete}
+                      onReplyLike={commentManager.handleReplyLike}
+                      onReplyAdd={commentManager.handleReplyAdd}
+                      formatTimeAgo={formatTimeAgo}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       <ConfirmDialog
-        isOpen={showDeleteConfirm}
+        isOpen={editor.showDeleteConfirm}
         title="Delete Post"
         message="Are you sure you want to delete this post? This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onConfirm={editor.confirmDelete}
+        onCancel={editor.cancelDelete}
+      />
+
+      <ConfirmDialog
+        isOpen={commentManager.showDeleteCommentConfirm}
+        title="Supprimer le commentaire"
+        message="Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée."
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
+        onConfirm={commentManager.confirmDeleteComment}
+        onCancel={commentManager.cancelDeleteComment}
+      />
+
+      <ConfirmDialog
+        isOpen={commentManager.showDeleteReplyConfirm}
+        title="Supprimer la réponse"
+        message="Êtes-vous sûr de vouloir supprimer cette réponse ? Cette action ne peut pas être annulée."
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
+        onConfirm={commentManager.confirmDeleteReply}
+        onCancel={commentManager.cancelDeleteReply}
       />
     </Card>
   )

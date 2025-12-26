@@ -40,7 +40,7 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Debug: Check if user is authenticated
+  // Debug: Check if user is authenticated and has profile
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient();
@@ -48,10 +48,23 @@ export default function OnboardingPage() {
       console.log('Current user:', user);
       if (!user) {
         console.error('No user found on client side!');
+        return;
+      }
+
+      // Check if user already has a profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profile) {
+        console.log('User already has a profile, redirecting to feed');
+        router.push('/feed');
       }
     };
     checkAuth();
-  }, []);
+  }, [router]);
 
   const toggleRole = (role: string) => {
     setSelectedRoles(prev =>
