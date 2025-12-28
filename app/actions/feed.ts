@@ -50,8 +50,24 @@ export async function createPost(
       return { success: false, error: error.message }
     }
 
+    // Fetch user profile to include in the response
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, display_name')
+      .eq('id', user.id)
+      .single()
+
+    // Enrich post with user profile data
+    const enrichedPost = {
+      ...post,
+      user: profile,
+      likes_count: 0,
+      comments_count: 0,
+      is_liked_by_user: false,
+    }
+
     revalidatePath('/feed')
-    return { success: true, post }
+    return { success: true, post: enrichedPost }
   } catch (error: unknown) {
     const err = error as SupabaseError
     console.error('Error creating post:', err)

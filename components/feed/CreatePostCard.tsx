@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Paperclip, Link as LinkIcon, X, Music, Loader2, ExternalLink } from 'lucide-react'
@@ -13,9 +13,10 @@ import { createClient } from '@/lib/supabase/client'
 interface CreatePostCardProps {
   userAvatar?: string | null
   username?: string
+  userId: string
 }
 
-export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
+export function CreatePostCard({ userAvatar, username, userId }: CreatePostCardProps) {
   const [content, setContent] = useState('')
   const [isPosting, setIsPosting] = useState(false)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -29,6 +30,21 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
   const [linkUrl, setLinkUrl] = useState('')
   const [isFetchingLink, setIsFetchingLink] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const broadcastChannelRef = useRef<any>(null)
+
+  // Initialize broadcast channel
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase.channel('feed_posts')
+
+    channel.subscribe()
+
+    broadcastChannelRef.current = channel
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
   const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -150,22 +166,11 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
     let mediaType: 'image' | 'audio' | 'video' | undefined
 
     try {
-      // Get current user
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        toast.error('Not authenticated')
-        return
-      }
-
       // Upload media first if exists
       if (selectedImage) {
         const { url, error } = await uploadMediaToStorage(
           selectedImage,
-          user.id,
+          userId,
           'image',
           setUploadProgress
         )
@@ -179,7 +184,7 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
       } else if (selectedAudio) {
         const { url, error } = await uploadMediaToStorage(
           selectedAudio,
-          user.id,
+          userId,
           'audio',
           setUploadProgress
         )
@@ -193,7 +198,7 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
       } else if (selectedVideo) {
         const { url, error } = await uploadMediaToStorage(
           selectedVideo,
-          user.id,
+          userId,
           'video',
           setUploadProgress
         )
@@ -219,6 +224,19 @@ export function CreatePostCard({ userAvatar, username }: CreatePostCardProps) {
       )
 
       if (result.success) {
+        // Broadcast the new post to other users
+        if (result.post && broadcastChannelRef.current) {
+          try {
+            await broadcastChannelRef.current.send({
+              type: 'broadcast',
+              event: 'post_created',
+              payload: result.post,
+            })
+          } catch (error) {
+            console.error('Error broadcasting post:', error)
+          }
+        }
+
         toast.success('Posted successfully!')
         setContent('')
         handleRemoveImage()

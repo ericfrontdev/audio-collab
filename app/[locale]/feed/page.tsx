@@ -1,6 +1,6 @@
 import { getFeedPosts } from '@/app/actions/feed'
 import { CreatePostCard } from '@/components/feed/CreatePostCard'
-import { FeedPost } from '@/components/feed/FeedPost'
+import { FeedPostsList } from '@/components/feed/FeedPostsList'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { UserProfileCard } from '@/components/cards/UserProfileCard'
 import { QuickActions } from '@/components/cards/QuickActions'
@@ -72,26 +72,11 @@ export default async function FeedPage({
               <CreatePostCard
                 userAvatar={profile?.avatar_url}
                 username={profile?.username || undefined}
+                userId={user.id}
               />
 
               {/* Feed */}
-              <div className="space-y-4">
-                {posts.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 mb-4">
-                      No posts yet. Be the first to share something!
-                    </p>
-                  </div>
-                ) : (
-                  posts.map((post) => (
-                    <FeedPost
-                      key={post.id}
-                      post={post}
-                      currentUserId={user.id}
-                    />
-                  ))
-                )}
-              </div>
+              <FeedPostsList initialPosts={posts} currentUserId={user.id} />
             </div>
           </div>
 

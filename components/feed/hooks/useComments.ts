@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { addPostComment, getPostComments, toggleCommentLike } from '@/app/actions/feed'
 import { toast } from 'react-toastify'
+import { createClient } from '@/lib/supabase/client'
 
 export function useComments(postId: string) {
   const [showCommentInput, setShowCommentInput] = useState(false)
@@ -14,6 +15,66 @@ export function useComments(postId: string) {
   const [showDeleteCommentConfirm, setShowDeleteCommentConfirm] = useState(false)
   const [deletingReplyId, setDeletingReplyId] = useState<string | null>(null)
   const [showDeleteReplyConfirm, setShowDeleteReplyConfirm] = useState(false)
+  const channelRef = useRef<any>(null)
+
+  // Subscribe to real-time comment updates
+  useEffect(() => {
+    const supabase = createClient()
+
+    const channel = supabase
+      .channel(`post_comments:${postId}`)
+      .on('broadcast', { event: 'comment_added' }, (payload) => {
+        const newComment = payload.payload
+        if (commentsLoaded) {
+          setComments((prev) => [newComment, ...prev])
+        }
+        setCommentsCount((prev) => prev + 1)
+      })
+      .on('broadcast', { event: 'comment_liked' }, (payload) => {
+        const { commentId, isLiked, likesCount } = payload.payload
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === commentId
+              ? { ...comment, likes_count: likesCount }
+              : comment
+          )
+        )
+      })
+      .on('broadcast', { event: 'reply_added' }, (payload) => {
+        const { commentId, reply } = payload.payload
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === commentId
+              ? { ...comment, replies: [...(comment.replies || []), reply] }
+              : comment
+          )
+        )
+      })
+      .on('broadcast', { event: 'reply_liked' }, (payload) => {
+        const { commentId, replyId, isLiked, likesCount } = payload.payload
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === commentId
+              ? {
+                  ...comment,
+                  replies: (comment.replies || []).map((reply: any) =>
+                    reply.id === replyId
+                      ? { ...reply, likes_count: likesCount }
+                      : reply
+                  ),
+                }
+              : comment
+          )
+        )
+      })
+      .subscribe()
+
+    channelRef.current = channel
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [postId, commentsLoaded])
 
   const initializeCommentsCount = (count: number) => {
     setCommentsCount(count)
@@ -52,6 +113,15 @@ export function useComments(postId: string) {
         setComments([result.comment, ...comments])
         setCommentText('')
         toast.success('Comment added!')
+
+        // Broadcast the new comment to other users using the existing channel
+        if (channelRef.current) {
+          await channelRef.current.send({
+            type: 'broadcast',
+            event: 'comment_added',
+            payload: result.comment,
+          })
+        }
       } else {
         setCommentsCount(previousCount)
         toast.error(result.error || 'Failed to add comment')
@@ -103,11 +173,14 @@ export function useComments(postId: string) {
     const previousLiked = comment.is_liked_by_user
     const previousCount = comment.likes_count || 0
 
+    const newLiked = !previousLiked
+    const newCount = previousLiked ? previousCount - 1 : previousCount + 1
+
     const updatedComments = [...comments]
     updatedComments[commentIndex] = {
       ...comment,
-      is_liked_by_user: !previousLiked,
-      likes_count: previousLiked ? previousCount - 1 : previousCount + 1,
+      is_liked_by_user: newLiked,
+      likes_count: newCount,
     }
     setComments(updatedComments)
 
@@ -123,6 +196,19 @@ export function useComments(postId: string) {
         }
         setComments(revertedComments)
         toast.error('Failed to like comment')
+      } else {
+        // Broadcast the comment like change to other users
+        if (channelRef.current) {
+          await channelRef.current.send({
+            type: 'broadcast',
+            event: 'comment_liked',
+            payload: {
+              commentId,
+              isLiked: newLiked,
+              likesCount: newCount,
+            },
+          })
+        }
       }
     } catch (error) {
       const revertedComments = [...comments]
@@ -190,12 +276,15 @@ export function useComments(postId: string) {
     const previousLiked = reply.is_liked_by_user
     const previousCount = reply.likes_count || 0
 
+    const newLiked = !previousLiked
+    const newCount = previousLiked ? previousCount - 1 : previousCount + 1
+
     const updatedComments = [...comments]
     const updatedReplies = [...(comment.replies || [])]
     updatedReplies[replyIndex] = {
       ...reply,
-      is_liked_by_user: !previousLiked,
-      likes_count: previousLiked ? previousCount - 1 : previousCount + 1,
+      is_liked_by_user: newLiked,
+      likes_count: newCount,
     }
     updatedComments[commentIndex] = {
       ...comment,
@@ -220,6 +309,20 @@ export function useComments(postId: string) {
         }
         setComments(revertedComments)
         toast.error('Failed to like reply')
+      } else {
+        // Broadcast the reply like change to other users
+        if (channelRef.current) {
+          await channelRef.current.send({
+            type: 'broadcast',
+            event: 'reply_liked',
+            payload: {
+              commentId,
+              replyId,
+              isLiked: newLiked,
+              likesCount: newCount,
+            },
+          })
+        }
       }
     } catch (error) {
       const revertedComments = [...comments]
@@ -238,7 +341,7 @@ export function useComments(postId: string) {
     }
   }
 
-  const handleReplyAdd = (commentId: string, reply: any) => {
+  const handleReplyAdd = async (commentId: string, reply: any) => {
     const updatedComments = comments.map((comment) => {
       if (comment.id === commentId) {
         return {
@@ -249,6 +352,18 @@ export function useComments(postId: string) {
       return comment
     })
     setComments(updatedComments)
+
+    // Broadcast the new reply to other users
+    if (channelRef.current) {
+      await channelRef.current.send({
+        type: 'broadcast',
+        event: 'reply_added',
+        payload: {
+          commentId,
+          reply,
+        },
+      })
+    }
   }
 
   return {
