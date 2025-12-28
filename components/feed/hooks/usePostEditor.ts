@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { updatePost, deletePost } from '@/app/actions/feed'
 import { uploadMediaToStorage, deleteMediaFromStorage } from '@/lib/storage/uploadMedia'
 import { toast } from 'react-toastify'
-import { createClient } from '@/lib/supabase/client'
 import type { Post } from '@/lib/types/feed'
 
 export function usePostEditor(post: Post, onSuccess: () => void) {
@@ -103,16 +102,6 @@ export function usePostEditor(post: Post, onSuccess: () => void) {
     let newMediaType: 'image' | 'audio' | null | undefined
 
     try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        toast.error('Not authenticated')
-        return
-      }
-
       if (removeCurrentMedia) {
         if (post.media_url) {
           await deleteMediaFromStorage(post.media_url)
@@ -125,7 +114,7 @@ export function usePostEditor(post: Post, onSuccess: () => void) {
         }
         const { url, error } = await uploadMediaToStorage(
           editImage,
-          user.id,
+          post.user_id,
           'image',
           setUploadProgress
         )
@@ -142,7 +131,7 @@ export function usePostEditor(post: Post, onSuccess: () => void) {
         }
         const { url, error } = await uploadMediaToStorage(
           editAudio,
-          user.id,
+          post.user_id,
           'audio',
           setUploadProgress
         )
