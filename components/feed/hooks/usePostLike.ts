@@ -58,7 +58,6 @@ export function usePostLike(initialIsLiked: boolean, initialLikesCount: number, 
             event: 'like_changed',
             payload: {
               likesCount: newCount,
-              userId: result.userId,
               isLiked: newIsLiked,
             },
           })
