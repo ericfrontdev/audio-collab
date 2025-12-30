@@ -9,6 +9,7 @@
 - ✅ Clubs
 - ✅ Projets/Studios
 - ✅ Real-time (posts, likes, commentaires, replies)
+- ✅ Messagerie privée (asynchrone, 1-on-1)
 
 ### Pages existantes
 - `/[locale]/profile/[username]` - Page de profil
@@ -19,28 +20,34 @@
 - `/[locale]/projects/[id]` - Détails d'un projet
 - `/[locale]/projects/[id]/studio` - Interface studio
 - `/[locale]/feed` - Feed principal
+- `/[locale]/messages` - Messagerie privée (liste des conversations)
+- `/[locale]/messages/[id]` - Conversation individuelle
 
 ---
 
 ## Nouvelles fonctionnalités à développer
 
-### 1. Messagerie privée (STANDALONE)
+### 1. ✅ Messagerie privée (TERMINÉE)
 **Type:** Nouvelle fonctionnalité standalone
-**Priorité:** Haute (débloque le Repost/Sharing)
-**Complexité:** Élevée
+**Statut:** ✅ **TERMINÉE**
 
 **Description:**
-Système de messagerie privée entre utilisateurs avec conversations en temps réel.
+Système de messagerie privée 1-on-1 entre utilisateurs (asynchrone, comme email).
 
-**Besoins techniques:**
-- Nouvelle table `conversations` et `messages`
-- Real-time avec Supabase channels
-- Nouvelle page `/[locale]/messages`
-- Notifications de nouveaux messages
-- Liste des conversations
-- Interface de chat en temps réel
+**Implémenté:**
+- ✅ Tables `conversations` et `messages`
+- ✅ Page `/[locale]/messages` avec liste des conversations
+- ✅ Page `/[locale]/messages/[id]` pour conversation individuelle
+- ✅ Badge de notifications avec compteur de messages non lus
+- ✅ Marquer messages comme lus automatiquement
+- ✅ Éditer/supprimer ses propres messages
+- ✅ Recherche d'utilisateurs pour nouvelle conversation
+- ✅ Sidebar de droite avec profil utilisateur
 
-**Dépendances:** Aucune
+**Notes:**
+- Messagerie asynchrone (pas real-time) - les messages apparaissent au refresh/navigation
+- Limite de 2000 caractères par message
+- Suppression définitive des messages (DELETE from DB)
 
 ---
 
@@ -145,10 +152,10 @@ Interface de mixage audio dans le studio pour mixer les différentes pistes/take
 ## Ordre de développement suggéré
 
 ### Phase 1: Features sociales de base
-1. **Feed des clubs** (faible complexité, ajoute de la valeur rapidement)
-2. **Messagerie privée** (débloque le Sharing)
+1. ✅ ~~**Messagerie privée**~~ (TERMINÉE - débloque le Sharing)
+2. **Feed des clubs** (faible complexité, ajoute de la valeur rapidement)
 3. **Feed personnel** (alternative au messaging pour le Sharing)
-4. **Repost/Sharing** (une fois messaging ou feed personnel en place)
+4. **Repost/Sharing** (messaging déjà en place, peut être développé maintenant)
 
 ### Phase 2: Features studio/production
 5. **Système de retakes** (feature core pour les musiciens)
