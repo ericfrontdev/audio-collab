@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getConversations } from '@/app/actions/messaging'
 import { AppLayout } from '@/components/layouts/AppLayout'
 import { ConversationsList } from '@/components/messaging/ConversationsList'
+import { UserProfileCard } from '@/components/cards/UserProfileCard'
+import { QuickActions } from '@/components/cards/QuickActions'
 import { MessageCircle } from 'lucide-react'
 
 export default async function MessagesPage() {
@@ -31,6 +33,7 @@ export default async function MessagesPage() {
     <AppLayout>
       <div className="min-h-screen bg-black">
         <div className="flex">
+          {/* Main Content - Center */}
           <div className="flex-1 min-w-0">
             <div className="max-w-6xl mx-auto px-4 md:px-6 py-4">
               {/* Header */}
@@ -62,6 +65,26 @@ export default async function MessagesPage() {
               </div>
             </div>
           </div>
+
+          {/* Right Sidebar */}
+          <aside className="hidden xl:block w-96 border-l border-zinc-800 p-6 space-y-6">
+            {/* User Profile Card */}
+            {profile && <UserProfileCard profile={profile} />}
+
+            {/* Quick Actions */}
+            <QuickActions />
+
+            {/* Quick Info */}
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
+              <h3 className="text-sm font-semibold text-white mb-3">
+                Private Messaging
+              </h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Send private messages to other musicians. Start conversations,
+                collaborate on projects, and build your network.
+              </p>
+            </div>
+          </aside>
         </div>
       </div>
     </AppLayout>
