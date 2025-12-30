@@ -39,8 +39,12 @@ export function ChatView({ conversationId, otherUser, initialMessages, currentUs
   // Mark messages as read when viewing conversation
   useEffect(() => {
     const markAsRead = async () => {
-      await markMessagesAsRead(conversationId)
+      console.log('🔵 Marking messages as read for conversation:', conversationId)
+      const result = await markMessagesAsRead(conversationId)
+      console.log('🔵 Mark as read result:', result)
+      console.log('🔵 Calling router.refresh()')
       router.refresh() // Refresh to update unread count in sidebar
+      console.log('🔵 router.refresh() called')
     }
     markAsRead()
   }, [conversationId, router])

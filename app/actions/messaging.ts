@@ -276,10 +276,12 @@ export async function markMessagesAsRead(conversationId: string) {
       return { success: false, error: error.message }
     }
 
+    console.log('🟢 Messages marked as read, revalidating paths...')
     // Revalidate all paths to update unread count in sidebar
     revalidatePath('/', 'layout')
     revalidatePath('/messages')
     revalidatePath(`/messages/${conversationId}`)
+    console.log('🟢 Paths revalidated')
     return { success: true }
   } catch (error: unknown) {
     const err = error as SupabaseError
@@ -390,11 +392,12 @@ export async function getUnreadMessagesCount() {
       return { success: false, error: 'Not authenticated', count: 0 }
     }
 
-    // Get all conversations for the user
+    // Get all conversations for the user (force fresh data)
     const { data: conversations, error: convsError } = await supabase
       .from('conversations')
       .select('id')
       .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
+      .order('created_at', { ascending: false })
 
     if (convsError) {
       console.error('Error fetching conversations:', convsError)
@@ -407,13 +410,14 @@ export async function getUnreadMessagesCount() {
 
     const conversationIds = conversations.map(c => c.id)
 
-    // Count unread messages in those conversations
+    // Count unread messages in those conversations (force fresh data)
     const { count, error } = await supabase
       .from('messages')
       .select('*', { count: 'exact', head: true })
       .in('conversation_id', conversationIds)
       .eq('is_read', false)
       .neq('user_id', user.id)
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching unread count:', error)

@@ -2,6 +2,10 @@ import { Sidebar } from '@/components/navigation/Sidebar';
 import { createClient } from '@/lib/supabase/server';
 import { getUnreadMessagesCount } from '@/app/actions/messaging';
 
+// Force dynamic rendering - don't cache this layout
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -19,8 +23,10 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
 
     // Get unread messages count
     const unreadResult = await getUnreadMessagesCount();
+    console.log('🟡 AppLayout: Unread messages count result:', unreadResult)
     if (unreadResult.success) {
       unreadCount = unreadResult.count;
+      console.log('🟡 AppLayout: Setting unread count to:', unreadCount)
     }
   }
 
