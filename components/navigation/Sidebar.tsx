@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils';
 
 interface SidebarProps {
   username?: string;
+  unreadMessagesCount?: number;
 }
 
-export function Sidebar({ username }: SidebarProps) {
+export function Sidebar({ username, unreadMessagesCount = 0 }: SidebarProps) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -85,6 +86,11 @@ export function Sidebar({ username }: SidebarProps) {
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-sm font-medium">{item.name}</span>
+                  {item.name === 'Messages' && unreadMessagesCount > 0 && (
+                    <span className="ml-auto bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                      {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}

@@ -375,6 +375,57 @@ export async function deleteMessage(messageId: string) {
   }
 }
 
+// Get unread messages count
+export async function getUnreadMessagesCount() {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Not authenticated', count: 0 }
+    }
+
+    // Get all conversations for the user
+    const { data: conversations, error: convsError } = await supabase
+      .from('conversations')
+      .select('id')
+      .or(`user_1_id.eq.${user.id},user_2_id.eq.${user.id}`)
+
+    if (convsError) {
+      console.error('Error fetching conversations:', convsError)
+      return { success: false, error: convsError.message, count: 0 }
+    }
+
+    if (!conversations || conversations.length === 0) {
+      return { success: true, count: 0 }
+    }
+
+    const conversationIds = conversations.map(c => c.id)
+
+    // Count unread messages in those conversations
+    const { count, error } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .in('conversation_id', conversationIds)
+      .eq('is_read', false)
+      .neq('user_id', user.id)
+
+    if (error) {
+      console.error('Error fetching unread count:', error)
+      return { success: false, error: error.message, count: 0 }
+    }
+
+    return { success: true, count: count || 0 }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error:', err)
+    return { success: false, error: err.message, count: 0 }
+  }
+}
+
 // Search users for starting a new conversation
 export async function searchUsers(query: string) {
   try {
