@@ -83,7 +83,7 @@ export async function sendMessage(conversationId: string, content: string) {
       return { success: false, error: 'Message is too long (max 2000 characters)' }
     }
 
-    // Insert message with user profile data
+    // Insert message
     const { data: message, error: insertError } = await supabase
       .from('messages')
       .insert({
@@ -91,15 +91,25 @@ export async function sendMessage(conversationId: string, content: string) {
         user_id: user.id,
         content: trimmedContent,
       })
-      .select(`
-        *,
-        user:profiles(id, username, display_name, avatar_url)
-      `)
+      .select()
       .single()
 
     if (insertError) {
       console.error('Error sending message:', insertError)
       return { success: false, error: insertError.message }
+    }
+
+    // Fetch user profile separately
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .eq('id', user.id)
+      .single()
+
+    // Combine message with user profile
+    const enrichedMessage = {
+      ...message,
+      user: profile,
     }
 
     // Update conversation last_message_at
@@ -114,7 +124,7 @@ export async function sendMessage(conversationId: string, content: string) {
 
     revalidatePath('/messages')
     revalidatePath(`/messages/${conversationId}`)
-    return { success: true, message }
+    return { success: true, message: enrichedMessage }
   } catch (error: unknown) {
     const err = error as SupabaseError
     console.error('Error:', err)
@@ -137,10 +147,7 @@ export async function getMessages(conversationId: string, limit = 50, offset = 0
 
     const { data: messages, error } = await supabase
       .from('messages')
-      .select(`
-        *,
-        user:profiles(id, username, display_name, avatar_url)
-      `)
+      .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
       .range(offset, offset + limit - 1)
@@ -150,7 +157,23 @@ export async function getMessages(conversationId: string, limit = 50, offset = 0
       return { success: false, error: error.message }
     }
 
-    return { success: true, messages: messages as Message[] }
+    // Fetch all unique user profiles
+    const userIds = [...new Set(messages.map(m => m.user_id))]
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .in('id', userIds)
+
+    // Create a map of profiles for quick lookup
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || [])
+
+    // Enrich messages with user profiles
+    const enrichedMessages = messages.map(message => ({
+      ...message,
+      user: profileMap.get(message.user_id),
+    }))
+
+    return { success: true, messages: enrichedMessages as Message[] }
   } catch (error: unknown) {
     const err = error as SupabaseError
     console.error('Error:', err)
@@ -290,10 +313,7 @@ export async function editMessage(messageId: string, content: string) {
       .update({ content: trimmedContent, is_edited: true })
       .eq('id', messageId)
       .eq('user_id', user.id)
-      .select(`
-        *,
-        user:profiles(id, username, display_name, avatar_url)
-      `)
+      .select()
       .single()
 
     if (error) {
@@ -301,8 +321,20 @@ export async function editMessage(messageId: string, content: string) {
       return { success: false, error: error.message }
     }
 
+    // Fetch user profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, username, display_name, avatar_url')
+      .eq('id', user.id)
+      .single()
+
+    const enrichedMessage = {
+      ...message,
+      user: profile,
+    }
+
     revalidatePath('/messages')
-    return { success: true, message }
+    return { success: true, message: enrichedMessage }
   } catch (error: unknown) {
     const err = error as SupabaseError
     console.error('Error:', err)

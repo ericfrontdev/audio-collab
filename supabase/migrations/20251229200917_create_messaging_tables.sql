@@ -6,11 +6,8 @@ CREATE TABLE IF NOT EXISTS conversations (
   last_message_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  -- Ensure only one conversation between two users (regardless of order)
-  CONSTRAINT unique_conversation UNIQUE(
-    LEAST(user_1_id, user_2_id),
-    GREATEST(user_1_id, user_2_id)
-  )
+  -- Ensure only one conversation between two users
+  UNIQUE(user_1_id, user_2_id)
 );
 
 -- Create messages table
