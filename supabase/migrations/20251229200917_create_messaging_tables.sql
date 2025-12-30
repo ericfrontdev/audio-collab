@@ -72,9 +72,19 @@ CREATE POLICY "Users can send messages in their conversations"
     )
   );
 
-CREATE POLICY "Users can update their own messages"
+CREATE POLICY "Users can update their own messages or mark as read"
   ON messages FOR UPDATE
-  USING (auth.uid() = user_id);
+  USING (
+    -- Can update own messages (for editing content)
+    auth.uid() = user_id
+    OR
+    -- Can update is_read for messages in conversations where user is a participant
+    EXISTS (
+      SELECT 1 FROM conversations
+      WHERE conversations.id = messages.conversation_id
+      AND (conversations.user_1_id = auth.uid() OR conversations.user_2_id = auth.uid())
+    )
+  );
 
 CREATE POLICY "Users can delete their own messages"
   ON messages FOR DELETE
