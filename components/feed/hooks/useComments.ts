@@ -7,6 +7,7 @@ export function useComments(postId: string) {
   const [showCommentInput, setShowCommentInput] = useState(false)
   const [commentText, setCommentText] = useState('')
   const [commentsCount, setCommentsCount] = useState(0)
+  const [hasInitialized, setHasInitialized] = useState(false)
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [comments, setComments] = useState<any[]>([])
   const [commentsLoaded, setCommentsLoaded] = useState(false)
@@ -78,6 +79,22 @@ export function useComments(postId: string) {
 
   const initializeCommentsCount = (count: number) => {
     setCommentsCount(count)
+    // Auto-open comments section if there's at least one comment
+    if (!hasInitialized && count > 0) {
+      setShowCommentInput(true)
+      setHasInitialized(true)
+      // Load comments when auto-opening
+      if (!commentsLoaded && !loadingComments) {
+        setLoadingComments(true)
+        getPostComments(postId).then((result) => {
+          if (result.success) {
+            setComments(result.comments)
+            setCommentsLoaded(true)
+          }
+          setLoadingComments(false)
+        })
+      }
+    }
   }
 
   const handleToggleCommentInput = async () => {

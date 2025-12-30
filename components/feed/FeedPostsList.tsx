@@ -7,9 +7,10 @@ import { createClient } from '@/lib/supabase/client'
 interface FeedPostsListProps {
   initialPosts: any[]
   currentUserId: string
+  currentUserAvatar?: string | null
 }
 
-export function FeedPostsList({ initialPosts, currentUserId }: FeedPostsListProps) {
+export function FeedPostsList({ initialPosts, currentUserId, currentUserAvatar }: FeedPostsListProps) {
   const [posts, setPosts] = useState(initialPosts)
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export function FeedPostsList({ initialPosts, currentUserId }: FeedPostsListProp
             key={post.id}
             post={post}
             currentUserId={currentUserId}
+            currentUserAvatar={currentUserAvatar}
           />
         ))
       )}

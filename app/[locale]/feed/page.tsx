@@ -76,7 +76,11 @@ export default async function FeedPage({
               />
 
               {/* Feed */}
-              <FeedPostsList initialPosts={posts} currentUserId={user.id} />
+              <FeedPostsList
+                initialPosts={posts}
+                currentUserId={user.id}
+                currentUserAvatar={profile?.avatar_url}
+              />
             </div>
           </div>
 

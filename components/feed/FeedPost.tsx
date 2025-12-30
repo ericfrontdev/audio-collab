@@ -17,9 +17,10 @@ import { useComments } from './hooks/useComments'
 interface FeedPostProps {
   post: Post
   currentUserId?: string
+  currentUserAvatar?: string | null
 }
 
-export function FeedPost({ post, currentUserId }: FeedPostProps) {
+export function FeedPost({ post, currentUserId, currentUserAvatar }: FeedPostProps) {
   const router = useRouter()
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -229,17 +230,15 @@ export function FeedPost({ post, currentUserId }: FeedPostProps) {
               <div className="flex gap-3">
                 {currentUserId && (
                   <div className="flex-shrink-0">
-                    {post.user?.avatar_url ? (
+                    {currentUserAvatar ? (
                       <img
-                        src={post.user.avatar_url}
+                        src={currentUserAvatar}
                         alt="Your avatar"
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                        <span className="text-primary font-semibold text-sm">
-                          {post.user?.username?.[0]?.toUpperCase() || 'U'}
-                        </span>
+                        <span className="text-primary font-semibold text-sm">U</span>
                       </div>
                     )}
                   </div>
