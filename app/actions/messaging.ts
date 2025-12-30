@@ -276,6 +276,8 @@ export async function markMessagesAsRead(conversationId: string) {
       return { success: false, error: error.message }
     }
 
+    // Revalidate all paths to update unread count in sidebar
+    revalidatePath('/', 'layout')
     revalidatePath('/messages')
     revalidatePath(`/messages/${conversationId}`)
     return { success: true }
