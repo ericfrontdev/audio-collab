@@ -276,12 +276,10 @@ export async function markMessagesAsRead(conversationId: string) {
       return { success: false, error: error.message }
     }
 
-    console.log('🟢 Messages marked as read, revalidating paths...')
     // Revalidate all paths to update unread count in sidebar
     revalidatePath('/', 'layout')
     revalidatePath('/messages')
     revalidatePath(`/messages/${conversationId}`)
-    console.log('🟢 Paths revalidated')
     return { success: true }
   } catch (error: unknown) {
     const err = error as SupabaseError

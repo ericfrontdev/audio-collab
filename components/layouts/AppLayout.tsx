@@ -23,10 +23,8 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
 
     // Get unread messages count
     const unreadResult = await getUnreadMessagesCount();
-    console.log('🟡 AppLayout: Unread messages count result:', unreadResult)
     if (unreadResult.success) {
       unreadCount = unreadResult.count;
-      console.log('🟡 AppLayout: Setting unread count to:', unreadCount)
     }
   }
 
