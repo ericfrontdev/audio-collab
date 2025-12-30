@@ -84,6 +84,14 @@ export default async function MessagesPage() {
                 collaborate on projects, and build your network.
               </p>
             </div>
+
+            {/* Footer */}
+            <footer className="flex flex-rows">
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Made by indie musicians for indie musicians <br />
+                &copy; 2026 AudioCollab
+              </p>
+            </footer>
           </aside>
         </div>
       </div>
