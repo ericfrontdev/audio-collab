@@ -161,8 +161,8 @@ export async function createClubProject(clubId: string, title: string, descripti
       title,
       description: description || null,
       owner_id: user.id,
-      club_id: clubId,
-      status: 'active'
+      club_id: clubId
+      // status has a default value of 'active' in the database
     })
     .select()
     .single()
