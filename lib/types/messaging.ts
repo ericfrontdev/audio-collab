@@ -1,3 +1,5 @@
+import type { Post } from './feed'
+
 export interface Conversation {
   id: string
   user_1_id: string
@@ -29,6 +31,8 @@ export interface Message {
   is_edited: boolean
   created_at: string
   updated_at: string
+  // Sharing fields
+  shared_post_id: string | null
   // Joined data
   user?: {
     id: string
@@ -36,4 +40,6 @@ export interface Message {
     display_name: string | null
     avatar_url: string | null
   }
+  // Joined shared post
+  shared_post?: Post | null
 }

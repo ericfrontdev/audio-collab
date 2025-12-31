@@ -11,6 +11,11 @@ export interface Post {
   link_image: string | null
   created_at: string
   updated_at: string
+  // Sharing fields
+  shared_post_id: string | null
+  profile_user_id: string | null
+  club_id: string | null
+  shares_count: number
   // Joined data
   user?: {
     id: string
@@ -25,6 +30,21 @@ export interface Post {
   likes_count?: number
   comments_count?: number
   is_liked_by_user?: boolean
+  // Joined shared post data (recursive)
+  shared_post?: Post | null
+  // Joined profile user data (for personal feed posts)
+  profile_user?: {
+    id: string
+    username: string
+    avatar_url: string | null
+    display_name: string | null
+  }
+  // Joined club data (for club feed posts)
+  club?: {
+    id: string
+    name: string
+    slug: string
+  } | null
 }
 
 export interface PostLike {

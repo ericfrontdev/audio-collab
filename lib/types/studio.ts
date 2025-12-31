@@ -13,6 +13,8 @@ export interface ProjectTrack {
   color: string; // Hex color like '#3B82F6'
   order_index: number;
   active_take_id: string | null;
+  created_by: string; // User ID of the track creator
+  is_collaborative: boolean; // If true, other club members can upload takes
   created_at: string;
   updated_at: string;
 }

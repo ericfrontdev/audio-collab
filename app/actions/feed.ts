@@ -3,20 +3,94 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Post } from '@/lib/types/feed'
+import type { ShareToMessageParams, ShareToFeedParams } from '@/lib/types/share'
 
 interface SupabaseError {
   message: string;
 }
 
-export async function createPost(
-  content: string,
-  projectId?: string,
-  mediaUrl?: string,
-  mediaType?: 'image' | 'audio' | 'video',
-  linkUrl?: string,
-  linkTitle?: string,
-  linkDescription?: string,
-  linkImage?: string
+async function getEnrichedSharedPost(
+  supabase: any,
+  sharedPostId: string,
+  currentUserId?: string
+): Promise<Post | null> {
+  try {
+    // Fetch the shared post
+    const { data: post, error } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('id', sharedPostId)
+      .single()
+
+    if (error || !post) {
+      return null
+    }
+
+    // Fetch user profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, display_name')
+      .eq('id', post.user_id)
+      .single()
+
+    // Fetch project if exists
+    let project = null
+    if (post.project_id) {
+      const { data: projectData } = await supabase
+        .from('projects')
+        .select('id, title')
+        .eq('id', post.project_id)
+        .single()
+      project = projectData
+    }
+
+    // Get likes count
+    const { data: likesData } = await supabase
+      .from('post_likes')
+      .select('id')
+      .eq('post_id', post.id)
+
+    const likes_count = likesData?.length || 0
+
+    // Get comments count
+    const { data: commentsData } = await supabase
+      .from('post_comments')
+      .select('id')
+      .eq('post_id', post.id)
+
+    const comments_count = commentsData?.length || 0
+
+    // Check if current user liked the post
+    let is_liked_by_user = false
+    if (currentUserId) {
+      const { data: userLike } = await supabase
+        .from('post_likes')
+        .select('id')
+        .eq('post_id', post.id)
+        .eq('user_id', currentUserId)
+        .maybeSingle()
+
+      is_liked_by_user = !!userLike
+    }
+
+    return {
+      ...post,
+      user: profile,
+      project,
+      likes_count,
+      comments_count,
+      is_liked_by_user,
+    }
+  } catch (error) {
+    console.error('Error fetching enriched shared post:', error)
+    return null
+  }
+}
+
+export async function sharePostToMessage(
+  postId: string,
+  conversationId: string,
+  content?: string
 ) {
   try {
     const supabase = await createClient()
@@ -27,6 +101,166 @@ export async function createPost(
 
     if (!user) {
       return { success: false, error: 'Not authenticated' }
+    }
+
+    // Verify post exists
+    const { data: post, error: postError } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('id', postId)
+      .single()
+
+    if (postError || !post) {
+      return { success: false, error: 'Post not found' }
+    }
+
+    // Verify user is in the conversation
+    const { data: conversation, error: conversationError } = await supabase
+      .from('conversations')
+      .select('user_1_id, user_2_id')
+      .eq('id', conversationId)
+      .single()
+
+    if (conversationError || !conversation) {
+      return { success: false, error: 'Conversation not found' }
+    }
+
+    if (conversation.user_1_id !== user.id && conversation.user_2_id !== user.id) {
+      return { success: false, error: 'Not authorized to message in this conversation' }
+    }
+
+    // Insert message with shared_post_id
+    const { error: messageError } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: conversationId,
+        user_id: user.id,
+        content: content || null,
+        shared_post_id: postId,
+      })
+
+    if (messageError) {
+      console.error('Error sharing post to message:', messageError)
+      return { success: false, error: messageError.message }
+    }
+
+    // Update conversation's last_message_at
+    const { error: updateError } = await supabase
+      .from('conversations')
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', conversationId)
+
+    if (updateError) {
+      console.error('Error updating conversation:', updateError)
+    }
+
+    revalidatePath('/messages')
+    revalidatePath(`/messages/${conversationId}`)
+    return { success: true }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error sharing post to message:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+export async function sharePostToFeed(
+  postId: string,
+  targetUserId: string,
+  content?: string
+) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    // Verify post exists
+    const { data: post, error: postError } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('id', postId)
+      .single()
+
+    if (postError || !post) {
+      return { success: false, error: 'Post not found' }
+    }
+
+    // Verify target user exists
+    const { data: targetUser, error: userError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', targetUserId)
+      .single()
+
+    if (userError || !targetUser) {
+      return { success: false, error: 'Target user not found' }
+    }
+
+    // Create new post with shared_post_id and profile_user_id
+    const { error: shareError } = await supabase
+      .from('posts')
+      .insert({
+        user_id: user.id,
+        content: content || null,
+        shared_post_id: postId,
+        profile_user_id: targetUserId,
+      })
+
+    if (shareError) {
+      console.error('Error sharing post to feed:', shareError)
+      return { success: false, error: shareError.message }
+    }
+
+    revalidatePath('/feed')
+    revalidatePath(`/profile/${targetUserId}`)
+    return { success: true }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error sharing post to feed:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+export async function createPost(
+  content: string,
+  projectId?: string,
+  mediaUrl?: string,
+  mediaType?: 'image' | 'audio' | 'video',
+  linkUrl?: string,
+  linkTitle?: string,
+  linkDescription?: string,
+  linkImage?: string,
+  clubId?: string
+) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    // If clubId provided, verify user is a member
+    if (clubId) {
+      const { data: membership } = await supabase
+        .from('club_members')
+        .select('id')
+        .eq('club_id', clubId)
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (!membership) {
+        return { success: false, error: 'You must be a member of the club to post' }
+      }
     }
 
     const { data: post, error } = await supabase
@@ -41,6 +275,7 @@ export async function createPost(
         link_title: linkTitle || null,
         link_description: linkDescription || null,
         link_image: linkImage || null,
+        club_id: clubId || null,
       })
       .select()
       .single()
@@ -67,11 +302,140 @@ export async function createPost(
     }
 
     revalidatePath('/feed')
+    if (clubId) {
+      // Also revalidate club page if posting to club
+      const { data: club } = await supabase
+        .from('clubs')
+        .select('slug')
+        .eq('id', clubId)
+        .single()
+      if (club) {
+        revalidatePath(`/clubs/${club.slug}`)
+      }
+    }
     return { success: true, post: enrichedPost }
   } catch (error: unknown) {
     const err = error as SupabaseError
     console.error('Error creating post:', err)
     return { success: false, error: err.message }
+  }
+}
+
+export async function getProfilePosts(userId: string, limit = 20, offset = 0) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    // Get posts created by user OR shared on their profile feed
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select('*')
+      .or(`user_id.eq.${userId},profile_user_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) {
+      console.error('Error fetching profile posts:', error)
+      return { success: false, error: error.message, posts: [] }
+    }
+
+    if (!posts || posts.length === 0) {
+      return { success: true, posts: [] }
+    }
+
+    // Get user profiles for all post authors
+    const userIds = [...new Set(posts.map((p) => p.user_id))]
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, display_name')
+      .in('id', userIds)
+
+    // Get projects if any posts reference them
+    const projectIds = posts.map((p) => p.project_id).filter(Boolean)
+    interface ProjectInfo {
+      id: string;
+      title: string;
+    }
+    let projects: ProjectInfo[] = []
+    if (projectIds.length > 0) {
+      const { data: projectsData } = await supabase
+        .from('projects')
+        .select('id, title')
+        .in('id', projectIds)
+      projects = projectsData || []
+    }
+
+    // Get like counts
+    const postIds = posts.map((p) => p.id)
+    const { data: likeCounts } = await supabase
+      .from('post_likes')
+      .select('post_id')
+      .in('post_id', postIds)
+
+    // Get comment counts
+    const { data: commentCounts } = await supabase
+      .from('post_comments')
+      .select('post_id')
+      .in('post_id', postIds)
+
+    // Get user's likes if authenticated
+    let userLikes: string[] = []
+    if (user) {
+      const { data: likes } = await supabase
+        .from('post_likes')
+        .select('post_id')
+        .eq('user_id', user.id)
+        .in('post_id', postIds)
+
+      userLikes = likes?.map((like) => like.post_id) || []
+    }
+
+    // Transform posts to include all related data
+    const transformedPosts: Post[] = await Promise.all(
+      posts.map(async (post) => {
+        const profile = profiles?.find((p) => p.id === post.user_id)
+        const project = projects.find((p) => p.id === post.project_id)
+        const likes_count = likeCounts?.filter((l) => l.post_id === post.id).length || 0
+        const comments_count = commentCounts?.filter((c) => c.post_id === post.id).length || 0
+
+        // Fetch shared post if exists
+        let shared_post = null
+        if (post.shared_post_id) {
+          shared_post = await getEnrichedSharedPost(supabase, post.shared_post_id, user?.id)
+        }
+
+        // Fetch profile user if exists
+        let profile_user = null
+        if (post.profile_user_id) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url, display_name')
+            .eq('id', post.profile_user_id)
+            .single()
+          profile_user = data
+        }
+
+        return {
+          ...post,
+          user: profile,
+          project,
+          likes_count,
+          comments_count,
+          is_liked_by_user: userLikes.includes(post.id),
+          shared_post,
+          profile_user,
+        }
+      })
+    )
+
+    return { success: true, posts: transformedPosts }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error fetching profile posts:', err)
+    return { success: false, error: err.message, posts: [] }
   }
 }
 
@@ -147,21 +511,42 @@ export async function getFeedPosts(limit = 20, offset = 0) {
     }
 
     // Transform posts to include all related data
-    const transformedPosts: Post[] = posts.map((post) => {
-      const profile = profiles?.find((p) => p.id === post.user_id)
-      const project = projects.find((p) => p.id === post.project_id)
-      const likes_count = likeCounts?.filter((l) => l.post_id === post.id).length || 0
-      const comments_count = commentCounts?.filter((c) => c.post_id === post.id).length || 0
+    const transformedPosts: Post[] = await Promise.all(
+      posts.map(async (post) => {
+        const profile = profiles?.find((p) => p.id === post.user_id)
+        const project = projects.find((p) => p.id === post.project_id)
+        const likes_count = likeCounts?.filter((l) => l.post_id === post.id).length || 0
+        const comments_count = commentCounts?.filter((c) => c.post_id === post.id).length || 0
 
-      return {
-        ...post,
-        user: profile,
-        project,
-        likes_count,
-        comments_count,
-        is_liked_by_user: userLikes.includes(post.id),
-      }
-    })
+        // Fetch shared post if exists
+        let shared_post = null
+        if (post.shared_post_id) {
+          shared_post = await getEnrichedSharedPost(supabase, post.shared_post_id, user?.id)
+        }
+
+        // Fetch profile user if exists
+        let profile_user = null
+        if (post.profile_user_id) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url, display_name')
+            .eq('id', post.profile_user_id)
+            .single()
+          profile_user = data
+        }
+
+        return {
+          ...post,
+          user: profile,
+          project,
+          likes_count,
+          comments_count,
+          is_liked_by_user: userLikes.includes(post.id),
+          shared_post,
+          profile_user,
+        }
+      })
+    )
 
     return { success: true, posts: transformedPosts }
   } catch (error: unknown) {
@@ -632,6 +1017,211 @@ export async function deleteComment(commentId: string) {
   } catch (error: unknown) {
     const err = error as SupabaseError
     console.error('Error deleting comment:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+export async function getClubPosts(clubId: string, limit = 20, offset = 0) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Not authenticated', posts: [] }
+    }
+
+    // Verify user is a club member
+    const { data: membership } = await supabase
+      .from('club_members')
+      .select('id')
+      .eq('club_id', clubId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!membership) {
+      return { success: false, error: 'You must be a member to view club posts', posts: [] }
+    }
+
+    // Get club posts (RLS will also enforce this)
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('club_id', clubId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) {
+      console.error('Error fetching club posts:', error)
+      return { success: false, error: error.message, posts: [] }
+    }
+
+    if (!posts || posts.length === 0) {
+      return { success: true, posts: [] }
+    }
+
+    // Get user profiles for all post authors
+    const userIds = [...new Set(posts.map((p) => p.user_id))]
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, display_name')
+      .in('id', userIds)
+
+    // Get club info
+    const { data: club } = await supabase
+      .from('clubs')
+      .select('id, name, slug')
+      .eq('id', clubId)
+      .single()
+
+    // Get projects if any posts reference them
+    const projectIds = posts.map((p) => p.project_id).filter(Boolean)
+    interface ProjectInfo {
+      id: string;
+      title: string;
+    }
+    let projects: ProjectInfo[] = []
+    if (projectIds.length > 0) {
+      const { data: projectsData } = await supabase
+        .from('projects')
+        .select('id, title')
+        .in('id', projectIds)
+      projects = projectsData || []
+    }
+
+    // Get like counts
+    const postIds = posts.map((p) => p.id)
+    const { data: likeCounts } = await supabase
+      .from('post_likes')
+      .select('post_id')
+      .in('post_id', postIds)
+
+    // Get comment counts
+    const { data: commentCounts } = await supabase
+      .from('post_comments')
+      .select('post_id')
+      .in('post_id', postIds)
+
+    // Get user's likes
+    const { data: likes } = await supabase
+      .from('post_likes')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .in('post_id', postIds)
+
+    const userLikes = likes?.map((like) => like.post_id) || []
+
+    // Transform posts to include all related data
+    const transformedPosts: Post[] = await Promise.all(
+      posts.map(async (post) => {
+        const profile = profiles?.find((p) => p.id === post.user_id)
+        const project = projects.find((p) => p.id === post.project_id)
+        const likes_count = likeCounts?.filter((l) => l.post_id === post.id).length || 0
+        const comments_count = commentCounts?.filter((c) => c.post_id === post.id).length || 0
+
+        // Fetch shared post if exists
+        let shared_post = null
+        if (post.shared_post_id) {
+          shared_post = await getEnrichedSharedPost(supabase, post.shared_post_id, user?.id)
+        }
+
+        return {
+          ...post,
+          user: profile,
+          project,
+          club,
+          likes_count,
+          comments_count,
+          is_liked_by_user: userLikes.includes(post.id),
+          shared_post,
+        }
+      })
+    )
+
+    return { success: true, posts: transformedPosts }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error fetching club posts:', err)
+    return { success: false, error: err.message, posts: [] }
+  }
+}
+
+export async function sharePostToClub(
+  postId: string,
+  clubId: string,
+  content?: string
+) {
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    // Verify user is a club member
+    const { data: membership } = await supabase
+      .from('club_members')
+      .select('id')
+      .eq('club_id', clubId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!membership) {
+      return { success: false, error: 'You must be a member to share to this club' }
+    }
+
+    // Verify the post exists
+    const { data: originalPost, error: postError } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('id', postId)
+      .single()
+
+    if (postError || !originalPost) {
+      return { success: false, error: 'Post not found' }
+    }
+
+    // Create the shared post
+    const { data: newPost, error: insertError } = await supabase
+      .from('posts')
+      .insert({
+        user_id: user.id,
+        content: content || '',
+        shared_post_id: postId,
+        club_id: clubId,
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Error sharing post to club:', insertError)
+      return { success: false, error: insertError.message }
+    }
+
+    // Increment shares_count on original post
+    await supabase.rpc('increment_shares_count', { post_id: postId })
+
+    // Fetch club info
+    const { data: club } = await supabase
+      .from('clubs')
+      .select('slug')
+      .eq('id', clubId)
+      .single()
+
+    if (club) {
+      revalidatePath(`/clubs/${club.slug}`)
+    }
+
+    return { success: true, post: newPost }
+  } catch (error: unknown) {
+    const err = error as SupabaseError
+    console.error('Error sharing post to club:', err)
     return { success: false, error: err.message }
   }
 }

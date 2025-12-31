@@ -167,11 +167,57 @@ export async function getMessages(conversationId: string, limit = 50, offset = 0
     // Create a map of profiles for quick lookup
     const profileMap = new Map(profiles?.map(p => [p.id, p]) || [])
 
-    // Enrich messages with user profiles
-    const enrichedMessages = messages.map(message => ({
-      ...message,
-      user: profileMap.get(message.user_id),
-    }))
+    // Enrich messages with user profiles and shared posts
+    const enrichedMessages = await Promise.all(
+      messages.map(async (message) => {
+        const base = {
+          ...message,
+          user: profileMap.get(message.user_id),
+        }
+
+        // Fetch shared post if exists
+        if (message.shared_post_id) {
+          const { data: sharedPost } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('id', message.shared_post_id)
+            .single()
+
+          if (sharedPost) {
+            const { data: postProfile } = await supabase
+              .from('profiles')
+              .select('id, username, avatar_url, display_name')
+              .eq('id', sharedPost.user_id)
+              .single()
+
+            // Get likes count for the shared post
+            const { data: likesData } = await supabase
+              .from('post_likes')
+              .select('id')
+              .eq('post_id', sharedPost.id)
+
+            // Get comments count for the shared post
+            const { data: commentsData } = await supabase
+              .from('post_comments')
+              .select('id')
+              .eq('post_id', sharedPost.id)
+
+            return {
+              ...base,
+              shared_post: {
+                ...sharedPost,
+                user: postProfile,
+                likes_count: likesData?.length || 0,
+                comments_count: commentsData?.length || 0,
+                is_liked_by_user: false,
+              },
+            }
+          }
+        }
+
+        return base
+      })
+    )
 
     return { success: true, messages: enrichedMessages as Message[] }
   } catch (error: unknown) {

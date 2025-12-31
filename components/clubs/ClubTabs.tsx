@@ -7,6 +7,7 @@ import { MessageCircle, Music, Users as UsersIcon, Info, CheckCircle2, Calendar,
 import type { Club } from '@/types/club';
 import type { Project } from '@/types/project';
 import { Button } from '@/components/ui/button';
+import { ClubFeed } from './ClubFeed';
 
 const tabs = [
   { id: 'feed', label: 'Feed', icon: MessageCircle },
@@ -39,9 +40,12 @@ interface ClubTabsProps {
   club: Club;
   members: Member[];
   projects: ProjectWithDetails[];
+  currentUserId?: string;
+  currentUserAvatar?: string | null;
+  currentUsername?: string;
 }
 
-export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects }: ClubTabsProps) {
+export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, currentUserId, currentUserAvatar, currentUsername }: ClubTabsProps) {
   const [activeTab, setActiveTab] = useState('feed');
 
   const formatDate = (dateString: string) => {
@@ -79,13 +83,13 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects }
       {/* Tab Content */}
       <div className="p-8">
         {activeTab === 'feed' && (
-          <div className="text-center py-12 text-gray-500">
-            {isMember ? (
-              <p>Club feed coming soon...</p>
-            ) : (
-              <p>Join the club to see the feed</p>
-            )}
-          </div>
+          <ClubFeed
+            club={{ id: clubId, name: club.name, slug: clubSlug }}
+            isMember={isMember}
+            userId={currentUserId}
+            userAvatar={currentUserAvatar}
+            username={currentUsername}
+          />
         )}
 
         {activeTab === 'projects' && (

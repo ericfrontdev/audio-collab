@@ -10,6 +10,8 @@ import { useRouter } from '@/i18n/routing'
 import { PostContent } from './PostContent'
 import { PostActions } from './PostActions'
 import { Comment } from './Comment'
+import { SharedPostPreview } from './SharedPostPreview'
+import { ShareModal } from './ShareModal'
 import { usePostLike } from './hooks/usePostLike'
 import { usePostEditor } from './hooks/usePostEditor'
 import { useComments } from './hooks/useComments'
@@ -23,6 +25,7 @@ interface FeedPostProps {
 export function FeedPost({ post, currentUserId, currentUserAvatar }: FeedPostProps) {
   const router = useRouter()
   const [showMenu, setShowMenu] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
   const editAudioInputRef = useRef<HTMLInputElement>(null)
@@ -157,6 +160,16 @@ export function FeedPost({ post, currentUserId, currentUserAvatar }: FeedPostPro
             )}
           </div>
 
+          {/* Shared on profile feed indicator */}
+          {post.profile_user && (
+            <div className="mb-2 text-sm text-gray-400">
+              Partagé sur le feed de{' '}
+              <Link href={`/profile/${post.profile_user.username}`} className="text-primary hover:underline">
+                @{post.profile_user.username}
+              </Link>
+            </div>
+          )}
+
           {/* Post content - Edit mode or display mode */}
           {editor.isEditing ? (
             <div className="mb-3">
@@ -202,26 +215,45 @@ export function FeedPost({ post, currentUserId, currentUserAvatar }: FeedPostPro
               </div>
             </div>
           ) : (
-            <PostContent
-              content={post.content}
-              mediaUrl={post.media_url}
-              mediaType={post.media_type}
-              project={post.project}
-              linkUrl={post.link_url}
-              linkTitle={post.link_title}
-              linkDescription={post.link_description}
-              linkImage={post.link_image}
-            />
+            <>
+              {/* Share comment (if this is a shared post with commentary) */}
+              {post.shared_post_id && post.content && (
+                <p className="text-white whitespace-pre-wrap mb-3">{post.content}</p>
+              )}
+
+              {/* Shared post preview */}
+              {post.shared_post && (
+                <div className="mb-3">
+                  <SharedPostPreview post={post.shared_post} />
+                </div>
+              )}
+
+              {/* Original post content (only if NOT a shared post) */}
+              {!post.shared_post_id && (
+                <PostContent
+                  content={post.content}
+                  mediaUrl={post.media_url}
+                  mediaType={post.media_type}
+                  project={post.project}
+                  linkUrl={post.link_url}
+                  linkTitle={post.link_title}
+                  linkDescription={post.link_description}
+                  linkImage={post.link_image}
+                />
+              )}
+            </>
           )}
 
           {/* Actions */}
           <PostActions
             likesCount={likesCount}
             commentsCount={commentManager.commentsCount}
+            sharesCount={post.shares_count || 0}
             isLiked={isLiked}
             isLiking={isLiking}
             onLike={handleLike}
             onToggleComments={commentManager.handleToggleCommentInput}
+            onShare={post.shared_post_id ? undefined : () => setShowShareModal(true)}
           />
 
           {/* Comment input - appears when user clicks comment button */}
@@ -331,6 +363,13 @@ export function FeedPost({ post, currentUserId, currentUserAvatar }: FeedPostPro
         variant="danger"
         onConfirm={commentManager.confirmDeleteReply}
         onCancel={commentManager.cancelDeleteReply}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        post={post}
       />
     </Card>
   )

@@ -162,3 +162,44 @@
     font-family: var(--font-sans);
   }
 }
+
+/* Custom Toast Styles */
+.Toastify__toast {
+  background: #18181b !important; /* zinc-900 */
+  border-radius: 0 !important;
+  border: 1px solid #27272a !important; /* zinc-800 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  padding: 1rem !important;
+  min-height: 64px !important;
+}
+
+.Toastify__toast--success {
+  border-left: 4px solid #10b981 !important; /* green-500 */
+}
+
+.Toastify__toast--error {
+  border-left: 4px solid #ef4444 !important; /* red-500 */
+}
+
+.Toastify__toast--warning {
+  border-left: 4px solid #f59e0b !important; /* amber-500 */
+}
+
+.Toastify__toast--info {
+  border-left: 4px solid #3b82f6 !important; /* blue-500 */
+}
+
+.Toastify__toast-body {
+  color: #ffffff !important;
+  font-size: 0.875rem !important;
+  padding: 0 !important;
+}
+
+.Toastify__close-button {
+  color: #71717a !important; /* zinc-500 */
+  opacity: 1 !important;
+}
+
+.Toastify__close-button:hover {
+  color: #a1a1aa !important; /* zinc-400 */
+}

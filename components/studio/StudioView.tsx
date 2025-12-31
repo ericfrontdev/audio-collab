@@ -90,6 +90,7 @@ export function StudioView({ projectId }: StudioViewProps) {
     position: { x: number; y: number }
   }>({ isOpen: false, trackId: '', timestamp: 0, position: { x: 0, y: 0 } })
   const [currentUser, setCurrentUser] = useState<{
+    id?: string
     avatar_url?: string | null
   } | null>(null)
   const [isPortrait, setIsPortrait] = useState(false)
@@ -152,7 +153,10 @@ export function StudioView({ projectId }: StudioViewProps) {
           .select('avatar_url')
           .eq('id', user.id)
           .maybeSingle()
-        setCurrentUser(profile)
+        setCurrentUser({
+          id: user.id,
+          avatar_url: profile?.avatar_url,
+        })
       }
     }
     loadUserProfile()
@@ -377,10 +381,12 @@ export function StudioView({ projectId }: StudioViewProps) {
                       isMuted={trackControls.trackMutes.has(track.id)}
                       maxDuration={playback.maxDuration}
                       primaryColor={primaryColor}
+                      currentUserId={currentUser?.id}
                       onTrackSelect={setSelectedTrackId}
                       onWaveformClick={handleWaveformClick}
                       onWaveformReady={playback.handleWaveformReady}
                       onTimeUpdate={playback.handleTimeUpdate}
+                      onDataRefresh={loadStudioData}
                       waveformRef={(ref) => {
                         if (ref) {
                           playback.waveformRefs.current.set(track.id, ref)

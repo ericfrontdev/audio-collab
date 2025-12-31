@@ -8,6 +8,7 @@ import { useRouter } from '@/i18n/routing'
 import { toast } from 'react-toastify'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { SharedPostPreview } from '@/components/feed/SharedPostPreview'
 
 interface MessageItemProps {
   message: Message
@@ -152,20 +153,30 @@ export function MessageItem({ message, isOwnMessage, otherUser }: MessageItemPro
           </div>
         ) : (
           <div className="relative group">
-            <div
-              className={`rounded-2xl px-4 py-2 ${
-                isOwnMessage
-                  ? 'bg-primary text-white'
-                  : 'bg-zinc-800 text-white'
-              }`}
-            >
-              <p className="whitespace-pre-wrap break-words">{message.content}</p>
-              {message.is_edited && (
-                <span className="text-xs opacity-70 italic mt-1 block">
-                  (edited)
-                </span>
-              )}
-            </div>
+            {/* Shared post preview */}
+            {message.shared_post && (
+              <div className="mb-2 max-w-lg">
+                <SharedPostPreview post={message.shared_post} />
+              </div>
+            )}
+
+            {/* Message text content (if exists) */}
+            {message.content && (
+              <div
+                className={`rounded-2xl px-4 py-2 ${
+                  isOwnMessage
+                    ? 'bg-primary text-white'
+                    : 'bg-zinc-800 text-white'
+                }`}
+              >
+                <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                {message.is_edited && (
+                  <span className="text-xs opacity-70 italic mt-1 block">
+                    (edited)
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Menu for own messages */}
             {isOwnMessage && (

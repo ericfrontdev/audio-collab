@@ -178,6 +178,9 @@ export default async function ClubPage({
               club={club}
               members={formattedMembers}
               projects={projectsWithDetails}
+              currentUserId={user?.id}
+              currentUserAvatar={userProfile?.avatar_url}
+              currentUsername={userProfile?.username}
             />
           </div>
 

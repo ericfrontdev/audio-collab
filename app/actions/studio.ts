@@ -80,6 +80,8 @@ export async function createTrack(
         name,
         color: color || TRACK_COLORS[Math.floor(Math.random() * TRACK_COLORS.length)],
         order_index: count || 0,
+        created_by: user.id,
+        is_collaborative: false, // Default to private (only creator can upload takes)
       })
       .select()
       .single();
@@ -91,6 +93,54 @@ export async function createTrack(
   } catch (error: unknown) {
     const err = error as SupabaseError;
     console.error('Error creating track:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Toggle collaborative mode for a track (only track creator can do this)
+ */
+export async function toggleTrackCollaborative(
+  trackId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    // Verify user authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Get current track
+    const { data: track } = await supabase
+      .from('project_tracks')
+      .select('created_by, is_collaborative, project_id')
+      .eq('id', trackId)
+      .maybeSingle();
+
+    if (!track) {
+      return { success: false, error: 'Track not found' };
+    }
+
+    // Only the track creator can toggle collaborative mode
+    if (track.created_by !== user.id) {
+      return { success: false, error: 'Only the track creator can change this setting' };
+    }
+
+    // Toggle the collaborative mode
+    const { error } = await supabase
+      .from('project_tracks')
+      .update({ is_collaborative: !track.is_collaborative })
+      .eq('id', trackId);
+
+    if (error) throw error;
+
+    revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
+    return { success: true };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error toggling collaborative mode:', err);
     return { success: false, error: err.message };
   }
 }

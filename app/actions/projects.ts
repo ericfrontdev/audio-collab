@@ -132,6 +132,48 @@ export async function deleteProject(projectId: string, locale: string = 'en') {
   redirect(`/${locale}/projects`)
 }
 
+export async function createClubProject(clubId: string, title: string, description?: string) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' }
+  }
+
+  // Verify user is a member of the club
+  const { data: clubMember } = await supabase
+    .from('club_members')
+    .select('id')
+    .eq('club_id', clubId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!clubMember) {
+    return { success: false, error: 'You must be a member of the club to create a project' }
+  }
+
+  // Create the project
+  const { data: project, error } = await supabase
+    .from('projects')
+    .insert({
+      kind: 'club',
+      title,
+      description: description || null,
+      owner_id: user.id,
+      club_id: clubId,
+      status: 'active'
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  return { success: true, project }
+}
+
 export async function joinProject(projectId: string, locale: string = 'en') {
   const supabase = await createClient()
 

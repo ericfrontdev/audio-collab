@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Music, Link as LinkIcon, Instagram, Youtube, Users } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { AppLayout } from '@/components/layouts/AppLayout';
+import { ProfilePosts } from '@/components/profile/ProfilePosts';
+import { CreatePostCard } from '@/components/feed/CreatePostCard';
+import { getProfilePosts } from '@/app/actions/feed';
 
 export default async function ProfilePage({
   params,
@@ -36,6 +39,20 @@ export default async function ProfilePage({
   if (!profile.is_public && !isOwner) {
     notFound();
   }
+
+  // Fetch current user's profile for avatar
+  let currentUserProfile = null;
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .single();
+    currentUserProfile = data;
+  }
+
+  // Fetch profile posts (created by user + shared on their profile)
+  const { posts } = await getProfilePosts(profile.id, 20, 0);
 
   // Fetch user's projects
   const { data: userProjects } = await supabase
@@ -276,6 +293,28 @@ export default async function ProfilePage({
             </div>
           </div>
         )}
+
+        {/* Posts */}
+        <div className="mb-16">
+          <h2 className="text-2xl font-bold mb-6">Posts</h2>
+
+          {/* Create post card - only for profile owner */}
+          {isOwner && user && (
+            <div className="mb-4">
+              <CreatePostCard
+                userAvatar={profile.avatar_url}
+                username={profile.username}
+                userId={user.id}
+              />
+            </div>
+          )}
+
+          <ProfilePosts
+            initialPosts={posts}
+            currentUserId={user?.id}
+            currentUserAvatar={currentUserProfile?.avatar_url}
+          />
+        </div>
 
         {/* Projects */}
         <div className="mb-16">

@@ -59,7 +59,15 @@ export default async function LocaleLayout({ children, params }: Props) {
         <NextIntlClientProvider messages={messages}>
           <AuthProvider initialUser={user} initialProfile={profile}>
             {children}
-            <ToastContainer position="bottom-right" theme="dark" />
+            <ToastContainer
+              position="bottom-right"
+              theme="dark"
+              hideProgressBar={true}
+              autoClose={3000}
+              closeOnClick
+              pauseOnHover
+              draggable
+            />
           </AuthProvider>
         </NextIntlClientProvider>
       </body>

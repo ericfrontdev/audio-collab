@@ -14,9 +14,12 @@ interface CreatePostCardProps {
   userAvatar?: string | null
   username?: string
   userId: string
+  clubId?: string
+  clubName?: string
+  onPostCreated?: () => void
 }
 
-export function CreatePostCard({ userAvatar, username, userId }: CreatePostCardProps) {
+export function CreatePostCard({ userAvatar, username, userId, clubId, clubName, onPostCreated }: CreatePostCardProps) {
   const [content, setContent] = useState('')
   const [isPosting, setIsPosting] = useState(false)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -220,7 +223,8 @@ export function CreatePostCard({ userAvatar, username, userId }: CreatePostCardP
         linkMetadata?.url || undefined,
         linkMetadata?.title || undefined,
         linkMetadata?.description || undefined,
-        linkMetadata?.image || undefined
+        linkMetadata?.image || undefined,
+        clubId
       )
 
       if (result.success) {
@@ -244,6 +248,11 @@ export function CreatePostCard({ userAvatar, username, userId }: CreatePostCardP
         handleRemoveVideo()
         handleRemoveLink()
         setUploadProgress(0)
+
+        // Call onPostCreated callback if provided
+        if (onPostCreated) {
+          onPostCreated()
+        }
       } else {
         // Clean up uploaded media if post creation failed
         if (uploadedMediaUrl) {
@@ -286,6 +295,16 @@ export function CreatePostCard({ userAvatar, username, userId }: CreatePostCardP
 
         {/* Input area */}
         <div className="flex-1">
+          {/* Club badge */}
+          {clubId && clubName && (
+            <div className="mb-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
+              <svg className="w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span className="text-xs font-medium text-primary">Posting to {clubName}</span>
+            </div>
+          )}
+
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}

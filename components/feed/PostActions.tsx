@@ -1,28 +1,32 @@
 'use client'
 
-import { Heart, MessageCircle } from 'lucide-react'
+import { Heart, MessageCircle, Share2 } from 'lucide-react'
 
 interface PostActionsProps {
   likesCount: number
   commentsCount: number
+  sharesCount: number
   isLiked: boolean
   isLiking: boolean
   onLike: () => void
   onToggleComments: () => void
+  onShare?: () => void
 }
 
 export function PostActions({
   likesCount,
   commentsCount,
+  sharesCount,
   isLiked,
   isLiking,
   onLike,
   onToggleComments,
+  onShare,
 }: PostActionsProps) {
   return (
     <div className="mt-3">
       {/* Counters Section - Like Facebook */}
-      {(likesCount > 0 || commentsCount > 0) && (
+      {(likesCount > 0 || commentsCount > 0 || sharesCount > 0) && (
         <div className="flex items-center justify-between px-2 py-2 text-sm text-gray-400">
           <div className="flex items-center gap-1">
             {likesCount > 0 && (
@@ -36,6 +40,11 @@ export function PostActions({
               <button onClick={onToggleComments} className="hover:underline">
                 {commentsCount} {commentsCount === 1 ? 'commentaire' : 'commentaires'}
               </button>
+            )}
+            {sharesCount > 0 && (
+              <span className="text-gray-400">
+                {sharesCount} {sharesCount === 1 ? 'partage' : 'partages'}
+              </span>
             )}
           </div>
         </div>
@@ -65,11 +74,15 @@ export function PostActions({
             <span className="text-sm">Commenter</span>
           </button>
 
-          {/* TODO: Activer quand on aura les feeds personnels et/ou messages privés */}
-          {/* <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-gray-400 hover:bg-zinc-800/50 transition-colors font-medium">
-            <Share2 className="w-5 h-5" />
-            <span className="text-sm">Partager</span>
-          </button> */}
+          {onShare && (
+            <button
+              onClick={onShare}
+              className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-gray-400 hover:bg-zinc-800/50 transition-colors font-medium"
+            >
+              <Share2 className="w-5 h-5" />
+              <span className="text-sm">Partager</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

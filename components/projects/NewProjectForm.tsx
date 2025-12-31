@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from '@/i18n/routing';
-import { createClient } from '@/lib/supabase/client';
+import { createClubProject } from '@/app/actions/projects';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
 
@@ -25,48 +25,19 @@ export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps
     const description = formData.get('description') as string;
 
     try {
-      const supabase = createClient();
+      // Create the project using server action
+      const result = await createClubProject(clubId, title, description || undefined);
 
-      console.log('Creating project with data:', {
-        club_id: clubId,
-        title,
-        description: description || null,
-        owner_id: userId,
-        kind: 'club',
-      });
-
-      // Create the project (trigger will automatically add creator as owner in project_members)
-      const { data: project, error: projectError } = await supabase
-        .from('projects')
-        .insert({
-          club_id: clubId,
-          title,
-          description: description || null,
-          owner_id: userId,
-          kind: 'club', // Club project (status defaults to 'active')
-        })
-        .select()
-        .single();
-
-      console.log('Project creation result:', { project, error: projectError });
-
-      if (projectError) {
-        console.error('Project creation error:', projectError);
-        throw projectError;
-      }
-
-      if (!project) {
-        throw new Error('Project was not created - no data returned');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create project');
       }
 
       // Project created successfully!
-      // The trigger has automatically added the creator as owner in project_members
       toast.success('Project created successfully!');
       router.push(`/clubs/${clubSlug}`);
       router.refresh();
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error creating project:', err);
       toast.error(err.message || 'Failed to create project');
     } finally {
       setIsLoading(false);
