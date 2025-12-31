@@ -142,7 +142,7 @@ export function TransportControls({
                   className="fixed inset-0 z-40"
                   onClick={() => setShowMenu(false)}
                 />
-                <div className="absolute right-0 mt-2 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg overflow-hidden z-50">
+                <div className="absolute right-0 mt-2 w-56 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg overflow-hidden z-50">
                   <button
                     onClick={() => {
                       setShowMenu(false)
