@@ -43,5 +43,12 @@ export default async function ProjectStudioPage({
     redirect(`/${locale}/projects`);
   }
 
-  return <ProjectWorkspace projectId={id} currentUserId={user.id} />;
+  return (
+    <ProjectWorkspace
+      projectId={id}
+      currentUserId={user.id}
+      ownerId={project.owner_id}
+      locale={locale}
+    />
+  );
 }

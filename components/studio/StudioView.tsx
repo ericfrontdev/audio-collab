@@ -19,6 +19,9 @@ import { useStudioTimeline } from './hooks/useStudioTimeline'
 
 interface StudioViewProps {
   projectId: string
+  currentUserId?: string
+  ownerId?: string
+  locale?: string
 }
 
 interface TakeWithUploader {
@@ -73,7 +76,7 @@ interface TrackWithDetails extends ProjectTrack {
   mixer_settings?: MixerSettings | null
 }
 
-export function StudioView({ projectId }: StudioViewProps) {
+export function StudioView({ projectId, currentUserId, ownerId, locale }: StudioViewProps) {
   const [tracks, setTracks] = useState<TrackWithDetails[]>([])
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -309,6 +312,9 @@ export function StudioView({ projectId }: StudioViewProps) {
         hasTracksLoaded={tracks.length > 0}
         onPlayPause={playback.handlePlayPause}
         onStop={playback.handleStop}
+        projectId={projectId}
+        isOwner={currentUserId === ownerId}
+        locale={locale || 'en'}
       />
 
       {/* Main Studio Layout */}

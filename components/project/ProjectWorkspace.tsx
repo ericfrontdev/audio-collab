@@ -8,16 +8,23 @@ import { StudioView } from '../studio/StudioView'
 interface ProjectWorkspaceProps {
   projectId: string
   currentUserId?: string
+  ownerId?: string
+  locale?: string
 }
 
-export function ProjectWorkspace({ projectId, currentUserId }: ProjectWorkspaceProps) {
+export function ProjectWorkspace({ projectId, currentUserId, ownerId, locale }: ProjectWorkspaceProps) {
   const [isChatOpen, setIsChatOpen] = useState(true)
 
   return (
     <div className="flex h-screen bg-zinc-950">
       {/* Main studio area */}
       <div className="flex-1 overflow-hidden">
-        <StudioView projectId={projectId} />
+        <StudioView
+          projectId={projectId}
+          currentUserId={currentUserId}
+          ownerId={ownerId}
+          locale={locale}
+        />
       </div>
 
       {/* Chat sidebar */}
