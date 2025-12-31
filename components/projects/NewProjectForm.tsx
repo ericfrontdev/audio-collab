@@ -34,7 +34,8 @@ export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps
 
       // Project created successfully!
       toast.success('Project created successfully!');
-      router.push(`/clubs/${clubSlug}`);
+      // Redirect to the newly created project
+      router.push(`/projects/${result.project.id}`);
       router.refresh();
     } catch (error: unknown) {
       const err = error as Error;
