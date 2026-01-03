@@ -30,13 +30,13 @@ CREATE TABLE IF NOT EXISTS post_comments (
 );
 
 -- Add indexes
-CREATE INDEX idx_posts_user_id ON posts(user_id);
-CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
-CREATE INDEX idx_posts_project_id ON posts(project_id);
-CREATE INDEX idx_post_likes_post_id ON post_likes(post_id);
-CREATE INDEX idx_post_likes_user_id ON post_likes(user_id);
-CREATE INDEX idx_post_comments_post_id ON post_comments(post_id);
-CREATE INDEX idx_post_comments_user_id ON post_comments(user_id);
+CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_project_id ON posts(project_id);
+CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_likes_user_id ON post_likes(user_id);
+CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_comments_user_id ON post_comments(user_id);
 
 -- Enable RLS
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
@@ -44,51 +44,62 @@ ALTER TABLE post_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post_comments ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for posts
-CREATE POLICY "Anyone can view posts"
-  ON posts FOR SELECT
-  USING (true);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Anyone can view posts" ON posts;
+  CREATE POLICY "Anyone can view posts" ON posts FOR SELECT USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can create their own posts"
-  ON posts FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can create their own posts" ON posts;
+  CREATE POLICY "Users can create their own posts" ON posts FOR INSERT WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can update their own posts"
-  ON posts FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can update their own posts" ON posts;
+  CREATE POLICY "Users can update their own posts" ON posts FOR UPDATE USING (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can delete their own posts"
-  ON posts FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can delete their own posts" ON posts;
+  CREATE POLICY "Users can delete their own posts" ON posts FOR DELETE USING (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- RLS Policies for post_likes
-CREATE POLICY "Anyone can view likes"
-  ON post_likes FOR SELECT
-  USING (true);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Anyone can view likes" ON post_likes;
+  CREATE POLICY "Anyone can view likes" ON post_likes FOR SELECT USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can like posts"
-  ON post_likes FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can like posts" ON post_likes;
+  CREATE POLICY "Users can like posts" ON post_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can unlike posts"
-  ON post_likes FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can unlike posts" ON post_likes;
+  CREATE POLICY "Users can unlike posts" ON post_likes FOR DELETE USING (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- RLS Policies for post_comments
-CREATE POLICY "Anyone can view comments"
-  ON post_comments FOR SELECT
-  USING (true);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Anyone can view comments" ON post_comments;
+  CREATE POLICY "Anyone can view comments" ON post_comments FOR SELECT USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can create comments"
-  ON post_comments FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can create comments" ON post_comments;
+  CREATE POLICY "Users can create comments" ON post_comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can update their own comments"
-  ON post_comments FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can update their own comments" ON post_comments;
+  CREATE POLICY "Users can update their own comments" ON post_comments FOR UPDATE USING (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can delete their own comments"
-  ON post_comments FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can delete their own comments" ON post_comments;
+  CREATE POLICY "Users can delete their own comments" ON post_comments FOR DELETE USING (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -100,11 +111,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_posts_updated_at ON posts;
 CREATE TRIGGER update_posts_updated_at
   BEFORE UPDATE ON posts
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_post_comments_updated_at ON post_comments;
 CREATE TRIGGER update_post_comments_updated_at
   BEFORE UPDATE ON post_comments
   FOR EACH ROW

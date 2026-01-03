@@ -38,69 +38,53 @@ ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for conversations
-DO $$ BEGIN
-  DROP POLICY IF EXISTS "Users can view their conversations" ON conversations;
-  CREATE POLICY "Users can view their conversations"
-    ON conversations FOR SELECT
-    USING (auth.uid() = user_1_id OR auth.uid() = user_2_id);
-EXCEPTION WHEN OTHERS THEN NULL; END $$;
+CREATE POLICY "Users can view their conversations"
+  ON conversations FOR SELECT
+  USING (auth.uid() = user_1_id OR auth.uid() = user_2_id);
 
-DO $$ BEGIN
-  DROP POLICY IF EXISTS "Users can create conversations" ON conversations;
-  CREATE POLICY "Users can create conversations"
-    ON conversations FOR INSERT
-    WITH CHECK (auth.uid() = user_1_id OR auth.uid() = user_2_id);
-EXCEPTION WHEN OTHERS THEN NULL; END $$;
+CREATE POLICY "Users can create conversations"
+  ON conversations FOR INSERT
+  WITH CHECK (auth.uid() = user_1_id OR auth.uid() = user_2_id);
 
-DO $$ BEGIN
-  DROP POLICY IF EXISTS "Users can update their conversations" ON conversations;
-  CREATE POLICY "Users can update their conversations"
-    ON conversations FOR UPDATE
-    USING (auth.uid() = user_1_id OR auth.uid() = user_2_id);
-EXCEPTION WHEN OTHERS THEN NULL; END $$;
+CREATE POLICY "Users can update their conversations"
+  ON conversations FOR UPDATE
+  USING (auth.uid() = user_1_id OR auth.uid() = user_2_id);
 
 -- RLS Policies for messages
-DO $$ BEGIN
-  DROP POLICY IF EXISTS "Conversation participants can view messages" ON messages;
-  CREATE POLICY "Conversation participants can view messages"
-    ON messages FOR SELECT
-    USING (
-      EXISTS (
-        SELECT 1 FROM conversations
-        WHERE conversations.id = messages.conversation_id
-        AND (auth.uid() = conversations.user_1_id OR auth.uid() = conversations.user_2_id)
-      )
-    );
-EXCEPTION WHEN OTHERS THEN NULL; END $$;
+CREATE POLICY "Conversation participants can view messages"
+  ON messages FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM conversations
+      WHERE conversations.id = messages.conversation_id
+      AND (conversations.user_1_id = auth.uid() OR conversations.user_2_id = auth.uid())
+    )
+  );
 
-DO $$ BEGIN
-  DROP POLICY IF EXISTS "Users can send messages in their conversations" ON messages;
-  CREATE POLICY "Users can send messages in their conversations"
-    ON messages FOR INSERT
-    WITH CHECK (
-      auth.uid() = user_id
-      AND EXISTS (
-        SELECT 1 FROM conversations
-        WHERE conversations.id = messages.conversation_id
-        AND (auth.uid() = conversations.user_1_id OR auth.uid() = conversations.user_2_id)
-      )
-    );
-EXCEPTION WHEN OTHERS THEN NULL; END $$;
+CREATE POLICY "Users can send messages in their conversations"
+  ON messages FOR INSERT
+  WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM conversations
+      WHERE conversations.id = messages.conversation_id
+      AND (conversations.user_1_id = auth.uid() OR conversations.user_2_id = auth.uid())
+    )
+  );
 
-DO $$ BEGIN
-  DROP POLICY IF EXISTS "Users can update their own messages or mark as read" ON messages;
-  CREATE POLICY "Users can update their own messages or mark as read"
-    ON messages FOR UPDATE
-    USING (
-      auth.uid() = user_id
-      OR
-      EXISTS (
-        SELECT 1 FROM conversations
-        WHERE conversations.id = messages.conversation_id
-        AND (auth.uid() = conversations.user_1_id OR auth.uid() = conversations.user_2_id)
-      )
-    );
-EXCEPTION WHEN OTHERS THEN NULL; END $$;
+CREATE POLICY "Users can update their own messages or mark as read"
+  ON messages FOR UPDATE
+  USING (
+    -- Can update own messages (for editing content)
+    auth.uid() = user_id
+    OR
+    -- Can update is_read for messages in conversations where user is a participant
+    EXISTS (
+      SELECT 1 FROM conversations
+      WHERE conversations.id = messages.conversation_id
+      AND (conversations.user_1_id = auth.uid() OR conversations.user_2_id = auth.uid())
+    )
+  );
 
 DO $$ BEGIN
   DROP POLICY IF EXISTS "Users can delete their own messages" ON messages;
@@ -110,13 +94,11 @@ DO $$ BEGIN
 EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- Add triggers for updated_at
-DROP TRIGGER IF EXISTS update_conversations_updated_at ON conversations;
 CREATE TRIGGER update_conversations_updated_at
   BEFORE UPDATE ON conversations
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_messages_updated_at ON messages;
 CREATE TRIGGER update_messages_updated_at
   BEFORE UPDATE ON messages
   FOR EACH ROW

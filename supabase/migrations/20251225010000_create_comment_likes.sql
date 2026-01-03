@@ -15,14 +15,17 @@ CREATE INDEX IF NOT EXISTS idx_comment_likes_user_id ON comment_likes(user_id);
 ALTER TABLE comment_likes ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
-CREATE POLICY "Anyone can view comment likes"
-  ON comment_likes FOR SELECT
-  USING (true);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Anyone can view comment likes" ON comment_likes;
+  CREATE POLICY "Anyone can view comment likes" ON comment_likes FOR SELECT USING (true);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can like comments"
-  ON comment_likes FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can like comments" ON comment_likes;
+  CREATE POLICY "Users can like comments" ON comment_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
-CREATE POLICY "Users can unlike comments"
-  ON comment_likes FOR DELETE
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "Users can unlike comments" ON comment_likes;
+  CREATE POLICY "Users can unlike comments" ON comment_likes FOR DELETE USING (auth.uid() = user_id);
+EXCEPTION WHEN OTHERS THEN NULL; END $$;

@@ -1,20 +1,23 @@
 -- Add columns to posts table to support shared posts (like Twitter/X retweets)
 ALTER TABLE posts
-  ADD COLUMN shared_post_id uuid REFERENCES posts(id) ON DELETE CASCADE,
-  ADD COLUMN profile_user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  ADD COLUMN shares_count integer DEFAULT 0 NOT NULL;
+  ADD COLUMN IF NOT EXISTS shared_post_id uuid REFERENCES posts(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS profile_user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS shares_count integer DEFAULT 0 NOT NULL;
 
 -- Add indexes for performance
-CREATE INDEX idx_posts_shared_post_id ON posts(shared_post_id) WHERE shared_post_id IS NOT NULL;
-CREATE INDEX idx_posts_profile_user_id ON posts(profile_user_id) WHERE profile_user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_posts_shared_post_id ON posts(shared_post_id) WHERE shared_post_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_posts_profile_user_id ON posts(profile_user_id) WHERE profile_user_id IS NOT NULL;
 
 -- Add constraint: if shared_post_id exists, content should be limited to 500 chars
-ALTER TABLE posts
-  ADD CONSTRAINT shared_post_content_check
-  CHECK (
-    (shared_post_id IS NULL) OR
-    (shared_post_id IS NOT NULL AND (content IS NULL OR length(content) <= 500))
-  );
+DO $$ BEGIN
+  ALTER TABLE posts DROP CONSTRAINT IF EXISTS shared_post_content_check;
+  ALTER TABLE posts
+    ADD CONSTRAINT shared_post_content_check
+    CHECK (
+      (shared_post_id IS NULL) OR
+      (shared_post_id IS NOT NULL AND (content IS NULL OR length(content) <= 500))
+    );
+EXCEPTION WHEN OTHERS THEN NULL; END $$;
 
 -- Function to increment shares_count when a post is shared
 CREATE OR REPLACE FUNCTION increment_shares_count()
@@ -44,11 +47,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for posts table
+DROP TRIGGER IF EXISTS increment_post_shares ON posts;
 CREATE TRIGGER increment_post_shares
   AFTER INSERT ON posts
   FOR EACH ROW
   EXECUTE FUNCTION increment_shares_count();
 
+DROP TRIGGER IF EXISTS decrement_post_shares ON posts;
 CREATE TRIGGER decrement_post_shares
   AFTER DELETE ON posts
   FOR EACH ROW
