@@ -66,10 +66,10 @@ export const TimelineRuler = forwardRef<HTMLDivElement, TimelineRulerProps>(
           {ticks.map((tick, i) => (
             <div
               key={i}
-              className="absolute top-0 w-px bg-zinc-700/50"
+              className="absolute top-0 w-px"
               style={{
                 left: `${tick.position}%`,
-                height: tick.major ? '16px' : '8px',
+                height: tick.major ? '20px' : '10px',
                 backgroundColor: tick.major ? '#71717a' : '#52525b',
               }}
             />
@@ -79,7 +79,7 @@ export const TimelineRuler = forwardRef<HTMLDivElement, TimelineRulerProps>(
           {markers.map((marker, i) => (
             <span
               key={i}
-              className="absolute top-6 text-xs text-gray-500 -translate-x-1/2"
+              className="absolute top-6 text-sm text-white -translate-x-1/2"
               style={{ left: `${marker.position}%` }}
             >
               {marker.label}

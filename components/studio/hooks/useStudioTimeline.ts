@@ -1,16 +1,16 @@
-import { useState, useRef, useCallback, useEffect, MutableRefObject, Dispatch, SetStateAction } from 'react'
-import type { WaveformDisplayRef } from '../WaveformDisplay'
+import { useState, useRef, useCallback, useEffect, MutableRefObject } from 'react'
+import type { CanvasWaveformRef } from '../CanvasWaveform'
 
 interface UseStudioTimelineProps {
   maxDuration: number
-  waveformRefs: MutableRefObject<Map<string, WaveformDisplayRef>>
-  setCurrentTime: Dispatch<SetStateAction<number>>
+  waveformRefs: MutableRefObject<Map<string, CanvasWaveformRef>>
+  onSeek: (time: number) => void
 }
 
 export function useStudioTimeline({
   maxDuration,
   waveformRefs,
-  setCurrentTime,
+  onSeek,
 }: UseStudioTimelineProps) {
   const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
@@ -24,13 +24,10 @@ export function useStudioTimeline({
       const percentage = x / rect.width
       const newTime = percentage * maxDuration
 
-      waveformRefs.current.forEach((ref) => {
-        ref.seekTo(newTime)
-      })
-
-      setCurrentTime(newTime)
+      // Call handleSeek which updates Transport.seconds and syncs waveforms
+      onSeek(newTime)
     },
-    [maxDuration, waveformRefs, setCurrentTime]
+    [maxDuration, onSeek]
   )
 
   const handleTimelineMouseDown = useCallback(
@@ -47,20 +44,14 @@ export function useStudioTimeline({
       setIsDraggingPlayhead(true)
 
       const rect = timelineRef.current.getBoundingClientRect()
-      const x = Math.max(
-        0,
-        Math.min(e.touches[0].clientX - rect.left, rect.width)
-      )
+      const x = Math.max(0, Math.min(e.touches[0].clientX - rect.left, rect.width))
       const percentage = x / rect.width
       const newTime = percentage * maxDuration
 
-      waveformRefs.current.forEach((ref) => {
-        ref.seekTo(newTime)
-      })
-
-      setCurrentTime(newTime)
+      // Call handleSeek which updates Transport.seconds and syncs waveforms
+      onSeek(newTime)
     },
-    [maxDuration, waveformRefs, setCurrentTime]
+    [maxDuration, onSeek]
   )
 
   // Handle dragging
@@ -75,11 +66,8 @@ export function useStudioTimeline({
       const percentage = x / rect.width
       const newTime = percentage * maxDuration
 
-      waveformRefs.current.forEach((ref) => {
-        ref.seekTo(newTime)
-      })
-
-      setCurrentTime(newTime)
+      // Call handleSeek which updates Transport.seconds and syncs waveforms
+      onSeek(newTime)
     }
 
     const handleMouseUp = () => {
@@ -93,7 +81,7 @@ export function useStudioTimeline({
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isDraggingPlayhead, maxDuration, waveformRefs, setCurrentTime])
+  }, [isDraggingPlayhead, maxDuration, onSeek])
 
   return {
     isDraggingPlayhead,

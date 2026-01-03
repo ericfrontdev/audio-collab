@@ -1,19 +1,29 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Upload as UploadIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UploadTrackModal } from './UploadTrackModal'
-import { getProjectStudioData, deleteTrack, addTrackComment } from '@/app/actions/studio'
+import {
+  getProjectStudioData,
+  deleteTrack,
+  addTrackComment,
+  createEmptyTrack,
+  updateTrackName,
+  updateTrackColor,
+  duplicateTrack,
+} from '@/app/actions/studio'
 import { ProjectTrack } from '@/lib/types/studio'
 import { toast } from 'react-toastify'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { AddCommentModal } from './AddCommentModal'
 import { TransportControls } from './TransportControls'
-import { TrackList } from './TrackList'
+import { TrackHeaderList } from './TrackHeaderList'
+import { WaveformTrackRow } from './WaveformTrackRow'
+import { TrackContextMenu } from './TrackContextMenu'
+import { MixerView } from './MixerView'
 import { TimelineRuler } from './TimelineRuler'
-import { WaveformTrack } from './WaveformTrack'
-import { useStudioPlayback } from './hooks/useStudioPlayback'
+import { useTonePlayback } from './hooks/useTonePlayback'
 import { useStudioTracks } from './hooks/useStudioTracks'
 import { useStudioTimeline } from './hooks/useStudioTimeline'
 
@@ -99,15 +109,48 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
   const [isPortrait, setIsPortrait] = useState(false)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
   const [droppedFile, setDroppedFile] = useState<File | null>(null)
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean
+    trackId: string
+    trackName: string
+    trackColor: string
+    position: { x: number; y: number }
+  }>({ isOpen: false, trackId: '', trackName: '', trackColor: '', position: { x: 0, y: 0 } })
+  const [renamingTrackId, setRenamingTrackId] = useState<string | null>(null)
+  const [isMixerOpen, setIsMixerOpen] = useState(false)
   const primaryColor = '#9363f7'
 
+  // Master channel state
+  const [masterVolume, setMasterVolume] = useState(80)
+  const [masterPan, setMasterPan] = useState(0)
+  const [masterMute, setMasterMute] = useState(false)
+
+  // Audio levels for VU meters
+  const [trackAudioLevels, setTrackAudioLevels] = useState<Map<string, { level: number; peak: number }>>(new Map())
+
+  // Track loaded durations (from audio files, not database)
+  const [trackDurations, setTrackDurations] = useState<Map<string, number>>(new Map())
+
+  // Calculate maxDuration from trackDurations (instant, no waiting for Tone.js)
+  const maxDuration = trackDurations.size > 0
+    ? Math.max(...Array.from(trackDurations.values()))
+    : 0
+
   // Custom hooks
-  const playback = useStudioPlayback()
-  const trackControls = useStudioTracks(playback.waveformRefs)
+  const playback = useTonePlayback()
+  const trackControls = useStudioTracks({
+    setTrackVolume: playback.setTrackVolume,
+    setTrackPan: playback.setTrackPan,
+    setTrackMute: playback.setTrackMute,
+    trackIds: tracks.map(t => t.id),
+    masterVolume,
+    masterPan,
+    masterMute,
+  })
   const timeline = useStudioTimeline({
-    maxDuration: playback.maxDuration,
+    maxDuration: maxDuration,
     waveformRefs: playback.waveformRefs,
-    setCurrentTime: playback.setCurrentTime,
+    onSeek: playback.handleSeek,
   })
 
   // Check orientation on mobile
@@ -165,8 +208,163 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
     loadUserProfile()
   }, [projectId])
 
-  const handleUploadSuccess = () => {
-    loadStudioData()
+  // Track the loaded audio URLs to avoid reloading unnecessarily
+  const loadedAudioUrlsRef = useRef<Map<string, string>>(new Map())
+
+  // Load tracks into Tone.js players when tracks data changes
+  useEffect(() => {
+    // Get current track IDs
+    const currentTrackIds = new Set(tracks.map(t => t.id))
+
+    // Remove tracks that no longer exist in the tracks array
+    loadedAudioUrlsRef.current.forEach((url, trackId) => {
+      if (!currentTrackIds.has(trackId)) {
+        console.log('🗑️ Removing deleted track:', trackId)
+        playback.removeTrack(trackId)
+        loadedAudioUrlsRef.current.delete(trackId)
+      }
+    })
+
+    // Load or update existing tracks
+    tracks.forEach((track) => {
+      // Get active takes
+      const activeTakes = track.takes?.filter((t) => t.is_active).sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ) || []
+      const allTakes = [...(track.takes || [])].sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+      const activeTake = activeTakes.length > 0 ? activeTakes[0] : allTakes[0]
+
+      if (activeTake?.audio_url) {
+        // Only reload if the audio URL has changed
+        const currentUrl = loadedAudioUrlsRef.current.get(track.id)
+        if (currentUrl !== activeTake.audio_url) {
+          const mixerSettings = track.mixer_settings
+          const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
+          const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
+
+          playback.loadTrack(track.id, activeTake.audio_url, volume, pan)
+          loadedAudioUrlsRef.current.set(track.id, activeTake.audio_url)
+        }
+      } else {
+        // Remove track if no audio
+        if (loadedAudioUrlsRef.current.has(track.id)) {
+          playback.removeTrack(track.id)
+          loadedAudioUrlsRef.current.delete(track.id)
+        }
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracks])
+
+  const handleUploadSuccess = async (trackId: string) => {
+    // Instead of reloading all data, just fetch the updated track
+    const result = await getProjectStudioData(projectId)
+    if (result.success && result.tracks) {
+      const updatedTrack = result.tracks.find(t => t.id === trackId)
+      if (updatedTrack) {
+        setTracks(prev => prev.map(track =>
+          track.id === trackId ? updatedTrack as TrackWithDetails : track
+        ))
+      }
+    }
+  }
+
+  const handleAddTrack = async () => {
+    const result = await createEmptyTrack(projectId)
+    if (result.success) {
+      toast.success('Track created')
+      loadStudioData()
+    } else {
+      toast.error(result.error || 'Failed to create track')
+    }
+  }
+
+  const handleImport = (trackId: string) => {
+    setSelectedTrackId(trackId)
+    setIsUploadModalOpen(true)
+  }
+
+  const handleToggleTakes = (trackId: string) => {
+    // TODO: Implement takes dropdown
+    toast.info('Takes management coming soon')
+  }
+
+  const handleContextMenu = (e: React.MouseEvent, trackId: string) => {
+    e.preventDefault()
+    const track = tracks.find(t => t.id === trackId)
+    if (!track) return
+
+    setContextMenu({
+      isOpen: true,
+      trackId,
+      trackName: track.name,
+      trackColor: track.color,
+      position: { x: e.clientX, y: e.clientY },
+    })
+  }
+
+  const handleRename = (trackId: string) => {
+    setRenamingTrackId(trackId)
+  }
+
+  const handleTrackRename = async (trackId: string, newName: string) => {
+    if (!newName.trim()) {
+      setRenamingTrackId(null)
+      return
+    }
+
+    // Optimistic update
+    setTracks((prevTracks) =>
+      prevTracks.map((track) =>
+        track.id === trackId ? { ...track, name: newName } : track
+      )
+    )
+    setRenamingTrackId(null)
+
+    // Update server
+    const result = await updateTrackName(trackId, newName)
+    if (!result.success) {
+      toast.error(result.error || 'Failed to rename track')
+      loadStudioData()
+    }
+  }
+
+  const handleCancelRename = () => {
+    setRenamingTrackId(null)
+  }
+
+  const handleColorChange = async (trackId: string, color: string) => {
+    // Optimistic update - update local state immediately
+    setTracks((prevTracks) =>
+      prevTracks.map((track) =>
+        track.id === trackId ? { ...track, color } : track
+      )
+    )
+
+    // Update context menu color too
+    setContextMenu((prev) =>
+      prev.trackId === trackId ? { ...prev, trackColor: color } : prev
+    )
+
+    // Update server in background
+    const result = await updateTrackColor(trackId, color)
+    if (!result.success) {
+      // Revert on error
+      toast.error(result.error || 'Failed to update color')
+      loadStudioData()
+    }
+  }
+
+  const handleDuplicate = async (trackId: string) => {
+    const result = await duplicateTrack(trackId)
+    if (result.success) {
+      toast.success('Track duplicated')
+      loadStudioData()
+    } else {
+      toast.error(result.error || 'Failed to duplicate track')
+    }
   }
 
   const handleDeleteTrack = (trackId: string, trackName: string) => {
@@ -193,12 +391,46 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
     setDeleteConfirmation({ isOpen: false, trackId: '', trackName: '' })
   }
 
+  // Master channel handlers
+  const handleMasterVolumeChange = (volume: number) => {
+    setMasterVolume(volume)
+    // Applied via useStudioTracks hook
+  }
+
+  const handleMasterPanChange = (pan: number) => {
+    setMasterPan(pan)
+    // TODO: Apply master pan to audio output
+  }
+
+  const handleMasterMuteToggle = () => {
+    setMasterMute((prev) => !prev)
+    // Applied via useStudioTracks hook
+  }
+
+  // Audio level callback for VU meters
+  const handleAudioLevel = useCallback((trackId: string, level: number, peak: number) => {
+    setTrackAudioLevels((prev) => {
+      const newMap = new Map(prev)
+      newMap.set(trackId, { level, peak })
+      return newMap
+    })
+  }, [])
+
+  // Handle waveform ready - store the loaded duration
+  const handleWaveformReady = useCallback((trackId: string, duration: number) => {
+    setTrackDurations((prev) => {
+      const newMap = new Map(prev)
+      newMap.set(trackId, duration)
+      return newMap
+    })
+  }, [])
+
   const handleWaveformClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>, trackId: string) => {
       const rect = e.currentTarget.getBoundingClientRect()
       const x = e.clientX - rect.left
       const percentage = x / rect.width
-      const timestamp = percentage * playback.maxDuration
+      const timestamp = percentage * maxDuration
 
       setCommentModal({
         isOpen: true,
@@ -207,7 +439,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
         position: { x: e.clientX, y: e.clientY },
       })
     },
-    [playback.maxDuration]
+    [maxDuration]
   )
 
   const handleCommentSubmit = useCallback(
@@ -310,33 +542,36 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
         isPlaying={playback.isPlaying}
         currentTime={playback.currentTime}
         hasTracksLoaded={tracks.length > 0}
+        isMixerOpen={isMixerOpen}
         onPlayPause={playback.handlePlayPause}
         onStop={playback.handleStop}
-        projectId={projectId}
-        isOwner={currentUserId === ownerId}
-        locale={locale || 'en'}
+        onToggleMixer={() => setIsMixerOpen(!isMixerOpen)}
       />
 
       {/* Main Studio Layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar: Track List */}
-        <TrackList
+        {/* Left Sidebar: Track Headers */}
+        <TrackHeaderList
           tracks={tracks}
           selectedTrackId={selectedTrackId}
           trackVolumes={trackControls.trackVolumes}
           trackMutes={trackControls.trackMutes}
           trackSolos={trackControls.trackSolos}
-          primaryColor={primaryColor}
+          renamingTrackId={renamingTrackId}
           onTrackSelect={setSelectedTrackId}
           onVolumeChange={trackControls.handleVolumeChange}
           onMuteToggle={trackControls.handleMuteToggle}
           onSoloToggle={trackControls.handleSoloToggle}
-          onDeleteTrack={handleDeleteTrack}
-          onAddTrack={() => setIsUploadModalOpen(true)}
+          onImport={handleImport}
+          onToggleTakes={handleToggleTakes}
+          onAddTrack={handleAddTrack}
+          onContextMenu={handleContextMenu}
+          onTrackRename={handleTrackRename}
+          onCancelRename={handleCancelRename}
         />
 
         {/* Center: Timeline & Waveforms */}
-        <div className="flex-1 flex flex-col bg-zinc-950">
+        <div className="flex-1 flex flex-col bg-zinc-900/80">
           {tracks.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center max-w-md">
@@ -355,85 +590,63 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
             </div>
           ) : (
             <div className="flex-1 flex flex-col overflow-hidden relative">
-              {/* Single unified playhead */}
-              <div className="absolute inset-0 pointer-events-none z-40">
-                {playback.maxDuration > 0 && (
-                  <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-white"
-                    style={{
-                      left: `${(playback.currentTime / playback.maxDuration) * 100}%`,
-                    }}
-                  />
-                )}
-              </div>
-
-              {/* Timeline Ruler */}
-              <TimelineRuler
-                ref={timeline.timelineRef}
-                maxDuration={playback.maxDuration}
-                isDragging={timeline.isDraggingPlayhead}
-                onMouseDown={timeline.handleTimelineMouseDown}
-                onTouchStart={timeline.handleTimelineTouchStart}
-              />
-
-              {/* Tracks & Waveforms */}
-              <div className="flex-1 overflow-auto relative">
-                <div className="py-4 space-y-3">
-                  {tracks.map((track) => (
-                    <WaveformTrack
-                      key={track.id}
-                      track={track}
-                      isSelected={selectedTrackId === track.id}
-                      isMuted={trackControls.trackMutes.has(track.id)}
-                      maxDuration={playback.maxDuration}
-                      primaryColor={primaryColor}
-                      currentUserId={currentUser?.id}
-                      onTrackSelect={setSelectedTrackId}
-                      onWaveformClick={handleWaveformClick}
-                      onWaveformReady={playback.handleWaveformReady}
-                      onTimeUpdate={playback.handleTimeUpdate}
-                      onDataRefresh={loadStudioData}
-                      waveformRef={(ref) => {
-                        if (ref) {
-                          playback.waveformRefs.current.set(track.id, ref)
-                        } else {
-                          playback.waveformRefs.current.delete(track.id)
-                        }
+              {/* Timeline container - fits to screen width */}
+              <div className="relative h-full flex flex-col">
+                {/* Single unified playhead */}
+                <div className="absolute inset-0 pointer-events-none z-40">
+                  {maxDuration > 0 && (
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-white"
+                      style={{
+                        left: `${(playback.currentTime / maxDuration) * 100}%`,
                       }}
                     />
-                  ))}
+                  )}
                 </div>
 
-                {/* Drag & Drop Zone */}
-                <div className="p-4">
-                  <div
-                    className={`h-32 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
-                      isDraggingFile
-                        ? 'border-primary bg-primary/10'
-                        : 'border-zinc-800 hover:border-zinc-700'
-                    }`}
-                    onClick={() => setIsUploadModalOpen(true)}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                  >
-                    <div className="text-center">
-                      <UploadIcon
-                        className={`w-6 h-6 mx-auto mb-2 ${
-                          isDraggingFile ? 'text-primary' : 'text-gray-600'
-                        }`}
-                      />
-                      <p
-                        className={`text-sm ${
-                          isDraggingFile ? 'text-primary' : 'text-gray-500'
-                        }`}
-                      >
-                        {isDraggingFile
-                          ? 'Drop file here'
-                          : 'Drag and Drop here or choose file'}
-                      </p>
-                    </div>
-                  </div>
+                {/* Timeline Ruler */}
+                <TimelineRuler
+                  ref={timeline.timelineRef}
+                  maxDuration={maxDuration}
+                  isDragging={timeline.isDraggingPlayhead}
+                  onMouseDown={timeline.handleTimelineMouseDown}
+                  onTouchStart={timeline.handleTimelineTouchStart}
+                />
+
+                {/* Waveforms container */}
+                <div className="flex-1 overflow-y-auto">
+                  {tracks.map((track) => {
+                      // Get active takes and sort by creation date (most recent first)
+                      const activeTakes = track.takes?.filter((t) => t.is_active).sort((a, b) =>
+                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                      ) || []
+                      const allTakes = [...(track.takes || [])].sort((a, b) =>
+                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                      )
+                      // Use the most recent active take, or the most recent take if none are active
+                      const activeTake = activeTakes.length > 0 ? activeTakes[0] : allTakes[0]
+                      return (
+                        <WaveformTrackRow
+                          key={track.id}
+                          trackId={track.id}
+                          trackColor={track.color}
+                          activeTake={activeTake}
+                          loadedDuration={trackDurations.get(track.id) || 0}
+                          maxDuration={maxDuration}
+                          onWaveformReady={(duration) => handleWaveformReady(track.id, duration)}
+                          onTimeUpdate={playback.handleTimeUpdate}
+                          onAudioLevel={(level, peak) => handleAudioLevel(track.id, level, peak)}
+                          onClick={handleWaveformClick}
+                          waveformRef={(ref) => {
+                            if (ref) {
+                              playback.waveformRefs.current.set(track.id, ref)
+                            } else {
+                              playback.waveformRefs.current.delete(track.id)
+                            }
+                          }}
+                        />
+                      )
+                  })}
                 </div>
               </div>
             </div>
@@ -452,6 +665,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
         }}
         onSuccess={handleUploadSuccess}
         droppedFile={droppedFile}
+        targetTrackId={selectedTrackId}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -475,6 +689,55 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
         onSubmit={handleCommentSubmit}
         onClose={() => setCommentModal({ ...commentModal, isOpen: false })}
       />
+
+      {/* Context Menu */}
+      {contextMenu.isOpen && (
+        <TrackContextMenu
+          trackId={contextMenu.trackId}
+          trackName={contextMenu.trackName}
+          trackColor={contextMenu.trackColor}
+          position={contextMenu.position}
+          onClose={() => setContextMenu({ ...contextMenu, isOpen: false })}
+          onRename={handleRename}
+          onColorChange={handleColorChange}
+          onDuplicate={handleDuplicate}
+          onDelete={(trackId) => {
+            const track = tracks.find(t => t.id === trackId)
+            if (track) {
+              handleDeleteTrack(trackId, track.name)
+            }
+          }}
+        />
+      )}
+
+      {/* Mixer Overlay */}
+      {isMixerOpen && (
+        <div className="fixed bottom-0 left-0 right-0 h-[60vh] bg-zinc-900 border-t border-zinc-800 shadow-2xl z-50">
+          <MixerView
+            tracks={tracks}
+            selectedTrackId={selectedTrackId}
+            trackVolumes={trackControls.trackVolumes}
+            trackPans={trackControls.trackPans}
+            trackMutes={trackControls.trackMutes}
+            trackSolos={trackControls.trackSolos}
+            trackAudioLevels={trackAudioLevels}
+            masterVolume={masterVolume}
+            masterPan={masterPan}
+            masterMute={masterMute}
+            onTrackSelect={setSelectedTrackId}
+            onVolumeChange={trackControls.handleVolumeChange}
+            onPanChange={trackControls.handlePanChange}
+            onMuteToggle={trackControls.handleMuteToggle}
+            onSoloToggle={trackControls.handleSoloToggle}
+            onDeleteTrack={handleDeleteTrack}
+            onImport={handleImport}
+            onMasterVolumeChange={handleMasterVolumeChange}
+            onMasterPanChange={handleMasterPanChange}
+            onMasterMuteToggle={handleMasterMuteToggle}
+            onAddTrack={handleAddTrack}
+          />
+        </div>
+      )}
     </div>
   )
 }
