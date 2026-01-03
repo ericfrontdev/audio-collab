@@ -35,7 +35,9 @@ export async function POST(request: NextRequest) {
     if (waveformDataString) {
       try {
         waveformData = JSON.parse(waveformDataString)
-        console.log('Waveform data received:', waveformData.length, 'samples')
+        if (waveformData) {
+          console.log('Waveform data received:', waveformData.length, 'samples')
+        }
       } catch (error) {
         console.warn('Failed to parse waveform data:', error)
       }
