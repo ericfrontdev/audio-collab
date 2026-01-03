@@ -210,7 +210,7 @@ export const TRACK_COLORS: TrackColor[] = [
  */
 
 export const AUDIO_CONSTRAINTS = {
-  MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
+  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB (Netlify serverless function limit is 6MB, use 5MB to be safe)
   SUPPORTED_FORMATS: ['audio/mpeg', 'audio/wav', 'audio/wave', 'audio/x-wav', 'audio/flac', 'audio/x-flac', 'audio/mp4', 'audio/m4a', 'audio/ogg'],
   MAX_TRACKS: 50,
   MAX_TAKES_PER_TRACK: 20,

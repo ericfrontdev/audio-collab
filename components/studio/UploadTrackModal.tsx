@@ -194,6 +194,13 @@ export function UploadTrackModal({
         // Continue without peaks if generation fails
       }
 
+      // Double-check file size (should already be validated, but this is a failsafe)
+      if (!isFileSizeValid(selectedFile)) {
+        throw new Error(
+          `File is too large (${(selectedFile.size / 1024 / 1024).toFixed(1)}MB). Maximum size is ${AUDIO_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024)}MB. Please compress your audio file.`
+        );
+      }
+
       // Upload the audio file via API route
       console.log('📤 Uploading audio file to track:', trackId);
       const formData = new FormData();
@@ -211,6 +218,19 @@ export function UploadTrackModal({
         method: 'POST',
         body: formData,
       });
+
+      // Check if response is ok before parsing JSON
+      if (!response.ok) {
+        let errorMessage = `Upload failed with status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // If JSON parsing fails, use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
 
       const uploadResult = await response.json();
       console.log('Upload result:', uploadResult);

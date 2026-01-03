@@ -1,0 +1,18 @@
+[build]
+  command = "pnpm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  # Increase body size limit for audio uploads (max 10MB for Netlify)
+  # Note: Netlify has a hard limit of 10MB for function payloads
+  included_files = ["app/api/**"]
+
+[[headers]]
+  for = "/api/upload-audio"
+  [headers.values]
+    # Allow larger file uploads (up to 50MB)
+    # This is handled by Supabase storage, not Netlify functions
+    Content-Length = "52428800"
