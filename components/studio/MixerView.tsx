@@ -52,6 +52,7 @@ interface MixerViewProps {
   masterVolume: number
   masterPan: number
   masterMute: boolean
+  masterAudioLevel: { level: number; peak: number }
   onTrackSelect: (trackId: string) => void
   onVolumeChange: (trackId: string, volume: number) => void
   onPanChange: (trackId: string, pan: number) => void
@@ -76,6 +77,7 @@ export function MixerView({
   masterVolume,
   masterPan,
   masterMute,
+  masterAudioLevel,
   onTrackSelect,
   onVolumeChange,
   onPanChange,
@@ -158,12 +160,17 @@ export function MixerView({
             volume={masterVolume}
             pan={masterPan}
             isMuted={masterMute}
+            audioLevel={masterAudioLevel.level}
+            audioPeak={masterAudioLevel.peak}
             onVolumeChange={onMasterVolumeChange}
             onPanChange={onMasterPanChange}
             onMuteToggle={onMasterMuteToggle}
           />
         </div>
       </div>
+
+      {/* Footer */}
+      <div className="h-8 border-t border-zinc-800 bg-zinc-900/50" />
     </div>
   )
 }

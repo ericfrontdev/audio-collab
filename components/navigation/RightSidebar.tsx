@@ -3,15 +3,10 @@
 import { UserProfileCard } from '@/components/cards/UserProfileCard'
 import { QuickActions } from '@/components/cards/QuickActions'
 import { ReactNode } from 'react'
+import type { Profile } from '@/types/profile'
 
 interface RightSidebarProps {
-  profile?: {
-    id: string
-    username: string
-    display_name: string | null
-    avatar_url: string | null
-    bio: string | null
-  } | null
+  profile?: Profile | null
   quickActionsProps?: {
     clubId?: string
     isMember?: boolean

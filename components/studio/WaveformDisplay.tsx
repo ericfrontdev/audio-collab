@@ -114,15 +114,14 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       barRadius: 2,
       height,
       normalize: true,
-      // Share the same AudioContext as Tone.js for precise synchronization
-      audioContext: toneContext.rawContext as AudioContext,
       backend: 'WebAudio',
       interact: false, // Disable WaveSurfer's click-to-seek to allow comment overlay to work
-      // Mute the audio since Tone.js handles playback
-      volume: 0,
     });
 
     wavesurferRef.current = wavesurfer;
+
+    // Mute the audio since Tone.js handles playback
+    wavesurfer.setVolume(0);
 
     // Track if component is still mounted
     let isMounted = true;

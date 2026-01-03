@@ -17,6 +17,7 @@ interface TrackHeaderListProps {
   trackVolumes: Map<string, number>
   trackMutes: Set<string>
   trackSolos: Set<string>
+  trackAudioLevels?: Map<string, { level: number; peak: number }>
   renamingTrackId: string | null
   onTrackSelect: (trackId: string) => void
   onVolumeChange: (trackId: string, volume: number) => void
@@ -36,6 +37,7 @@ export function TrackHeaderList({
   trackVolumes,
   trackMutes,
   trackSolos,
+  trackAudioLevels,
   renamingTrackId,
   onTrackSelect,
   onVolumeChange,
@@ -90,6 +92,8 @@ export function TrackHeaderList({
                 isSelected={selectedTrackId === track.id}
                 isRenaming={renamingTrackId === track.id}
                 takesCount={track.takes?.length ?? 0}
+                audioLevel={trackAudioLevels?.get(track.id)?.level}
+                audioPeak={trackAudioLevels?.get(track.id)?.peak}
                 onVolumeChange={onVolumeChange}
                 onMuteToggle={onMuteToggle}
                 onSoloToggle={onSoloToggle}

@@ -127,6 +127,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
 
   // Audio levels for VU meters
   const [trackAudioLevels, setTrackAudioLevels] = useState<Map<string, { level: number; peak: number }>>(new Map())
+  const [masterAudioLevel, setMasterAudioLevel] = useState({ level: 0, peak: 0 })
 
   // Track loaded durations (from audio files, not database)
   const [trackDurations, setTrackDurations] = useState<Map<string, number>>(new Map())
@@ -136,8 +137,21 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
     ? Math.max(...Array.from(trackDurations.values()))
     : 0
 
+  // Audio level callback for VU meters
+  const handleAudioLevel = useCallback((trackId: string, level: number, peak: number) => {
+    if (trackId === 'master') {
+      setMasterAudioLevel({ level, peak })
+    } else {
+      setTrackAudioLevels((prev) => {
+        const newMap = new Map(prev)
+        newMap.set(trackId, { level, peak })
+        return newMap
+      })
+    }
+  }, [])
+
   // Custom hooks
-  const playback = useTonePlayback()
+  const playback = useTonePlayback(handleAudioLevel)
   const trackControls = useStudioTracks({
     setTrackVolume: playback.setTrackVolume,
     setTrackPan: playback.setTrackPan,
@@ -394,27 +408,21 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
   // Master channel handlers
   const handleMasterVolumeChange = (volume: number) => {
     setMasterVolume(volume)
-    // Applied via useStudioTracks hook
+    playback.setMasterVolume(volume)
   }
 
   const handleMasterPanChange = (pan: number) => {
     setMasterPan(pan)
-    // TODO: Apply master pan to audio output
+    playback.setMasterPan(pan)
   }
 
   const handleMasterMuteToggle = () => {
-    setMasterMute((prev) => !prev)
-    // Applied via useStudioTracks hook
-  }
-
-  // Audio level callback for VU meters
-  const handleAudioLevel = useCallback((trackId: string, level: number, peak: number) => {
-    setTrackAudioLevels((prev) => {
-      const newMap = new Map(prev)
-      newMap.set(trackId, { level, peak })
-      return newMap
+    setMasterMute((prev) => {
+      const newMute = !prev
+      playback.setMasterMute(newMute)
+      return newMute
     })
-  }, [])
+  }
 
   // Handle waveform ready - store the loaded duration
   const handleWaveformReady = useCallback((trackId: string, duration: number) => {
@@ -557,6 +565,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
           trackVolumes={trackControls.trackVolumes}
           trackMutes={trackControls.trackMutes}
           trackSolos={trackControls.trackSolos}
+          trackAudioLevels={trackAudioLevels}
           renamingTrackId={renamingTrackId}
           onTrackSelect={setSelectedTrackId}
           onVolumeChange={trackControls.handleVolumeChange}
@@ -634,8 +643,6 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
                           loadedDuration={trackDurations.get(track.id) || 0}
                           maxDuration={maxDuration}
                           onWaveformReady={(duration) => handleWaveformReady(track.id, duration)}
-                          onTimeUpdate={playback.handleTimeUpdate}
-                          onAudioLevel={(level, peak) => handleAudioLevel(track.id, level, peak)}
                           onClick={handleWaveformClick}
                           waveformRef={(ref) => {
                             if (ref) {
@@ -724,6 +731,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
             masterVolume={masterVolume}
             masterPan={masterPan}
             masterMute={masterMute}
+            masterAudioLevel={masterAudioLevel}
             onTrackSelect={setSelectedTrackId}
             onVolumeChange={trackControls.handleVolumeChange}
             onPanChange={trackControls.handlePanChange}

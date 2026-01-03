@@ -105,7 +105,7 @@ export async function deleteProject(projectId: string, locale: string = 'en') {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return { error: 'Not authenticated' }
+    return { success: false, error: 'Not authenticated' }
   }
 
   // Check ownership
@@ -116,7 +116,7 @@ export async function deleteProject(projectId: string, locale: string = 'en') {
     .maybeSingle()
 
   if (!project || project.owner_id !== user.id) {
-    return { error: 'Not authorized' }
+    return { success: false, error: 'Not authorized' }
   }
 
   const { error } = await supabase
@@ -125,11 +125,11 @@ export async function deleteProject(projectId: string, locale: string = 'en') {
     .eq('id', projectId)
 
   if (error) {
-    return { error: error.message }
+    return { success: false, error: error.message }
   }
 
   revalidatePath(`/${locale}/projects`)
-  redirect(`/${locale}/projects`)
+  return { success: true }
 }
 
 export async function createClubProject(clubId: string, title: string, description?: string) {

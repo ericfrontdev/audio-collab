@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 
 interface VUMeterProps {
   trackId?: string
+  level?: number // 0-100, optional - if provided, use this instead of internal state
+  peak?: number // 0-100, optional - if provided, use this instead of internal state
   width?: number
   height?: number
   showScale?: boolean
@@ -12,26 +14,18 @@ interface VUMeterProps {
 
 export function VUMeter({
   trackId,
+  level: levelProp,
+  peak: peakProp,
   width = 10,
   height = 48,
   showScale = false,
   className = '',
 }: VUMeterProps) {
-  const [level, setLevel] = useState(0)
-  const [peak, setPeak] = useState(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // TODO: Connect to actual audio analysis
-  // Simulation disabled for now to avoid performance issues
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     const randomLevel = Math.random() * 100
-  //     setLevel(randomLevel)
-  //     setPeak((prev) => Math.max(prev * 0.95, randomLevel))
-  //   }, 50)
-  //
-  //   return () => clearInterval(interval)
-  // }, [trackId])
+  // Use props if provided, otherwise use 0
+  const level = levelProp ?? 0
+  const peak = peakProp ?? 0
 
   useEffect(() => {
     const canvas = canvasRef.current

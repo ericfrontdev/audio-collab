@@ -15,6 +15,8 @@ interface TrackHeaderProps {
   isSelected: boolean
   isRenaming: boolean
   takesCount: number
+  audioLevel?: number
+  audioPeak?: number
   onVolumeChange: (trackId: string, volume: number) => void
   onMuteToggle: (trackId: string) => void
   onSoloToggle: (trackId: string) => void
@@ -36,6 +38,8 @@ export function TrackHeader({
   isSelected,
   isRenaming,
   takesCount,
+  audioLevel,
+  audioPeak,
   onVolumeChange,
   onMuteToggle,
   onSoloToggle,
@@ -85,6 +89,7 @@ export function TrackHeader({
               onKeyDown={handleKeyDown}
               onBlur={() => onRename(trackId, editingName)}
               autoFocus
+              ref={(input) => input?.select()}
               className="flex-1 text-xs text-white font-medium bg-zinc-800 border border-primary rounded px-1 py-0.5 outline-none min-w-0"
               onClick={(e) => e.stopPropagation()}
             />
@@ -193,6 +198,8 @@ export function TrackHeader({
       {/* VU Meter (right side, full height) */}
       <VUMeter
         trackId={trackId}
+        level={audioLevel}
+        peak={audioPeak}
         width={10}
         height={70}
         className="border-l border-zinc-900"

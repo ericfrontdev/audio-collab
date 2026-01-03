@@ -19,9 +19,7 @@ function lightenColor(hex: string, amount: number = 0.9): string {
   const newB = Math.round(b + (255 - b) * amount)
 
   // Convert back to hex
-  return `#${newR.toString(16).padStart(2, '0')}${newG
-    .toString(16)
-    .padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`
+  return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`
 }
 
 interface TakeWithUploader {
@@ -50,6 +48,8 @@ interface WaveformTrackRowProps {
   loadedDuration: number
   maxDuration: number
   onWaveformReady: (duration: number) => void
+  onTimeUpdate: (time: number) => void
+  onAudioLevel?: (level: number, peak: number) => void
   waveformRef: (ref: CanvasWaveformRef | null) => void
   onClick?: (e: React.MouseEvent<HTMLDivElement>, trackId: string) => void
 }
@@ -61,22 +61,21 @@ export function WaveformTrackRow({
   loadedDuration,
   maxDuration,
   onWaveformReady,
+  onTimeUpdate,
+  onAudioLevel,
   waveformRef,
   onClick,
 }: WaveformTrackRowProps) {
   // Calculate percentage width based on loaded duration vs maxDuration
-  const widthPercentage =
-    loadedDuration > 0 && maxDuration > 0
-      ? (loadedDuration / maxDuration) * 100
-      : 100
+  const widthPercentage = loadedDuration > 0 && maxDuration > 0
+    ? (loadedDuration / maxDuration) * 100
+    : 100
+
+  console.log('📊 Track:', trackId.substring(0, 8), '- LoadedDuration:', loadedDuration.toFixed(2), '/ MaxDuration:', maxDuration.toFixed(2), '= Width:', widthPercentage.toFixed(2), '%')
 
   // Notify parent when waveform canvas gets duration
   useEffect(() => {
-    if (
-      activeTake &&
-      activeTake.waveform_data &&
-      activeTake.waveform_data.length > 0
-    ) {
+    if (activeTake && activeTake.waveform_data && activeTake.waveform_data.length > 0) {
       // Calculate duration from peaks (100 peaks per second)
       const calculatedDuration = activeTake.waveform_data.length / 100
 
@@ -91,24 +90,21 @@ export function WaveformTrackRow({
     <div
       className="relative h-[70px] border-b border-zinc-800 py-2 cursor-pointer w-full"
       style={{
-        backgroundColor: `${trackColor}40`,
+        backgroundColor: `${trackColor}40`
       }}
       onClick={(e) => onClick?.(e, trackId)}
     >
-      {/* Center baseline that continues after waveform */}
+      {/* Center baseline that extends full width */}
       <div
-        className="absolute right-0"
+        className="absolute left-0 right-0"
         style={{
-          left: `${widthPercentage}%`,
-          top: 'calc(50% - 1px)',
+          top: '50%',
           height: '2px',
           backgroundColor: trackColor,
         }}
       />
 
-      {activeTake &&
-      activeTake.waveform_data &&
-      activeTake.waveform_data.length > 0 ? (
+      {activeTake && activeTake.waveform_data && activeTake.waveform_data.length > 0 ? (
         <div
           className="h-full relative"
           style={{

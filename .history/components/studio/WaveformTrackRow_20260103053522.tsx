@@ -50,6 +50,8 @@ interface WaveformTrackRowProps {
   loadedDuration: number
   maxDuration: number
   onWaveformReady: (duration: number) => void
+  onTimeUpdate: (time: number) => void
+  onAudioLevel?: (level: number, peak: number) => void
   waveformRef: (ref: CanvasWaveformRef | null) => void
   onClick?: (e: React.MouseEvent<HTMLDivElement>, trackId: string) => void
 }
@@ -61,6 +63,8 @@ export function WaveformTrackRow({
   loadedDuration,
   maxDuration,
   onWaveformReady,
+  onTimeUpdate,
+  onAudioLevel,
   waveformRef,
   onClick,
 }: WaveformTrackRowProps) {
@@ -69,6 +73,18 @@ export function WaveformTrackRow({
     loadedDuration > 0 && maxDuration > 0
       ? (loadedDuration / maxDuration) * 100
       : 100
+
+  console.log(
+    '📊 Track:',
+    trackId.substring(0, 8),
+    '- LoadedDuration:',
+    loadedDuration.toFixed(2),
+    '/ MaxDuration:',
+    maxDuration.toFixed(2),
+    '= Width:',
+    widthPercentage.toFixed(2),
+    '%'
+  )
 
   // Notify parent when waveform canvas gets duration
   useEffect(() => {
@@ -95,13 +111,12 @@ export function WaveformTrackRow({
       }}
       onClick={(e) => onClick?.(e, trackId)}
     >
-      {/* Center baseline that continues after waveform */}
+      {/* Center baseline that extends full width */}
       <div
-        className="absolute right-0"
+        className="absolute left-0 right-0"
         style={{
-          left: `${widthPercentage}%`,
-          top: 'calc(50% - 1px)',
-          height: '2px',
+          top: '50%',
+          height: '4px',
           backgroundColor: trackColor,
         }}
       />

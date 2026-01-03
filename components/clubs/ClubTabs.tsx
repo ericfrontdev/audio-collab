@@ -26,6 +26,7 @@ interface Member {
 }
 
 interface ProjectWithDetails extends Project {
+  owner_id: string;
   member_count: number;
   owner_profile: {
     username: string;
@@ -117,7 +118,10 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
                 {projects.map((project) => (
                   <ProjectCard
                     key={project.id}
-                    project={project}
+                    project={{
+                      ...project,
+                      owner: project.owner_profile
+                    }}
                     currentUserId={currentUserId}
                     locale={locale}
                   />
