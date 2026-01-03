@@ -2,14 +2,17 @@
 
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import * as Tone from 'tone';
 
 interface WaveformDisplayProps {
   audioUrl: string;
   trackId: string;
   trackColor: string;
+  waveformData?: number[] | null;
   onReady?: (duration: number) => void;
   onSeek?: (time: number) => void;
   onTimeUpdate?: (time: number) => void;
+  onAudioLevel?: (level: number, peak: number) => void;
   height?: number;
 }
 
@@ -31,9 +34,11 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       audioUrl,
       trackId,
       trackColor,
+      waveformData,
       onReady,
       onSeek,
       onTimeUpdate,
+      onAudioLevel,
       height = 80,
     },
     ref
@@ -59,7 +64,10 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       play: () => wavesurferRef.current?.play(),
       pause: () => wavesurferRef.current?.pause(),
       seekTo: (time: number) => wavesurferRef.current?.seekTo(time / (wavesurferRef.current?.getDuration() || 1)),
-      setTime: (time: number) => wavesurferRef.current?.setTime(time),
+      setTime: (time: number) => {
+        // Directly set time without checking current time to reduce overhead
+        wavesurferRef.current?.setTime(time)
+      },
       getDuration: () => wavesurferRef.current?.getDuration() || 0,
       getCurrentTime: () => wavesurferRef.current?.getCurrentTime() || 0,
       isPlaying: () => wavesurferRef.current?.isPlaying() || false,
@@ -91,7 +99,10 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
     setIsLoading(true);
     setError(null);
 
-    // Create WaveSurfer instance
+    // Get Tone.js AudioContext to share with WaveSurfer
+    const toneContext = Tone.getContext();
+
+    // Create WaveSurfer instance (visualization only, no audio playback)
     const wavesurfer = WaveSurfer.create({
       container: containerRef.current,
       waveColor: trackColor,
@@ -103,9 +114,12 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       barRadius: 2,
       height,
       normalize: true,
-      // splitChannels not set = channels are merged by default
+      // Share the same AudioContext as Tone.js for precise synchronization
+      audioContext: toneContext.rawContext as AudioContext,
       backend: 'WebAudio',
       interact: false, // Disable WaveSurfer's click-to-seek to allow comment overlay to work
+      // Mute the audio since Tone.js handles playback
+      volume: 0,
     });
 
     wavesurferRef.current = wavesurfer;
@@ -113,8 +127,12 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
     // Track if component is still mounted
     let isMounted = true;
 
-    // Load audio
-    wavesurfer.load(audioUrl);
+    // Load audio with pre-computed peaks if available (much faster!)
+    if (waveformData && waveformData.length > 0) {
+      wavesurfer.load(audioUrl, [waveformData]);
+    } else {
+      wavesurfer.load(audioUrl);
+    }
 
     // Event listeners
     wavesurfer.on('ready', () => {
@@ -164,6 +182,109 @@ export const WaveformDisplay = forwardRef<WaveformDisplayRef, WaveformDisplayPro
       }
     };
   }, [audioUrl, trackId]);
+
+  // Update colors dynamically without reloading
+  useEffect(() => {
+    if (wavesurferRef.current) {
+      wavesurferRef.current.setOptions({
+        waveColor: trackColor,
+        progressColor: trackColor,
+      });
+    }
+  }, [trackColor]);
+
+  // Audio level monitoring
+  useEffect(() => {
+    if (!onAudioLevel || !wavesurferRef.current) return;
+
+    const wavesurfer = wavesurferRef.current;
+    let analyser: AnalyserNode | null = null;
+    let animationFrameId: number | null = null;
+    let peakValue = 0;
+    let peakHoldTime = 0;
+
+    const setupAnalyser = () => {
+      try {
+        // Get the backend (WebAudio)
+        const backend = (wavesurfer as any).backend;
+        if (!backend || !backend.audioContext) return;
+
+        const audioContext = backend.audioContext as AudioContext;
+
+        // Create analyser node
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.8;
+
+        // Connect to the audio graph
+        if (backend.gainNode) {
+          backend.gainNode.connect(analyser);
+        }
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const updateLevel = () => {
+          if (!analyser || !wavesurfer?.isPlaying()) {
+            // Decay when not playing
+            if (peakValue > 0) {
+              peakValue *= 0.95;
+              onAudioLevel?.(0, (peakValue / 255) * 100);
+            }
+            animationFrameId = requestAnimationFrame(updateLevel);
+            return;
+          }
+
+          analyser.getByteFrequencyData(dataArray);
+
+          // Calculate RMS level
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i] * dataArray[i];
+          }
+          const rms = Math.sqrt(sum / dataArray.length);
+          const level = (rms / 255) * 100;
+
+          // Update peak with hold time
+          const now = Date.now();
+          if (rms > peakValue || now - peakHoldTime > 1000) {
+            peakValue = rms;
+            peakHoldTime = now;
+          } else {
+            peakValue *= 0.98; // Slow decay
+          }
+
+          const peak = (peakValue / 255) * 100;
+
+          onAudioLevel(level, peak);
+
+          animationFrameId = requestAnimationFrame(updateLevel);
+        };
+
+        updateLevel();
+      } catch (error) {
+        console.error('Error setting up audio analyser:', error);
+      }
+    };
+
+    // Setup analyser when audio is ready
+    const onReady = () => setupAnalyser();
+    wavesurfer.on('ready', onReady);
+
+    // Cleanup
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      if (analyser) {
+        try {
+          analyser.disconnect();
+        } catch (e) {
+          // Ignore disconnect errors
+        }
+      }
+      wavesurfer.un('ready', onReady);
+    };
+  }, [onAudioLevel]);
 
   return (
     <div className="relative w-full">

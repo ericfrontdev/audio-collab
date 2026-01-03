@@ -146,6 +146,216 @@ export async function toggleTrackCollaborative(
 }
 
 /**
+ * Create an empty track with auto-generated name (Audio 1, Audio 2, etc.)
+ */
+export async function createEmptyTrack(
+  projectId: string
+): Promise<{ success: boolean; track?: ProjectTrack; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    // Verify user authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Get project and check access
+    const { data: project } = await supabase
+      .from('projects')
+      .select('id, owner_id, club_id')
+      .eq('id', projectId)
+      .maybeSingle();
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Get current track count for auto-naming
+    const { count } = await supabase
+      .from('project_tracks')
+      .select('*', { count: 'exact', head: true })
+      .eq('project_id', projectId);
+
+    const trackNumber = (count || 0) + 1;
+    const trackName = `Audio ${trackNumber}`;
+
+    // Create empty track
+    const { data: track, error } = await supabase
+      .from('project_tracks')
+      .insert({
+        project_id: projectId,
+        name: trackName,
+        color: TRACK_COLORS[Math.floor(Math.random() * TRACK_COLORS.length)],
+        order_index: count || 0,
+        created_by: user.id,
+        is_collaborative: false,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    revalidatePath(`/[locale]/projects/${projectId}/studio`);
+    return { success: true, track };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error creating empty track:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Update track name
+ */
+export async function updateTrackName(
+  trackId: string,
+  name: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('project_tracks')
+      .update({ name })
+      .eq('id', trackId);
+
+    if (error) throw error;
+
+    // Get project_id for revalidation
+    const { data: track } = await supabase
+      .from('project_tracks')
+      .select('project_id')
+      .eq('id', trackId)
+      .maybeSingle();
+
+    if (track) {
+      revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error updating track name:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Update track color
+ */
+export async function updateTrackColor(
+  trackId: string,
+  color: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from('project_tracks')
+      .update({ color })
+      .eq('id', trackId);
+
+    if (error) throw error;
+
+    // Get project_id for revalidation
+    const { data: track } = await supabase
+      .from('project_tracks')
+      .select('project_id')
+      .eq('id', trackId)
+      .maybeSingle();
+
+    if (track) {
+      revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error updating track color:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Duplicate a track (without takes)
+ */
+export async function duplicateTrack(
+  trackId: string
+): Promise<{ success: boolean; track?: ProjectTrack; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    // Verify user authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Get original track
+    const { data: originalTrack } = await supabase
+      .from('project_tracks')
+      .select('*')
+      .eq('id', trackId)
+      .maybeSingle();
+
+    if (!originalTrack) {
+      return { success: false, error: 'Track not found' };
+    }
+
+    // Get current track count for order_index
+    const { count } = await supabase
+      .from('project_tracks')
+      .select('*', { count: 'exact', head: true })
+      .eq('project_id', originalTrack.project_id);
+
+    // Create duplicate track
+    const { data: newTrack, error } = await supabase
+      .from('project_tracks')
+      .insert({
+        project_id: originalTrack.project_id,
+        name: `${originalTrack.name} (Copy)`,
+        color: originalTrack.color,
+        order_index: count || 0,
+        created_by: user.id,
+        is_collaborative: originalTrack.is_collaborative,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Duplicate all takes (references to same audio files)
+    const { data: originalTakes } = await supabase
+      .from('project_takes')
+      .select('*')
+      .eq('track_id', trackId);
+
+    if (originalTakes && originalTakes.length > 0) {
+      const duplicatedTakes = originalTakes.map((take) => ({
+        track_id: newTrack.id,
+        audio_url: take.audio_url, // Reference to same file
+        duration: take.duration,
+        waveform_data: take.waveform_data,
+        file_size: take.file_size,
+        file_format: take.file_format,
+        is_active: take.is_active,
+        uploaded_by: user.id,
+      }));
+
+      await supabase.from('project_takes').insert(duplicatedTakes);
+    }
+
+    revalidatePath(`/[locale]/projects/${originalTrack.project_id}/studio`);
+    return { success: true, track: newTrack };
+  } catch (error: unknown) {
+    const err = error as SupabaseError;
+    console.error('Error duplicating track:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Update track name or color
  */
 export async function updateTrack(

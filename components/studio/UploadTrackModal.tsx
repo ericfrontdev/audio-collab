@@ -3,17 +3,55 @@
 import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createTrack, uploadTake } from '@/app/actions/studio';
+import { createTrack } from '@/app/actions/studio';
 import { toast } from 'react-toastify';
 import { ProjectTrack, AUDIO_CONSTRAINTS, isAudioFile, isFileSizeValid } from '@/lib/types/studio';
+
+// Generate waveform peaks from audio file
+// Generates a fixed number of peaks per second for consistent visual scaling
+async function generateWaveformPeaks(file: File, peaksPerSecond: number = 100): Promise<number[]> {
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    const rawData = audioBuffer.getChannelData(0); // Get first channel
+    const duration = audioBuffer.duration;
+
+    // Generate peaks based on duration, not sample count
+    // This ensures consistent visual scaling regardless of sample rate
+    const peaksCount = Math.floor(duration * peaksPerSecond);
+    const samplesPerPeak = rawData.length / peaksCount;
+    const peaks: number[] = [];
+
+    for (let i = 0; i < peaksCount; i++) {
+      const start = Math.floor(i * samplesPerPeak);
+      const end = Math.floor((i + 1) * samplesPerPeak);
+      let max = 0;
+
+      for (let j = start; j < end && j < rawData.length; j++) {
+        const abs = Math.abs(rawData[j]);
+        if (abs > max) max = abs;
+      }
+
+      peaks.push(max);
+    }
+
+    return peaks;
+  } finally {
+    await audioContext.close();
+  }
+}
 
 interface UploadTrackModalProps {
   projectId: string;
   existingTracks: ProjectTrack[];
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (trackId: string) => void;
   droppedFile?: File | null;
+  targetTrackId?: string | null;
 }
 
 export function UploadTrackModal({
@@ -23,13 +61,30 @@ export function UploadTrackModal({
   onClose,
   onSuccess,
   droppedFile,
+  targetTrackId,
 }: UploadTrackModalProps) {
-  const [uploadType, setUploadType] = useState<'new-track' | 'add-take'>('new-track');
+  // Find target track if specified
+  const targetTrack = targetTrackId ? existingTracks.find((t) => t.id === targetTrackId) : null;
+
+  // If targetTrackId is provided, we're always uploading to that existing track
+  const [uploadType, setUploadType] = useState<'new-track' | 'add-take'>(
+    targetTrackId ? 'add-take' : 'new-track'
+  );
   const [trackName, setTrackName] = useState('');
-  const [selectedTrackId, setSelectedTrackId] = useState<string>('');
+  const [selectedTrackId, setSelectedTrackId] = useState<string>(targetTrackId || '');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Reset state when modal opens or targetTrackId changes
+  useEffect(() => {
+    if (isOpen) {
+      // Set upload type based on targetTrackId
+      setUploadType(targetTrackId ? 'add-take' : 'new-track');
+      // Set selected track ID
+      setSelectedTrackId(targetTrackId || '');
+    }
+  }, [isOpen, targetTrackId]);
 
   // Handle dropped file from drag & drop
   useEffect(() => {
@@ -126,13 +181,38 @@ export function UploadTrackModal({
         setUploadProgress(30);
       }
 
-      // Upload the audio file
-      console.log('Uploading audio file to track:', trackId);
+      // Generate waveform peaks before uploading
+      console.log('🔧 Generating waveform data...');
+      setUploadProgress(40);
+      let waveformPeaks: number[] = [];
+      try {
+        waveformPeaks = await generateWaveformPeaks(selectedFile);
+        console.log('✅ Waveform peaks generated:', waveformPeaks.length, 'samples');
+        console.log('📊 First 10 peaks:', waveformPeaks.slice(0, 10));
+      } catch (error) {
+        console.error('❌ Failed to generate waveform peaks:', error);
+        // Continue without peaks if generation fails
+      }
+
+      // Upload the audio file via API route
+      console.log('📤 Uploading audio file to track:', trackId);
       const formData = new FormData();
       formData.append('audio', selectedFile);
+      formData.append('trackId', trackId);
+      if (waveformPeaks.length > 0) {
+        formData.append('waveformData', JSON.stringify(waveformPeaks));
+        console.log('✅ Waveform data added to upload:', waveformPeaks.length, 'samples');
+      } else {
+        console.warn('⚠️ No waveform data to upload!');
+      }
 
-      setUploadProgress(50);
-      const uploadResult = await uploadTake(trackId, formData);
+      setUploadProgress(60);
+      const response = await fetch('/api/upload-audio', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const uploadResult = await response.json();
       console.log('Upload result:', uploadResult);
 
       if (!uploadResult.success) {
@@ -162,7 +242,7 @@ export function UploadTrackModal({
       setUploadProgress(0);
 
       // Call success callback and close modal
-      onSuccess();
+      onSuccess(trackId);
       onClose();
     } catch (error: unknown) {
       const err = error as Error;
@@ -190,7 +270,14 @@ export function UploadTrackModal({
       <div className="relative w-full max-w-lg bg-zinc-900 rounded-xl border border-zinc-800 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
-          <h2 className="text-xl font-semibold text-white">Upload Audio</h2>
+          <div>
+            <h2 className="text-xl font-semibold text-white">Upload Audio</h2>
+            {targetTrack && (
+              <p className="text-sm text-zinc-400 mt-1">
+                Pour la piste : <span className="text-white font-medium">{targetTrack.name}</span>
+              </p>
+            )}
+          </div>
           <button
             onClick={resetAndClose}
             disabled={isUploading}
@@ -202,50 +289,52 @@ export function UploadTrackModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Upload Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-white mb-3">
-              Upload Type
-            </label>
-            <div className="flex gap-4">
-              <label className="flex-1">
-                <input
-                  type="radio"
-                  name="uploadType"
-                  value="new-track"
-                  checked={uploadType === 'new-track'}
-                  onChange={(e) => setUploadType(e.target.value as 'new-track')}
-                  disabled={isUploading}
-                  className="sr-only peer"
-                />
-                <div className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-zinc-700 cursor-pointer peer-checked:border-primary peer-checked:bg-primary/10 hover:border-zinc-600 transition-all">
-                  <div className="text-sm font-medium text-white">New Track</div>
-                  <div className="text-xs text-gray-400 mt-1">Create a new track</div>
-                </div>
+          {/* Upload Type Selection - Only show if no target track specified */}
+          {!targetTrackId && (
+            <div>
+              <label className="block text-sm font-medium text-white mb-3">
+                Upload Type
               </label>
+              <div className="flex gap-4">
+                <label className="flex-1">
+                  <input
+                    type="radio"
+                    name="uploadType"
+                    value="new-track"
+                    checked={uploadType === 'new-track'}
+                    onChange={(e) => setUploadType(e.target.value as 'new-track')}
+                    disabled={isUploading}
+                    className="sr-only peer"
+                  />
+                  <div className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-zinc-700 cursor-pointer peer-checked:border-primary peer-checked:bg-primary/10 hover:border-zinc-600 transition-all">
+                    <div className="text-sm font-medium text-white">New Track</div>
+                    <div className="text-xs text-gray-400 mt-1">Create a new track</div>
+                  </div>
+                </label>
 
-              <label className="flex-1">
-                <input
-                  type="radio"
-                  name="uploadType"
-                  value="add-take"
-                  checked={uploadType === 'add-take'}
-                  onChange={(e) => setUploadType(e.target.value as 'add-take')}
-                  disabled={isUploading || existingTracks.length === 0}
-                  className="sr-only peer"
-                />
-                <div className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-zinc-700 cursor-pointer peer-checked:border-primary peer-checked:bg-primary/10 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed hover:border-zinc-600 transition-all">
-                  <div className="text-sm font-medium text-white">Add Take</div>
-                  <div className="text-xs text-gray-400 mt-1">Add to existing track</div>
-                </div>
-              </label>
+                <label className="flex-1">
+                  <input
+                    type="radio"
+                    name="uploadType"
+                    value="add-take"
+                    checked={uploadType === 'add-take'}
+                    onChange={(e) => setUploadType(e.target.value as 'add-take')}
+                    disabled={isUploading || existingTracks.length === 0}
+                    className="sr-only peer"
+                  />
+                  <div className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-zinc-700 cursor-pointer peer-checked:border-primary peer-checked:bg-primary/10 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed hover:border-zinc-600 transition-all">
+                    <div className="text-sm font-medium text-white">Add Take</div>
+                    <div className="text-xs text-gray-400 mt-1">Add to existing track</div>
+                  </div>
+                </label>
+              </div>
+              {existingTracks.length === 0 && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Create your first track to enable adding takes
+                </p>
+              )}
             </div>
-            {existingTracks.length === 0 && (
-              <p className="mt-2 text-xs text-gray-500">
-                Create your first track to enable adding takes
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Track Name Input (for new tracks) */}
           {uploadType === 'new-track' && (
@@ -266,8 +355,8 @@ export function UploadTrackModal({
             </div>
           )}
 
-          {/* Track Selection (for adding takes) */}
-          {uploadType === 'add-take' && existingTracks.length > 0 && (
+          {/* Track Selection (for adding takes) - Only show if no target track specified */}
+          {!targetTrackId && uploadType === 'add-take' && existingTracks.length > 0 && (
             <div>
               <label htmlFor="trackSelect" className="block text-sm font-medium text-white mb-2">
                 Select Track <span className="text-red-500">*</span>

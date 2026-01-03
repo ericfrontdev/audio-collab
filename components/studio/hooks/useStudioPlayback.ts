@@ -64,11 +64,21 @@ export function useStudioPlayback() {
         setCurrentTime(pauseTime)
       }
     } else {
-      waveformRefs.current.forEach((ref) => ref.play())
+      // Synchronize all waveforms to current time before playing
+      const refs = Array.from(waveformRefs.current.values())
+      refs.forEach((ref) => {
+        ref.setTime(currentTime)
+      })
+
+      // Start all waveforms in the same animation frame for better sync
+      requestAnimationFrame(() => {
+        refs.forEach((ref) => ref.play())
+      })
+
       setIsPlaying(true)
       isPlayingRef.current = true
     }
-  }, [isPlaying])
+  }, [isPlaying, currentTime])
 
   const handleStop = useCallback(() => {
     waveformRefs.current.forEach((ref) => {

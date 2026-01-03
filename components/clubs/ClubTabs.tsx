@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Link } from '@/i18n/routing';
-import { MessageCircle, Music, Users as UsersIcon, Info, CheckCircle2, Calendar, PlusCircle, Folder } from 'lucide-react';
+import { MessageCircle, Music, Users as UsersIcon, Info, CheckCircle2, PlusCircle, Folder } from 'lucide-react';
 import type { Club } from '@/types/club';
 import type { Project } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { ClubFeed } from './ClubFeed';
+import { ProjectCard } from '@/components/projects/ProjectCard';
 
 const tabs = [
   { id: 'feed', label: 'Feed', icon: MessageCircle },
@@ -43,9 +44,10 @@ interface ClubTabsProps {
   currentUserId?: string;
   currentUserAvatar?: string | null;
   currentUsername?: string;
+  locale: string;
 }
 
-export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, currentUserId, currentUserAvatar, currentUsername }: ClubTabsProps) {
+export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, currentUserId, currentUserAvatar, currentUsername, locale }: ClubTabsProps) {
   const [activeTab, setActiveTab] = useState('feed');
 
   const formatDate = (dateString: string) => {
@@ -113,84 +115,12 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
             {projects.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {projects.map((project) => (
-                  <Link key={project.id} href={`/projects/${project.id}`}>
-                    <div className="group rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden hover:border-primary/50 transition-all duration-300">
-                      {/* Project Cover Image */}
-                      <div className="relative h-40 bg-gradient-to-br from-primary/20 to-purple-600/20">
-                        {project.cover_image_url ? (
-                          <Image
-                            src={project.cover_image_url}
-                            alt={project.name}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Folder className="w-16 h-16 text-zinc-700" />
-                          </div>
-                        )}
-                        {/* Status Badge */}
-                        <div className="absolute top-3 right-3">
-                          <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                            project.status === 'active'
-                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                              : project.status === 'completed'
-                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                              : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                          }`}>
-                            {project.status}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Project Info */}
-                      <div className="p-4">
-                        <h3 className="text-base font-bold text-white mb-1 group-hover:text-primary transition-colors line-clamp-1">
-                          {project.name}
-                        </h3>
-
-                        {project.description && (
-                          <p className="text-sm text-gray-400 mb-3 line-clamp-2">
-                            {project.description}
-                          </p>
-                        )}
-
-                        {/* Creator Info */}
-                        {project.owner_profile && (
-                          <div className="flex items-center gap-2 mb-3">
-                            {project.owner_profile.avatar_url ? (
-                              <Image
-                                src={project.owner_profile.avatar_url}
-                                alt={project.owner_profile.username}
-                                width={20}
-                                height={20}
-                                className="rounded-full"
-                              />
-                            ) : (
-                              <div className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center">
-                                <Music className="w-3 h-3 text-zinc-600" />
-                              </div>
-                            )}
-                            <span className="text-xs text-gray-500">
-                              by {project.owner_profile.display_name || project.owner_profile.username}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Meta Info */}
-                        <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-zinc-800">
-                          <div className="flex items-center gap-1">
-                            <UsersIcon className="w-3.5 h-3.5" />
-                            <span>{project.member_count} {project.member_count === 1 ? 'member' : 'members'}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>{formatDate(project.created_at)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    currentUserId={currentUserId}
+                    locale={locale}
+                  />
                 ))}
               </div>
             ) : (

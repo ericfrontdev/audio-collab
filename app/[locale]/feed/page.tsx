@@ -2,11 +2,9 @@ import { getFeedPosts } from '@/app/actions/feed'
 import { CreatePostCard } from '@/components/feed/CreatePostCard'
 import { FeedPostsList } from '@/components/feed/FeedPostsList'
 import { AppLayout } from '@/components/layouts/AppLayout'
-import { UserProfileCard } from '@/components/cards/UserProfileCard'
-import { QuickActions } from '@/components/cards/QuickActions'
+import { RightSidebar } from '@/components/navigation/RightSidebar'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Heart } from 'lucide-react'
 
 export default async function FeedPage({
   params,
@@ -58,7 +56,7 @@ export default async function FeedPage({
         {/* 3 Column Layout */}
         <div className="flex">
           {/* Main Content - Center */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 xl:mr-96">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-lg border-b border-zinc-800">
               <div className="px-4 md:px-6 py-4">
@@ -85,13 +83,7 @@ export default async function FeedPage({
           </div>
 
           {/* Right Sidebar */}
-          <aside className="hidden xl:block w-96 border-l border-zinc-800 p-6 space-y-6">
-            {/* User Profile Card */}
-            {profile && <UserProfileCard profile={profile} />}
-
-            {/* Quick Actions */}
-            <QuickActions />
-
+          <RightSidebar profile={profile} showFooter={true}>
             {/* Suggested Clubs */}
             {suggestedClubs && suggestedClubs.length > 0 && (
               <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
@@ -140,13 +132,7 @@ export default async function FeedPage({
                 discover new music from the community.
               </p>
             </div>
-            <footer className="flex flex-rows">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Made by indie musicians for indie musicians <br />
-                &copy; 2026 AudioCollab
-              </p>
-            </footer>
-          </aside>
+          </RightSidebar>
         </div>
       </div>
     </AppLayout>

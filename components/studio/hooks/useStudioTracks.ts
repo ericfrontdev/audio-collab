@@ -1,44 +1,63 @@
-import { useState, useCallback, MutableRefObject } from 'react'
-import type { WaveformDisplayRef } from '../WaveformDisplay'
+import { useState, useCallback, useEffect } from 'react'
 
-export function useStudioTracks(waveformRefs: MutableRefObject<Map<string, WaveformDisplayRef>>) {
+interface UseStudioTracksProps {
+  setTrackVolume: (trackId: string, volume: number) => void
+  setTrackPan: (trackId: string, pan: number) => void
+  setTrackMute: (trackId: string, muted: boolean) => void
+  trackIds: string[]
+  masterVolume: number
+  masterPan: number
+  masterMute: boolean
+}
+
+export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, trackIds, masterVolume, masterPan, masterMute }: UseStudioTracksProps) {
   const [trackVolumes, setTrackVolumes] = useState<Map<string, number>>(new Map())
+  const [trackPans, setTrackPans] = useState<Map<string, number>>(new Map())
   const [trackMutes, setTrackMutes] = useState<Set<string>>(new Set())
   const [trackSolos, setTrackSolos] = useState<Set<string>>(new Set())
 
   const handleVolumeChange = useCallback(
     (trackId: string, volume: number) => {
-      const waveformRef = waveformRefs.current.get(trackId)
-      if (waveformRef) {
-        waveformRef.setVolume(volume / 100)
-        setTrackVolumes((prev) => {
-          const newMap = new Map(prev)
-          newMap.set(trackId, volume)
-          return newMap
-        })
-      }
+      // Apply both track volume and master volume
+      const finalVolume = (volume / 100) * (masterVolume / 100)
+      setTrackVolume(trackId, finalVolume)
+      setTrackVolumes((prev) => {
+        const newMap = new Map(prev)
+        newMap.set(trackId, volume)
+        return newMap
+      })
     },
-    [waveformRefs]
+    [setTrackVolume, masterVolume]
+  )
+
+  const handlePanChange = useCallback(
+    (trackId: string, pan: number) => {
+      // Tone.js pan: -1 to 1
+      setTrackPan(trackId, pan / 100)
+      setTrackPans((prev) => {
+        const newMap = new Map(prev)
+        newMap.set(trackId, pan)
+        return newMap
+      })
+    },
+    [setTrackPan]
   )
 
   const handleMuteToggle = useCallback(
     (trackId: string) => {
-      const waveformRef = waveformRefs.current.get(trackId)
-      if (waveformRef) {
-        setTrackMutes((prev) => {
-          const newMutes = new Set(prev)
-          if (newMutes.has(trackId)) {
-            newMutes.delete(trackId)
-            waveformRef.setMute(false)
-          } else {
-            newMutes.add(trackId)
-            waveformRef.setMute(true)
-          }
-          return newMutes
-        })
-      }
+      setTrackMutes((prev) => {
+        const newMutes = new Set(prev)
+        if (newMutes.has(trackId)) {
+          newMutes.delete(trackId)
+          setTrackMute(trackId, false)
+        } else {
+          newMutes.add(trackId)
+          setTrackMute(trackId, true)
+        }
+        return newMutes
+      })
     },
-    [waveformRefs]
+    [setTrackMute]
   )
 
   const handleSoloToggle = useCallback(
@@ -53,30 +72,54 @@ export function useStudioTracks(waveformRefs: MutableRefObject<Map<string, Wavef
 
         // Update mutes based on solo state
         if (newSolos.size > 0) {
-          waveformRefs.current.forEach((ref, id) => {
+          trackIds.forEach((id) => {
             if (newSolos.has(id)) {
-              ref.setMute(false)
+              setTrackMute(id, masterMute ? true : false)
             } else {
-              ref.setMute(true)
+              setTrackMute(id, true)
             }
           })
         } else {
-          waveformRefs.current.forEach((ref, id) => {
-            ref.setMute(trackMutes.has(id))
+          trackIds.forEach((id) => {
+            setTrackMute(id, masterMute ? true : trackMutes.has(id))
           })
         }
 
         return newSolos
       })
     },
-    [waveformRefs, trackMutes]
+    [trackIds, setTrackMute, trackMutes, masterMute]
   )
+
+  // Apply master volume changes to all tracks
+  useEffect(() => {
+    trackIds.forEach((trackId) => {
+      const trackVolume = trackVolumes.get(trackId) ?? 80
+      const finalVolume = (trackVolume / 100) * (masterVolume / 100)
+      setTrackVolume(trackId, finalVolume)
+    })
+  }, [masterVolume, trackVolumes, trackIds, setTrackVolume])
+
+  // Apply master mute to all tracks
+  useEffect(() => {
+    trackIds.forEach((trackId) => {
+      if (masterMute) {
+        setTrackMute(trackId, true)
+      } else if (trackSolos.size > 0) {
+        setTrackMute(trackId, !trackSolos.has(trackId))
+      } else {
+        setTrackMute(trackId, trackMutes.has(trackId))
+      }
+    })
+  }, [masterMute, trackMutes, trackSolos, trackIds, setTrackMute])
 
   return {
     trackVolumes,
+    trackPans,
     trackMutes,
     trackSolos,
     handleVolumeChange,
+    handlePanChange,
     handleMuteToggle,
     handleSoloToggle,
   }

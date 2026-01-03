@@ -2,9 +2,9 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { Link } from '@/i18n/routing';
-import { Music, Users, Calendar, Folder, PlusCircle } from 'lucide-react';
+import { Folder, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
+import { ProjectCard } from '@/components/projects/ProjectCard';
 
 export default async function MyProjectsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -35,10 +35,20 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
     .or(`owner_id.eq.${user.id},id.in.(${memberProjectIds.length > 0 ? memberProjectIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
     .order('created_at', { ascending: false });
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
+  // Get owner profiles for all projects
+  const ownerIds = projects?.map(p => p.owner_id).filter(Boolean) || [];
+  const { data: ownerProfiles } = ownerIds.length > 0
+    ? await supabase
+        .from('profiles')
+        .select('id, username, display_name')
+        .in('id', ownerIds)
+    : { data: null };
+
+  // Enrich projects with owner info
+  const projectsWithOwners = projects?.map(project => ({
+    ...project,
+    owner: ownerProfiles?.find(profile => profile.id === project.owner_id) || null,
+  })) || [];
 
   return (
     <AppLayout>
@@ -69,73 +79,15 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
           )}
 
           {/* Projects Grid */}
-          {projects && projects.length > 0 ? (
+          {projectsWithOwners && projectsWithOwners.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
-                <div key={project.id} className="group rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden hover:border-primary/50 transition-all duration-300">
-                    {/* Project Cover Image */}
-                    <div className="relative h-40 bg-gradient-to-br from-primary/20 to-purple-600/20">
-                      {project.cover_url ? (
-                        <Image
-                          src={project.cover_url}
-                          alt={project.title}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Folder className="w-16 h-16 text-zinc-700" />
-                        </div>
-                      )}
-                      {/* Status Badge */}
-                      <div className="absolute top-3 right-3">
-                        <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                          project.status === 'active'
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                            : project.status === 'in_progress'
-                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                            : project.status === 'completed'
-                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                            : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                        }`}>
-                          {project.status?.replace('_', ' ')}
-                        </span>
-                      </div>
-                      {/* Kind Badge */}
-                      {project.kind && (
-                        <div className="absolute top-3 left-3">
-                          <span className="px-2 py-1 rounded-md text-xs font-medium bg-zinc-900/80 text-white border border-zinc-700">
-                            {project.kind === 'club' ? 'Club Project' : 'Personal'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Project Info */}
-                    <div className="p-4">
-                      <Link href={`/projects/${project.id}`} prefetch={false}>
-                        <h3 className="text-base font-bold text-white mb-1 hover:text-primary transition-colors line-clamp-1 cursor-pointer">
-                          {project.title}
-                        </h3>
-                      </Link>
-
-                      {project.description && (
-                        <p className="text-sm text-gray-400 mb-3 line-clamp-2">
-                          {project.description}
-                        </p>
-                      )}
-
-                      {/* Club Info - Removed temporarily */}
-
-                      {/* Meta Info */}
-                      <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-zinc-800">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>{formatDate(project.created_at)}</span>
-                        </div>
-                      </div>
-                    </div>
-                </div>
+              {projectsWithOwners.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  currentUserId={user.id}
+                  locale={locale}
+                />
               ))}
             </div>
           ) : (
