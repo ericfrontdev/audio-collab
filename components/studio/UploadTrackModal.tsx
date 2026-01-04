@@ -224,6 +224,7 @@ export function UploadTrackModal({
 
       // Step 2: Upload file directly to Supabase Storage with real-time progress tracking
       console.log('📤 Uploading file to Supabase Storage with progress tracking...');
+      setUploadProgress(60); // Set to 60% before starting upload
 
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -231,9 +232,9 @@ export function UploadTrackModal({
         // Track upload progress
         xhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable) {
-            // Map upload progress from 60% to 80%
+            // Map upload progress from 60% to 90%
             const uploadPercent = (e.loaded / e.total) * 100;
-            const mappedProgress = 60 + (uploadPercent * 0.2); // 60% + (0-100% * 20%)
+            const mappedProgress = 60 + (uploadPercent * 0.3); // 60% + (0-100% * 30%)
             setUploadProgress(Math.round(mappedProgress));
             console.log(`📊 Upload progress: ${uploadPercent.toFixed(1)}% (mapped to ${mappedProgress.toFixed(1)}%)`);
           }
@@ -242,7 +243,7 @@ export function UploadTrackModal({
         xhr.addEventListener('load', () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             console.log('✅ File uploaded to storage successfully');
-            setUploadProgress(80);
+            setUploadProgress(90);
             resolve();
           } else {
             reject(new Error(`Storage upload failed with status ${xhr.status}`));
