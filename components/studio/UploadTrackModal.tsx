@@ -201,39 +201,67 @@ export function UploadTrackModal({
         );
       }
 
-      // Upload the audio file via API route
-      console.log('📤 Uploading audio file to track:', trackId);
-      const formData = new FormData();
-      formData.append('audio', selectedFile);
-      formData.append('trackId', trackId);
-      if (waveformPeaks.length > 0) {
-        formData.append('waveformData', JSON.stringify(waveformPeaks));
-        console.log('✅ Waveform data added to upload:', waveformPeaks.length, 'samples');
-      } else {
-        console.warn('⚠️ No waveform data to upload!');
-      }
-
-      setUploadProgress(60);
-      const response = await fetch('/api/upload-audio', {
+      // Step 1: Request a signed upload URL from our API
+      console.log('📝 Requesting signed upload URL...');
+      setUploadProgress(50);
+      const urlResponse = await fetch('/api/generate-upload-url', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trackId,
+          fileName: selectedFile.name,
+          fileType: selectedFile.type,
+        }),
       });
 
-      // Check if response is ok before parsing JSON
-      if (!response.ok) {
-        let errorMessage = `Upload failed with status ${response.status}`;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          // If JSON parsing fails, use the status text
-          errorMessage = response.statusText || errorMessage;
-        }
-        throw new Error(errorMessage);
+      if (!urlResponse.ok) {
+        const errorData = await urlResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to generate upload URL');
       }
 
-      const uploadResult = await response.json();
-      console.log('Upload result:', uploadResult);
+      const { uploadUrl, filePath, token } = await urlResponse.json();
+      console.log('✅ Got signed URL, uploading file directly to Supabase Storage...');
+
+      // Step 2: Upload file directly to Supabase Storage with progress tracking
+      setUploadProgress(60);
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: selectedFile,
+        headers: {
+          'Content-Type': selectedFile.type,
+          'x-upsert': 'true',
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Storage upload failed with status ${uploadResponse.status}`);
+      }
+
+      console.log('✅ File uploaded to storage successfully');
+      setUploadProgress(80);
+
+      // Step 3: Finalize the upload by creating the take record
+      console.log('📝 Creating take record in database...');
+      const finalizeResponse = await fetch('/api/finalize-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trackId,
+          filePath,
+          fileSize: selectedFile.size,
+          fileFormat: selectedFile.name.split('.').pop(),
+          waveformData: waveformPeaks.length > 0 ? waveformPeaks : null,
+        }),
+      });
+
+      if (!finalizeResponse.ok) {
+        const errorData = await finalizeResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to finalize upload');
+      }
+
+      const uploadResult = await finalizeResponse.json();
+      console.log('✅ Upload finalized:', uploadResult);
 
       if (!uploadResult.success) {
         interface UploadResultWithDetails {
