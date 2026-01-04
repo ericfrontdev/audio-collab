@@ -224,8 +224,13 @@ export function WaveformTrack({
             />
 
             {/* Comment bubbles */}
-            {maxDuration > 0 &&
-              track.comments?.map((comment) => (
+            {(() => {
+              console.log(`💬 Rendering comments for track ${track.id}:`, {
+                maxDuration,
+                commentsCount: track.comments?.length || 0,
+                comments: track.comments,
+              })
+              return maxDuration > 0 && track.comments?.map((comment) => (
                 <div
                   key={comment.id}
                   className="absolute z-20 group"
@@ -273,7 +278,8 @@ export function WaveformTrack({
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+            })()}
           </>
         ) : (
           <div className="h-full flex items-center justify-center">
