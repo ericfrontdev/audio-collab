@@ -88,7 +88,8 @@ export async function createTrack(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${projectId}/studio`);
+    // Don't revalidate here - let the client handle UI updates optimistically
+    // revalidatePath(`/[locale]/projects/${projectId}/studio`);
     return { success: true, track };
   } catch (error: unknown) {
     const err = error as SupabaseError;
@@ -196,7 +197,8 @@ export async function createEmptyTrack(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${projectId}/studio`);
+    // Don't revalidate here - let the client handle UI updates optimistically
+    // revalidatePath(`/[locale]/projects/${projectId}/studio`);
     return { success: true, track };
   } catch (error: unknown) {
     const err = error as SupabaseError;

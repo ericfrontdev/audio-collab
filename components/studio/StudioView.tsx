@@ -273,23 +273,35 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
   }, [tracks])
 
   const handleUploadSuccess = async (trackId: string) => {
-    // Instead of reloading all data, just fetch the updated track
+    // Fetch the updated track data
     const result = await getProjectStudioData(projectId)
     if (result.success && result.tracks) {
       const updatedTrack = result.tracks.find(t => t.id === trackId)
       if (updatedTrack) {
-        setTracks(prev => prev.map(track =>
-          track.id === trackId ? updatedTrack as TrackWithDetails : track
-        ))
+        setTracks(prev => {
+          // Check if this is a new track or an existing one
+          const trackExists = prev.some(track => track.id === trackId)
+          if (trackExists) {
+            // Update existing track
+            return prev.map(track =>
+              track.id === trackId ? updatedTrack as TrackWithDetails : track
+            )
+          } else {
+            // Add new track
+            return [...prev, updatedTrack as TrackWithDetails]
+          }
+        })
       }
     }
   }
 
   const handleAddTrack = async () => {
     const result = await createEmptyTrack(projectId)
-    if (result.success) {
+    if (result.success && result.track) {
       toast.success('Track created')
-      loadStudioData()
+      // Add the new track to the state optimistically
+      setTracks(prev => [...prev, result.track as TrackWithDetails])
+      setSelectedTrackId(result.track.id)
     } else {
       toast.error(result.error || 'Failed to create track')
     }
