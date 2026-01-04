@@ -12,6 +12,7 @@ import {
   updateTrackName,
   updateTrackColor,
   duplicateTrack,
+  updateMixerSettings,
 } from '@/app/actions/studio'
 import { ProjectTrack } from '@/lib/types/studio'
 import { toast } from 'react-toastify'
@@ -152,6 +153,34 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
 
   // Custom hooks
   const playback = useTonePlayback(handleAudioLevel)
+
+  // Callback to save mixer settings to database
+  const handleMixerSettingsChange = useCallback(async (trackId: string, settings: {
+    volume?: number
+    pan?: number
+    solo?: boolean
+    mute?: boolean
+  }) => {
+    const result = await updateMixerSettings(trackId, settings)
+    if (!result.success) {
+      console.error('Failed to save mixer settings:', result.error)
+      // Don't show error toast to avoid annoying the user during mixing
+    }
+  }, [])
+
+  // Create initial mixer settings map from database
+  const initialMixerSettings = new Map(
+    tracks.map(track => [
+      track.id,
+      {
+        volume: track.mixer_settings?.volume ?? 0.8,
+        pan: track.mixer_settings?.pan ?? 0,
+        solo: track.mixer_settings?.solo ?? false,
+        mute: track.mixer_settings?.mute ?? false,
+      }
+    ])
+  )
+
   const trackControls = useStudioTracks({
     setTrackVolume: playback.setTrackVolume,
     setTrackPan: playback.setTrackPan,
@@ -160,6 +189,8 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
     masterVolume,
     masterPan,
     masterMute,
+    initialSettings: initialMixerSettings,
+    onMixerSettingsChange: handleMixerSettingsChange,
   })
   const timeline = useStudioTimeline({
     maxDuration: maxDuration,

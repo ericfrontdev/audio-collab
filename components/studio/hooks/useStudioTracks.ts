@@ -1,4 +1,12 @@
 import { useState, useCallback, useEffect } from 'react'
+import { useDebounce } from './useDebounce'
+
+interface MixerSettingsData {
+  volume?: number
+  pan?: number
+  solo?: boolean
+  mute?: boolean
+}
 
 interface UseStudioTracksProps {
   setTrackVolume: (trackId: string, volume: number) => void
@@ -8,13 +16,60 @@ interface UseStudioTracksProps {
   masterVolume: number
   masterPan: number
   masterMute: boolean
+  initialSettings?: Map<string, MixerSettingsData>
+  onMixerSettingsChange?: (trackId: string, settings: {
+    volume?: number
+    pan?: number
+    solo?: boolean
+    mute?: boolean
+  }) => void
 }
 
-export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, trackIds, masterVolume, masterPan, masterMute }: UseStudioTracksProps) {
-  const [trackVolumes, setTrackVolumes] = useState<Map<string, number>>(new Map())
-  const [trackPans, setTrackPans] = useState<Map<string, number>>(new Map())
-  const [trackMutes, setTrackMutes] = useState<Set<string>>(new Set())
-  const [trackSolos, setTrackSolos] = useState<Set<string>>(new Set())
+export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, trackIds, masterVolume, masterPan, masterMute, initialSettings, onMixerSettingsChange }: UseStudioTracksProps) {
+  const [trackVolumes, setTrackVolumes] = useState<Map<string, number>>(() => {
+    const map = new Map<string, number>()
+    initialSettings?.forEach((settings, trackId) => {
+      if (settings.volume !== undefined) {
+        map.set(trackId, settings.volume * 100) // Convert 0-1 to 0-100
+      }
+    })
+    return map
+  })
+
+  const [trackPans, setTrackPans] = useState<Map<string, number>>(() => {
+    const map = new Map<string, number>()
+    initialSettings?.forEach((settings, trackId) => {
+      if (settings.pan !== undefined) {
+        map.set(trackId, settings.pan * 100) // Convert -1 to 1 → -100 to 100
+      }
+    })
+    return map
+  })
+
+  const [trackMutes, setTrackMutes] = useState<Set<string>>(() => {
+    const set = new Set<string>()
+    initialSettings?.forEach((settings, trackId) => {
+      if (settings.mute) {
+        set.add(trackId)
+      }
+    })
+    return set
+  })
+
+  const [trackSolos, setTrackSolos] = useState<Set<string>>(() => {
+    const set = new Set<string>()
+    initialSettings?.forEach((settings, trackId) => {
+      if (settings.solo) {
+        set.add(trackId)
+      }
+    })
+    return set
+  })
+
+  // Debounce mixer settings changes to avoid too many DB writes
+  const debouncedSaveSettings = useDebounce((trackId: string, settings: any) => {
+    onMixerSettingsChange?.(trackId, settings)
+  }, 500)
 
   const handleVolumeChange = useCallback(
     (trackId: string, volume: number) => {
@@ -26,8 +81,11 @@ export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, tra
         newMap.set(trackId, volume)
         return newMap
       })
+
+      // Save to database (debounced)
+      debouncedSaveSettings(trackId, { volume: volume / 100 })
     },
-    [setTrackVolume, masterVolume]
+    [setTrackVolume, masterVolume, debouncedSaveSettings]
   )
 
   const handlePanChange = useCallback(
@@ -39,14 +97,19 @@ export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, tra
         newMap.set(trackId, pan)
         return newMap
       })
+
+      // Save to database (debounced)
+      debouncedSaveSettings(trackId, { pan: pan / 100 })
     },
-    [setTrackPan]
+    [setTrackPan, debouncedSaveSettings]
   )
 
   const handleMuteToggle = useCallback(
     (trackId: string) => {
       setTrackMutes((prev) => {
         const newMutes = new Set(prev)
+        const willBeMuted = !newMutes.has(trackId)
+
         if (newMutes.has(trackId)) {
           newMutes.delete(trackId)
           setTrackMute(trackId, false)
@@ -54,16 +117,22 @@ export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, tra
           newMutes.add(trackId)
           setTrackMute(trackId, true)
         }
+
+        // Save to database (no debounce needed for boolean toggles)
+        onMixerSettingsChange?.(trackId, { mute: willBeMuted })
+
         return newMutes
       })
     },
-    [setTrackMute]
+    [setTrackMute, onMixerSettingsChange]
   )
 
   const handleSoloToggle = useCallback(
     (trackId: string) => {
       setTrackSolos((prev) => {
         const newSolos = new Set(prev)
+        const willBeSoloed = !newSolos.has(trackId)
+
         if (newSolos.has(trackId)) {
           newSolos.delete(trackId)
         } else {
@@ -85,10 +154,13 @@ export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, tra
           })
         }
 
+        // Save to database (no debounce needed for boolean toggles)
+        onMixerSettingsChange?.(trackId, { solo: willBeSoloed })
+
         return newSolos
       })
     },
-    [trackIds, setTrackMute, trackMutes, masterMute]
+    [trackIds, setTrackMute, trackMutes, masterMute, onMixerSettingsChange]
   )
 
   // Apply master volume changes to all tracks
