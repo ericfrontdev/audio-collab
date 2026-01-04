@@ -668,6 +668,8 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
                           activeTake={activeTake}
                           loadedDuration={trackDurations.get(track.id) || 0}
                           maxDuration={maxDuration}
+                          comments={track.comments}
+                          currentUserId={currentUserId}
                           onWaveformReady={(duration) => handleWaveformReady(track.id, duration)}
                           onClick={handleWaveformClick}
                           waveformRef={(ref) => {
