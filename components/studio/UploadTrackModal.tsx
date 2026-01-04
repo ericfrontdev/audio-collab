@@ -222,24 +222,46 @@ export function UploadTrackModal({
       const { uploadUrl, filePath, token } = await urlResponse.json();
       console.log('✅ Got signed URL, uploading file directly to Supabase Storage...');
 
-      // Step 2: Upload file directly to Supabase Storage with progress tracking
-      setUploadProgress(60);
+      // Step 2: Upload file directly to Supabase Storage with real-time progress tracking
+      console.log('📤 Uploading file to Supabase Storage with progress tracking...');
 
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: selectedFile,
-        headers: {
-          'Content-Type': selectedFile.type,
-          'x-upsert': 'true',
-        },
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        // Track upload progress
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            // Map upload progress from 60% to 80%
+            const uploadPercent = (e.loaded / e.total) * 100;
+            const mappedProgress = 60 + (uploadPercent * 0.2); // 60% + (0-100% * 20%)
+            setUploadProgress(Math.round(mappedProgress));
+            console.log(`📊 Upload progress: ${uploadPercent.toFixed(1)}% (mapped to ${mappedProgress.toFixed(1)}%)`);
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            console.log('✅ File uploaded to storage successfully');
+            setUploadProgress(80);
+            resolve();
+          } else {
+            reject(new Error(`Storage upload failed with status ${xhr.status}`));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Storage upload failed due to network error'));
+        });
+
+        xhr.addEventListener('abort', () => {
+          reject(new Error('Storage upload was aborted'));
+        });
+
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', selectedFile.type);
+        xhr.setRequestHeader('x-upsert', 'true');
+        xhr.send(selectedFile);
       });
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Storage upload failed with status ${uploadResponse.status}`);
-      }
-
-      console.log('✅ File uploaded to storage successfully');
-      setUploadProgress(80);
 
       // Step 3: Finalize the upload by creating the take record
       console.log('📝 Creating take record in database...');
