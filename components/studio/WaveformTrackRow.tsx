@@ -160,19 +160,17 @@ export function WaveformTrackRow({
 
       {/* Comment bubbles */}
       {maxDuration > 0 &&
-        comments?.map((comment) => {
-          console.log('💬 Rendering comment:', comment, 'maxDuration:', maxDuration)
-          return (
-            <div
-              key={comment.id}
-              className="absolute z-20 group"
-              style={{
-                left: `${(comment.timestamp / maxDuration) * 100}%`,
-                bottom: '8px',
-                transform: 'translateX(-50%)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
+        comments?.map((comment) => (
+          <div
+            key={comment.id}
+            className="absolute z-20 group"
+            style={{
+              left: `${(comment.timestamp / maxDuration) * 100}%`,
+              bottom: '8px',
+              transform: 'translateX(-50%)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
               {/* Avatar bubble */}
               <div className="relative">
                 {comment.profile?.avatar_url ? (
@@ -210,8 +208,7 @@ export function WaveformTrackRow({
                 </div>
               </div>
             </div>
-          )
-        })}
+          ))}
     </div>
   )
 }

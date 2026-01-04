@@ -470,29 +470,21 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
 
   const handleCommentSubmit = useCallback(
     async (text: string, timestamp: number) => {
-      console.log('💬 Adding comment:', { trackId: commentModal.trackId, timestamp, text })
       const result = await addTrackComment(commentModal.trackId, timestamp, text)
-      console.log('💬 Comment result:', result)
       if (result.success && result.comment) {
         toast.success('Comment added!')
-        console.log('💬 Comment data:', result.comment)
-        setTracks((prevTracks) => {
-          const updated = prevTracks.map((track) => {
+        setTracks((prevTracks) =>
+          prevTracks.map((track) => {
             if (track.id === commentModal.trackId && result.comment) {
-              const newComments = [...(track.comments || []), result.comment]
-              console.log(`💬 Track ${track.id} now has ${newComments.length} comments`)
               return {
                 ...track,
-                comments: newComments,
+                comments: [...(track.comments || []), result.comment],
               }
             }
             return track
           })
-          console.log('💬 Updated tracks:', updated.map(t => ({ id: t.id, comments: t.comments?.length })))
-          return updated
-        })
+        )
       } else {
-        console.error('💬 Failed to add comment:', result.error)
         toast.error(result.error || 'Failed to add comment')
       }
     },
