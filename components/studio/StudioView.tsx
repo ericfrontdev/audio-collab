@@ -299,8 +299,14 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
     const result = await createEmptyTrack(projectId)
     if (result.success && result.track) {
       toast.success('Track created')
-      // Add the new track to the state optimistically
-      setTracks(prev => [...prev, result.track as TrackWithDetails])
+      // Add the new track to the state with proper structure
+      const newTrack: TrackWithDetails = {
+        ...result.track,
+        takes: [],
+        comments: [],
+        mixer_settings: null,
+      }
+      setTracks(prev => [...prev, newTrack])
       setSelectedTrackId(result.track.id)
     } else {
       toast.error(result.error || 'Failed to create track')
