@@ -184,10 +184,13 @@ export function UploadTrackModal({
       // Generate waveform peaks before uploading
       console.log('🔧 Generating waveform data...');
       setUploadProgress(40);
+      const waveformStartTime = performance.now();
       let waveformPeaks: number[] = [];
       try {
         waveformPeaks = await generateWaveformPeaks(selectedFile);
-        console.log('✅ Waveform peaks generated:', waveformPeaks.length, 'samples');
+        const waveformEndTime = performance.now();
+        const waveformDuration = ((waveformEndTime - waveformStartTime) / 1000).toFixed(2);
+        console.log(`✅ Waveform peaks generated in ${waveformDuration}s:`, waveformPeaks.length, 'samples');
         console.log('📊 First 10 peaks:', waveformPeaks.slice(0, 10));
       } catch (error) {
         console.error('❌ Failed to generate waveform peaks:', error);
@@ -224,7 +227,9 @@ export function UploadTrackModal({
 
       // Step 2: Upload file directly to Supabase Storage with real-time progress tracking
       console.log('📤 Uploading file to Supabase Storage with progress tracking...');
+      console.log(`📦 File size: ${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`);
       setUploadProgress(60); // Set to 60% before starting upload
+      const uploadStartTime = performance.now();
 
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -235,14 +240,18 @@ export function UploadTrackModal({
             // Map upload progress from 60% to 90%
             const uploadPercent = (e.loaded / e.total) * 100;
             const mappedProgress = 60 + (uploadPercent * 0.3); // 60% + (0-100% * 30%)
+            const elapsed = ((performance.now() - uploadStartTime) / 1000).toFixed(1);
+            const speed = ((e.loaded / 1024 / 1024) / parseFloat(elapsed)).toFixed(2);
             setUploadProgress(Math.round(mappedProgress));
-            console.log(`📊 Upload progress: ${uploadPercent.toFixed(1)}% (mapped to ${mappedProgress.toFixed(1)}%)`);
+            console.log(`📊 Upload: ${uploadPercent.toFixed(1)}% | ${(e.loaded / 1024 / 1024).toFixed(2)}MB/${(e.total / 1024 / 1024).toFixed(2)}MB | ${speed}MB/s | ${elapsed}s`);
           }
         });
 
         xhr.addEventListener('load', () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            console.log('✅ File uploaded to storage successfully');
+            const uploadEndTime = performance.now();
+            const uploadDuration = ((uploadEndTime - uploadStartTime) / 1000).toFixed(2);
+            console.log(`✅ File uploaded to storage in ${uploadDuration}s`);
             setUploadProgress(90);
             resolve();
           } else {
@@ -266,6 +275,7 @@ export function UploadTrackModal({
 
       // Step 3: Finalize the upload by creating the take record
       console.log('📝 Creating take record in database...');
+      const finalizeStartTime = performance.now();
       const finalizeResponse = await fetch('/api/finalize-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -284,7 +294,8 @@ export function UploadTrackModal({
       }
 
       const uploadResult = await finalizeResponse.json();
-      console.log('✅ Upload finalized:', uploadResult);
+      const finalizeDuration = ((performance.now() - finalizeStartTime) / 1000).toFixed(2);
+      console.log(`✅ Upload finalized in ${finalizeDuration}s:`, uploadResult);
 
       if (!uploadResult.success) {
         interface UploadResultWithDetails {
