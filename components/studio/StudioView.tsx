@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Upload as UploadIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UploadTrackModal } from './UploadTrackModal'
@@ -172,8 +172,8 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
     }
   }, [])
 
-  // Create initial mixer settings map from database
-  const initialMixerSettings = new Map(
+  // Create initial mixer settings map from database (memoized to prevent infinite loops)
+  const initialMixerSettings = useMemo(() => new Map(
     tracks.map(track => [
       track.id,
       {
@@ -183,7 +183,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
         mute: track.mixer_settings?.mute ?? false,
       }
     ])
-  )
+  ), [tracks])
 
   const trackControls = useStudioTracks({
     setTrackVolume: playback.setTrackVolume,
