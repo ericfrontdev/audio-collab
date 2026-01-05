@@ -853,23 +853,23 @@ export async function updateMixerSettings(
   try {
     const supabase = await createClient();
 
+    // Use upsert to insert if not exists, update if exists
     const { error } = await supabase
       .from('project_mixer_settings')
-      .update(settings)
-      .eq('track_id', trackId);
+      .upsert(
+        {
+          track_id: trackId,
+          ...settings,
+        },
+        {
+          onConflict: 'track_id',
+        }
+      );
 
     if (error) throw error;
 
-    // Get project_id for revalidation
-    const { data: track } = await supabase
-      .from('project_tracks')
-      .select('project_id')
-      .eq('id', trackId)
-      .maybeSingle();
-
-    if (track) {
-      revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
-    }
+    // Don't revalidate here - let the client handle UI updates optimistically
+    // revalidatePath would cause a page reload which defeats the purpose
 
     return { success: true };
   } catch (error: unknown) {
