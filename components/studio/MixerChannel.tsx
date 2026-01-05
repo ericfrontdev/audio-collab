@@ -22,6 +22,7 @@ interface MixerChannelProps {
   onSelect: (trackId: string) => void
   onDelete: (trackId: string, trackName: string) => void
   onImport: (trackId: string) => void
+  onContextMenu: (e: React.MouseEvent, trackId: string) => void
   uploaderUsername?: string
 }
 
@@ -43,6 +44,7 @@ export function MixerChannel({
   onSelect,
   onDelete,
   onImport,
+  onContextMenu,
   uploaderUsername,
 }: MixerChannelProps) {
   const [isHoveringFader, setIsHoveringFader] = useState(false)
@@ -169,6 +171,7 @@ export function MixerChannel({
         ${isSelected ? 'bg-zinc-900' : 'hover:bg-zinc-900/50'}
       `}
       onClick={() => onSelect(trackId)}
+      onContextMenu={(e) => onContextMenu(e, trackId)}
       style={{
         borderTop: `3px solid ${trackColor}`,
       }}

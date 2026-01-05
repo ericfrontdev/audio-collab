@@ -60,6 +60,7 @@ interface MixerViewProps {
   onSoloToggle: (trackId: string) => void
   onDeleteTrack: (trackId: string, trackName: string) => void
   onImport: (trackId: string) => void
+  onContextMenu: (e: React.MouseEvent, trackId: string) => void
   onMasterVolumeChange: (volume: number) => void
   onMasterPanChange: (pan: number) => void
   onMasterMuteToggle: () => void
@@ -85,6 +86,7 @@ export function MixerView({
   onSoloToggle,
   onDeleteTrack,
   onImport,
+  onContextMenu,
   onMasterVolumeChange,
   onMasterPanChange,
   onMasterMuteToggle,
@@ -146,6 +148,7 @@ export function MixerView({
                     onSelect={onTrackSelect}
                     onDelete={onDeleteTrack}
                     onImport={onImport}
+                    onContextMenu={onContextMenu}
                     uploaderUsername={uploader?.username}
                   />
                 )

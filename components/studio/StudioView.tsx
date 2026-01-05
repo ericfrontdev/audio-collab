@@ -794,6 +794,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
             onSoloToggle={trackControls.handleSoloToggle}
             onDeleteTrack={handleDeleteTrack}
             onImport={handleImport}
+            onContextMenu={handleContextMenu}
             onMasterVolumeChange={handleMasterVolumeChange}
             onMasterPanChange={handleMasterPanChange}
             onMasterMuteToggle={handleMasterMuteToggle}
