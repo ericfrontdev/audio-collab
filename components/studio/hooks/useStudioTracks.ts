@@ -188,53 +188,45 @@ export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, tra
 
   // Sync mixer state when initialSettings changes (when tracks load from DB)
   useEffect(() => {
-    if (!initialSettings) return
+    if (!initialSettings || initialSettings.size === 0) return
 
     console.log('🔄 Syncing mixer settings from database:', initialSettings)
 
-    // Update volumes
-    setTrackVolumes((prev) => {
-      const newMap = new Map(prev)
-      initialSettings.forEach((settings, trackId) => {
-        if (settings.volume !== undefined && !prev.has(trackId)) {
-          newMap.set(trackId, settings.volume * 100)
-        }
-      })
-      return newMap
+    // Update volumes - completely rebuild from DB
+    const newVolumes = new Map<string, number>()
+    initialSettings.forEach((settings, trackId) => {
+      if (settings.volume !== undefined) {
+        newVolumes.set(trackId, settings.volume * 100)
+      }
     })
+    setTrackVolumes(newVolumes)
 
-    // Update pans
-    setTrackPans((prev) => {
-      const newMap = new Map(prev)
-      initialSettings.forEach((settings, trackId) => {
-        if (settings.pan !== undefined && !prev.has(trackId)) {
-          newMap.set(trackId, settings.pan * 100)
-        }
-      })
-      return newMap
+    // Update pans - completely rebuild from DB
+    const newPans = new Map<string, number>()
+    initialSettings.forEach((settings, trackId) => {
+      if (settings.pan !== undefined) {
+        newPans.set(trackId, settings.pan * 100)
+      }
     })
+    setTrackPans(newPans)
 
-    // Update mutes
-    setTrackMutes((prev) => {
-      const newSet = new Set(prev)
-      initialSettings.forEach((settings, trackId) => {
-        if (settings.mute && !prev.has(trackId)) {
-          newSet.add(trackId)
-        }
-      })
-      return newSet
+    // Update mutes - completely rebuild from DB
+    const newMutes = new Set<string>()
+    initialSettings.forEach((settings, trackId) => {
+      if (settings.mute === true) {
+        newMutes.add(trackId)
+      }
     })
+    setTrackMutes(newMutes)
 
-    // Update solos
-    setTrackSolos((prev) => {
-      const newSet = new Set(prev)
-      initialSettings.forEach((settings, trackId) => {
-        if (settings.solo && !prev.has(trackId)) {
-          newSet.add(trackId)
-        }
-      })
-      return newSet
+    // Update solos - completely rebuild from DB
+    const newSolos = new Set<string>()
+    initialSettings.forEach((settings, trackId) => {
+      if (settings.solo === true) {
+        newSolos.add(trackId)
+      }
     })
+    setTrackSolos(newSolos)
   }, [initialSettings])
 
   return {
