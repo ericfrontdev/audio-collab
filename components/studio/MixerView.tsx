@@ -44,6 +44,7 @@ interface TrackWithDetails {
 interface MixerViewProps {
   tracks: TrackWithDetails[]
   selectedTrackId: string | null
+  renamingTrackId: string | null
   trackVolumes: Map<string, number>
   trackPans: Map<string, number>
   trackMutes: Set<string>
@@ -61,6 +62,8 @@ interface MixerViewProps {
   onDeleteTrack: (trackId: string, trackName: string) => void
   onImport: (trackId: string) => void
   onContextMenu: (e: React.MouseEvent, trackId: string) => void
+  onTrackRename: (trackId: string, newName: string) => void
+  onCancelRename: () => void
   onMasterVolumeChange: (volume: number) => void
   onMasterPanChange: (pan: number) => void
   onMasterMuteToggle: () => void
@@ -70,6 +73,7 @@ interface MixerViewProps {
 export function MixerView({
   tracks,
   selectedTrackId,
+  renamingTrackId,
   trackVolumes,
   trackPans,
   trackMutes,
@@ -87,6 +91,8 @@ export function MixerView({
   onDeleteTrack,
   onImport,
   onContextMenu,
+  onTrackRename,
+  onCancelRename,
   onMasterVolumeChange,
   onMasterPanChange,
   onMasterMuteToggle,
@@ -139,6 +145,7 @@ export function MixerView({
                     isMuted={trackMutes.has(track.id)}
                     isSoloed={trackSolos.has(track.id)}
                     isSelected={selectedTrackId === track.id}
+                    isRenaming={renamingTrackId === track.id}
                     audioLevel={trackAudioLevels.get(track.id)?.level ?? 0}
                     audioPeak={trackAudioLevels.get(track.id)?.peak ?? 0}
                     onVolumeChange={onVolumeChange}
@@ -149,6 +156,8 @@ export function MixerView({
                     onDelete={onDeleteTrack}
                     onImport={onImport}
                     onContextMenu={onContextMenu}
+                    onRename={onTrackRename}
+                    onCancelRename={onCancelRename}
                     uploaderUsername={uploader?.username}
                   />
                 )

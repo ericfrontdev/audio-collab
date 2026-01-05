@@ -13,6 +13,7 @@ interface MixerChannelProps {
   isMuted: boolean
   isSoloed: boolean
   isSelected: boolean
+  isRenaming: boolean
   audioLevel?: number
   audioPeak?: number
   onVolumeChange: (trackId: string, volume: number) => void
@@ -23,6 +24,8 @@ interface MixerChannelProps {
   onDelete: (trackId: string, trackName: string) => void
   onImport: (trackId: string) => void
   onContextMenu: (e: React.MouseEvent, trackId: string) => void
+  onRename: (trackId: string, newName: string) => void
+  onCancelRename: () => void
   uploaderUsername?: string
 }
 
@@ -35,6 +38,7 @@ export function MixerChannel({
   isMuted,
   isSoloed,
   isSelected,
+  isRenaming,
   audioLevel = 0,
   audioPeak = 0,
   onVolumeChange,
@@ -45,18 +49,43 @@ export function MixerChannel({
   onDelete,
   onImport,
   onContextMenu,
+  onRename,
+  onCancelRename,
   uploaderUsername,
 }: MixerChannelProps) {
   const [isHoveringFader, setIsHoveringFader] = useState(false)
   const [isHoveringPan, setIsHoveringPan] = useState(false)
   const [isDraggingFader, setIsDraggingFader] = useState(false)
   const [isDraggingPan, setIsDraggingPan] = useState(false)
+  const [editingName, setEditingName] = useState(trackName)
 
   const faderRef = useRef<HTMLDivElement>(null)
   const panRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const dragStartY = useRef(0)
   const dragStartX = useRef(0)
   const dragStartValue = useRef(0)
+
+  // Reset editing name when starting to rename
+  useEffect(() => {
+    if (isRenaming) {
+      setEditingName(trackName)
+      // Focus and select the input on next tick to avoid issues
+      setTimeout(() => {
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }, 0)
+    }
+  }, [isRenaming, trackName])
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onRename(trackId, editingName)
+    } else if (e.key === 'Escape') {
+      setEditingName(trackName)
+      onCancelRename()
+    }
+  }
 
   // Convert level (0-100) to dB for display
   const levelToDb = (level: number): string => {
@@ -179,21 +208,36 @@ export function MixerChannel({
       {/* Track Name Header */}
       <div className="relative h-16 px-2 flex items-center justify-center gap-2 border-b border-zinc-900 group">
         <div className="flex-1 min-w-0 text-center">
-          <span className="text-xs text-white font-medium truncate block">
-            {trackName}
-          </span>
+          {isRenaming ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={editingName}
+              onChange={(e) => setEditingName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={() => onRename(trackId, editingName)}
+              className="w-full text-xs text-white font-medium bg-zinc-800 border border-primary rounded px-1 py-0.5 outline-none text-center"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span className="text-xs text-white font-medium truncate block">
+              {trackName}
+            </span>
+          )}
         </div>
 
         {/* Delete button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete(trackId, trackName)
-          }}
-          className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-600 hover:text-red-500"
-        >
-          <Trash2 className="w-3 h-3" />
-        </button>
+        {!isRenaming && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(trackId, trackName)
+            }}
+            className="absolute top-1 right-1 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-600 hover:text-red-500"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        )}
       </div>
 
       {/* Import/Solo/Mute Buttons (collés ensemble) */}

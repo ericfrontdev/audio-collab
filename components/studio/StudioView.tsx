@@ -778,6 +778,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
           <MixerView
             tracks={tracks}
             selectedTrackId={selectedTrackId}
+            renamingTrackId={renamingTrackId}
             trackVolumes={trackControls.trackVolumes}
             trackPans={trackControls.trackPans}
             trackMutes={trackControls.trackMutes}
@@ -795,6 +796,8 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
             onDeleteTrack={handleDeleteTrack}
             onImport={handleImport}
             onContextMenu={handleContextMenu}
+            onTrackRename={handleTrackRename}
+            onCancelRename={handleCancelRename}
             onMasterVolumeChange={handleMasterVolumeChange}
             onMasterPanChange={handleMasterPanChange}
             onMasterMuteToggle={handleMasterMuteToggle}
