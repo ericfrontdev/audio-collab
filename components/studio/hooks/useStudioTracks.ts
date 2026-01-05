@@ -68,6 +68,7 @@ export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, tra
 
   // Debounce mixer settings changes to avoid too many DB writes
   const debouncedSaveSettings = useDebounce((trackId: string, settings: any) => {
+    console.log('🔄 Debounced save triggered for track:', trackId, settings)
     onMixerSettingsChange?.(trackId, settings)
   }, 500)
 

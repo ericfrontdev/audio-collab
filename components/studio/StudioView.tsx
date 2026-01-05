@@ -161,10 +161,14 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
     solo?: boolean
     mute?: boolean
   }) => {
+    console.log('🎛️ Saving mixer settings for track:', trackId, settings)
     const result = await updateMixerSettings(trackId, settings)
+    console.log('🎛️ Save result:', result)
     if (!result.success) {
-      console.error('Failed to save mixer settings:', result.error)
-      // Don't show error toast to avoid annoying the user during mixing
+      console.error('❌ Failed to save mixer settings:', result.error)
+      toast.error('Failed to save mixer settings')
+    } else {
+      console.log('✅ Mixer settings saved successfully')
     }
   }, [])
 
