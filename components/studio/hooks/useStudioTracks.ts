@@ -186,6 +186,57 @@ export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, tra
     })
   }, [masterMute, trackMutes, trackSolos, trackIds, setTrackMute])
 
+  // Sync mixer state when initialSettings changes (when tracks load from DB)
+  useEffect(() => {
+    if (!initialSettings) return
+
+    console.log('🔄 Syncing mixer settings from database:', initialSettings)
+
+    // Update volumes
+    setTrackVolumes((prev) => {
+      const newMap = new Map(prev)
+      initialSettings.forEach((settings, trackId) => {
+        if (settings.volume !== undefined && !prev.has(trackId)) {
+          newMap.set(trackId, settings.volume * 100)
+        }
+      })
+      return newMap
+    })
+
+    // Update pans
+    setTrackPans((prev) => {
+      const newMap = new Map(prev)
+      initialSettings.forEach((settings, trackId) => {
+        if (settings.pan !== undefined && !prev.has(trackId)) {
+          newMap.set(trackId, settings.pan * 100)
+        }
+      })
+      return newMap
+    })
+
+    // Update mutes
+    setTrackMutes((prev) => {
+      const newSet = new Set(prev)
+      initialSettings.forEach((settings, trackId) => {
+        if (settings.mute && !prev.has(trackId)) {
+          newSet.add(trackId)
+        }
+      })
+      return newSet
+    })
+
+    // Update solos
+    setTrackSolos((prev) => {
+      const newSet = new Set(prev)
+      initialSettings.forEach((settings, trackId) => {
+        if (settings.solo && !prev.has(trackId)) {
+          newSet.add(trackId)
+        }
+      })
+      return newSet
+    })
+  }, [initialSettings])
+
   return {
     trackVolumes,
     trackPans,
