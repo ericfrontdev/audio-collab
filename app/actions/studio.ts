@@ -860,7 +860,13 @@ export async function updateMixerSettings(
     }
 
     // Use upsert to insert if not exists, update if exists
-    const { error } = await supabase
+    console.log('🔧 Attempting to upsert mixer settings:', {
+      track_id: trackId,
+      user_id: user.id,
+      settings
+    });
+
+    const { data, error } = await supabase
       .from('project_mixer_settings')
       .upsert(
         {
@@ -871,9 +877,20 @@ export async function updateMixerSettings(
         {
           onConflict: 'track_id,user_id',
         }
-      );
+      )
+      .select();
 
-    if (error) throw error;
+    console.log('🔧 Upsert result:', { data, error });
+
+    if (error) {
+      console.error('❌ Upsert error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      throw error;
+    }
 
     // Don't revalidate here - let the client handle UI updates optimistically
     // revalidatePath would cause a page reload which defeats the purpose
