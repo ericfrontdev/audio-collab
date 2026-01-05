@@ -173,19 +173,17 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
       let masterLevel = 0
 
       if (isPlayingRef.current || isDecayingRef.current) {
-        // Calculate master level using RMS (root mean square) of track levels
+        // Calculate master level using RMS sum of track levels
         // Note: This is a simple calculation, not true audio summing (doesn't account for phase, clipping, etc.)
         let sumOfSquares = 0
-        let trackCount = 0
 
         currentLevelsRef.current.forEach((level) => {
           sumOfSquares += level * level
-          trackCount++
         })
 
-        // RMS calculation: sqrt(mean of squares)
-        if (trackCount > 0) {
-          masterLevel = Math.sqrt(sumOfSquares / trackCount)
+        // RMS sum: sqrt(sum of squares) - properly represents combined signal level
+        if (sumOfSquares > 0) {
+          masterLevel = Math.sqrt(sumOfSquares)
           masterLevel = Math.min(100, masterLevel) // Clamp to 100
         }
 
