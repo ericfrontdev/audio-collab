@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Upload, Layers } from 'lucide-react'
 import { VUMeter } from './VUMeter'
 import { VolumeControl } from './VolumeControl'
@@ -52,6 +52,19 @@ export function TrackHeader({
 }: TrackHeaderProps) {
   const [isHovering, setIsHovering] = useState(false)
   const [editingName, setEditingName] = useState(trackName)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Reset editing name when starting to rename
+  useEffect(() => {
+    if (isRenaming) {
+      setEditingName(trackName)
+      // Focus and select the input on next tick to avoid issues
+      setTimeout(() => {
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }, 0)
+    }
+  }, [isRenaming, trackName])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -83,13 +96,12 @@ export function TrackHeader({
           {/* Track name */}
           {isRenaming ? (
             <input
+              ref={inputRef}
               type="text"
               value={editingName}
               onChange={(e) => setEditingName(e.target.value)}
               onKeyDown={handleKeyDown}
               onBlur={() => onRename(trackId, editingName)}
-              autoFocus
-              ref={(input) => input?.select()}
               className="flex-1 text-xs text-white font-medium bg-zinc-800 border border-primary rounded px-1 py-0.5 outline-none min-w-0"
               onClick={(e) => e.stopPropagation()}
             />
