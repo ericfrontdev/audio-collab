@@ -853,16 +853,23 @@ export async function updateMixerSettings(
   try {
     const supabase = await createClient();
 
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     // Use upsert to insert if not exists, update if exists
     const { error } = await supabase
       .from('project_mixer_settings')
       .upsert(
         {
           track_id: trackId,
+          user_id: user.id,
           ...settings,
         },
         {
-          onConflict: 'track_id',
+          onConflict: 'track_id,user_id',
         }
       );
 
@@ -885,6 +892,9 @@ export async function updateMixerSettings(
 export async function getProjectStudioData(projectId: string) {
   try {
     const supabase = await createClient();
+
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
 
     // Get all tracks
     const { data: tracks, error: tracksError } = await supabase
@@ -915,11 +925,14 @@ export async function getProjectStudioData(projectId: string) {
       .in('track_id', trackIds)
       .order('timestamp');
 
-    // Get all mixer settings for these tracks
-    const { data: mixerSettings } = await supabase
-      .from('project_mixer_settings')
-      .select('*')
-      .in('track_id', trackIds);
+    // Get mixer settings for these tracks (filtered by current user)
+    const { data: mixerSettings } = user
+      ? await supabase
+          .from('project_mixer_settings')
+          .select('*')
+          .in('track_id', trackIds)
+          .eq('user_id', user.id)
+      : { data: [] };
 
     // Get user profiles for comments and takes
     const commentUserIds = comments?.map(c => c.user_id).filter(Boolean) || [];
