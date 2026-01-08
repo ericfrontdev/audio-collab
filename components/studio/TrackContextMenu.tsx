@@ -71,7 +71,7 @@ export function TrackContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-[100] bg-zinc-900 border border-zinc-800 rounded-md shadow-2xl overflow-hidden"
+      className="fixed z-[9999] bg-zinc-900 border border-zinc-800 rounded-md shadow-2xl overflow-hidden"
       style={{
         left: position.x,
         top: position.y,

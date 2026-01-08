@@ -420,9 +420,14 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
         }
       })
 
-      Tone.Transport.start()
+      // Start transport at the correct position
+      // Pass both when to start ("+0" = immediately) and where in timeline (startTime)
+      Tone.Transport.start("+0", startTime)
       setIsPlaying(true)
       isPlayingRef.current = true
+
+      // Clear decay state if we're restarting during decay
+      isDecayingRef.current = false
 
       // Start visual updates
       updateVisuals()

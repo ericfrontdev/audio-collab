@@ -6,7 +6,7 @@ import { Layers, Lock, Users } from 'lucide-react'
 import { WaveformDisplay, WaveformDisplayRef } from './WaveformDisplay'
 import { ProjectTrack } from '@/lib/types/studio'
 import { TakesManagerModal } from './TakesManagerModal'
-import { toggleTrackCollaborative } from '@/app/actions/studio'
+import { toggleTrackCollaborative } from '@/app/actions/studio/tracks'
 import { toast } from 'react-toastify'
 
 interface TakeWithUploader {

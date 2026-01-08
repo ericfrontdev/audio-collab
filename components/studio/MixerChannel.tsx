@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Trash2, Upload } from 'lucide-react'
+import { Trash2, Upload, GripVertical } from 'lucide-react'
 import { VUMeterBar } from './VUMeterBar'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface MixerChannelProps {
   trackId: string
@@ -65,16 +67,38 @@ export function MixerChannel({
   const dragStartY = useRef(0)
   const dragStartX = useRef(0)
   const dragStartValue = useRef(0)
+  const allowBlur = useRef<boolean>(false)
+
+  // DnD hook
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: trackId })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
 
   // Reset editing name when starting to rename
   useEffect(() => {
     if (isRenaming) {
       setEditingName(trackName)
-      // Focus and select the input on next tick to avoid issues
+      allowBlur.current = false
+      // Focus and select the input with a slight delay for the new flex layout
       setTimeout(() => {
         inputRef.current?.focus()
         inputRef.current?.select()
-      }, 0)
+        // Allow blur after input is fully ready
+        setTimeout(() => {
+          allowBlur.current = true
+        }, 100)
+      }, 50)
     }
   }, [isRenaming, trackName])
 
@@ -193,6 +217,7 @@ export function MixerChannel({
 
   return (
     <div
+      ref={setNodeRef}
       className={`
         relative flex flex-col h-full w-24 flex-shrink-0
         bg-zinc-950 border-r border-zinc-900
@@ -202,12 +227,24 @@ export function MixerChannel({
       onClick={() => onSelect(trackId)}
       onContextMenu={(e) => onContextMenu(e, trackId)}
       style={{
+        ...style,
         borderTop: `3px solid ${trackColor}`,
       }}
     >
       {/* Track Name Header */}
-      <div className="relative h-16 px-2 flex items-center justify-center gap-2 border-b border-zinc-900 group">
-        <div className="flex-1 min-w-0 text-center">
+      <div className="relative h-16 px-2 flex flex-col items-center justify-center gap-1 border-b border-zinc-900 group">
+        {/* Grip handle - horizontal centered */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="flex items-center justify-center h-5 cursor-grab active:cursor-grabbing text-zinc-400 hover:text-white transition-colors"
+          onClick={(e) => e.stopPropagation()}
+          title="Drag to reorder"
+        >
+          <GripVertical className="w-7 h-5 rotate-90" />
+        </button>
+
+        <div className="w-full px-1 flex items-center justify-center">
           {isRenaming ? (
             <input
               ref={inputRef}
@@ -215,7 +252,12 @@ export function MixerChannel({
               value={editingName}
               onChange={(e) => setEditingName(e.target.value)}
               onKeyDown={handleKeyDown}
-              onBlur={() => onRename(trackId, editingName)}
+              onBlur={() => {
+                // Only process blur if we've allowed it (after input is ready)
+                if (allowBlur.current) {
+                  onRename(trackId, editingName)
+                }
+              }}
               className="w-full text-xs text-white font-medium bg-zinc-800 border border-primary rounded px-1 py-0.5 outline-none text-center"
               onClick={(e) => e.stopPropagation()}
             />

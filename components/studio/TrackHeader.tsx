@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Upload, Layers } from 'lucide-react'
+import { Upload, Layers, GripVertical } from 'lucide-react'
 import { VUMeter } from './VUMeter'
 import { VolumeControl } from './VolumeControl'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface TrackHeaderProps {
   trackId: string
@@ -53,16 +55,38 @@ export function TrackHeader({
   const [isHovering, setIsHovering] = useState(false)
   const [editingName, setEditingName] = useState(trackName)
   const inputRef = useRef<HTMLInputElement>(null)
+  const allowBlur = useRef<boolean>(false)
+
+  // DnD hook
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: trackId })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  }
 
   // Reset editing name when starting to rename
   useEffect(() => {
     if (isRenaming) {
       setEditingName(trackName)
-      // Focus and select the input on next tick to avoid issues
+      allowBlur.current = false
+      // Focus and select the input with a slight delay
       setTimeout(() => {
         inputRef.current?.focus()
         inputRef.current?.select()
-      }, 0)
+        // Allow blur after input is fully ready
+        setTimeout(() => {
+          allowBlur.current = true
+        }, 100)
+      }, 50)
     }
   }, [isRenaming, trackName])
 
@@ -77,18 +101,30 @@ export function TrackHeader({
 
   return (
     <div
+      ref={setNodeRef}
+      style={{ ...style, borderLeft: `3px solid ${trackColor}` }}
       className={`
         relative flex w-52 h-[70px] flex-shrink-0
         border-r border-b border-zinc-800
         transition-colors
         ${isSelected ? 'bg-zinc-800/60' : 'bg-zinc-900/60 hover:bg-zinc-800/40'}
       `}
-      style={{ borderLeft: `3px solid ${trackColor}` }}
       onClick={() => onSelect(trackId)}
       onContextMenu={(e) => onContextMenu(e, trackId)}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
+      {/* Grip handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="flex items-center justify-center w-8 h-full cursor-grab active:cursor-grabbing text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-700 flex-shrink-0 transition-colors"
+        onClick={(e) => e.stopPropagation()}
+        title="Drag to reorder"
+      >
+        <GripVertical className="w-5 h-5" />
+      </button>
+
       {/* Main content area (2 rows) */}
       <div className="flex-1 flex flex-col">
         {/* Row 1: Name + Buttons */}
@@ -101,7 +137,12 @@ export function TrackHeader({
               value={editingName}
               onChange={(e) => setEditingName(e.target.value)}
               onKeyDown={handleKeyDown}
-              onBlur={() => onRename(trackId, editingName)}
+              onBlur={() => {
+                // Only process blur if we've allowed it (after input is ready)
+                if (allowBlur.current) {
+                  onRename(trackId, editingName)
+                }
+              }}
               className="flex-1 text-xs text-white font-medium bg-zinc-800 border border-primary rounded px-1 py-0.5 outline-none min-w-0"
               onClick={(e) => e.stopPropagation()}
             />

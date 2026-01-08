@@ -4,16 +4,17 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Upload as UploadIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UploadTrackModal } from './UploadTrackModal'
+import { getProjectStudioData } from '@/app/actions/studio/data'
 import {
-  getProjectStudioData,
   deleteTrack,
-  addTrackComment,
   createEmptyTrack,
   updateTrackName,
   updateTrackColor,
   duplicateTrack,
-  updateMixerSettings,
-} from '@/app/actions/studio'
+  reorderTracks,
+} from '@/app/actions/studio/tracks'
+import { addTrackComment } from '@/app/actions/studio/comments'
+import { updateMixerSettings } from '@/app/actions/studio/mixer'
 import { ProjectTrack } from '@/lib/types/studio'
 import { toast } from 'react-toastify'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -116,8 +117,10 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
     trackName: string
     trackColor: string
     position: { x: number; y: number }
-  }>({ isOpen: false, trackId: '', trackName: '', trackColor: '', position: { x: 0, y: 0 } })
-  const [renamingTrackId, setRenamingTrackId] = useState<string | null>(null)
+    source: 'track' | 'mixer' | null
+  }>({ isOpen: false, trackId: '', trackName: '', trackColor: '', position: { x: 0, y: 0 }, source: null })
+  const [renamingTrackHeaderId, setRenamingTrackHeaderId] = useState<string | null>(null)
+  const [renamingMixerChannelId, setRenamingMixerChannelId] = useState<string | null>(null)
   const [isMixerOpen, setIsMixerOpen] = useState(false)
   const primaryColor = '#9363f7'
 
@@ -358,7 +361,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
     toast.info('Takes management coming soon')
   }
 
-  const handleContextMenu = (e: React.MouseEvent, trackId: string) => {
+  const handleTrackContextMenu = (e: React.MouseEvent, trackId: string) => {
     e.preventDefault()
     const track = tracks.find(t => t.id === trackId)
     if (!track) return
@@ -369,16 +372,37 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
       trackName: track.name,
       trackColor: track.color,
       position: { x: e.clientX, y: e.clientY },
+      source: 'track',
     })
   }
 
-  const handleRename = (trackId: string) => {
-    setRenamingTrackId(trackId)
+  const handleMixerContextMenu = (e: React.MouseEvent, trackId: string) => {
+    e.preventDefault()
+    const track = tracks.find(t => t.id === trackId)
+    if (!track) return
+
+    setContextMenu({
+      isOpen: true,
+      trackId,
+      trackName: track.name,
+      trackColor: track.color,
+      position: { x: e.clientX, y: e.clientY },
+      source: 'mixer',
+    })
+  }
+
+  const handleRenameFromTrack = (trackId: string) => {
+    setRenamingTrackHeaderId(trackId)
+  }
+
+  const handleRenameFromMixer = (trackId: string) => {
+    setRenamingMixerChannelId(trackId)
   }
 
   const handleTrackRename = async (trackId: string, newName: string) => {
     if (!newName.trim()) {
-      setRenamingTrackId(null)
+      setRenamingTrackHeaderId(null)
+      setRenamingMixerChannelId(null)
       return
     }
 
@@ -388,7 +412,8 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
         track.id === trackId ? { ...track, name: newName } : track
       )
     )
-    setRenamingTrackId(null)
+    setRenamingTrackHeaderId(null)
+    setRenamingMixerChannelId(null)
 
     // Update server
     const result = await updateTrackName(trackId, newName)
@@ -399,7 +424,23 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
   }
 
   const handleCancelRename = () => {
-    setRenamingTrackId(null)
+    setRenamingTrackHeaderId(null)
+    setRenamingMixerChannelId(null)
+  }
+
+  const handleTracksReorder = async (trackIds: string[]) => {
+    // Optimistic update - reorder tracks locally
+    setTracks((prevTracks) => {
+      const trackMap = new Map(prevTracks.map(track => [track.id, track]))
+      return trackIds.map(id => trackMap.get(id)!).filter(Boolean)
+    })
+
+    // Update server in background
+    const result = await reorderTracks(projectId, trackIds)
+    if (!result.success) {
+      toast.error(result.error || 'Failed to reorder tracks')
+      loadStudioData() // Revert on error
+    }
   }
 
   const handleColorChange = async (trackId: string, color: string) => {
@@ -619,7 +660,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
           trackMutes={trackControls.trackMutes}
           trackSolos={trackControls.trackSolos}
           trackAudioLevels={trackAudioLevels}
-          renamingTrackId={renamingTrackId}
+          renamingTrackId={renamingTrackHeaderId}
           onTrackSelect={setSelectedTrackId}
           onVolumeChange={trackControls.handleVolumeChange}
           onMuteToggle={trackControls.handleMuteToggle}
@@ -627,9 +668,10 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
           onImport={handleImport}
           onToggleTakes={handleToggleTakes}
           onAddTrack={handleAddTrack}
-          onContextMenu={handleContextMenu}
+          onContextMenu={handleTrackContextMenu}
           onTrackRename={handleTrackRename}
           onCancelRename={handleCancelRename}
+          onTracksReorder={handleTracksReorder}
         />
 
         {/* Center: Timeline & Waveforms */}
@@ -760,7 +802,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
           trackColor={contextMenu.trackColor}
           position={contextMenu.position}
           onClose={() => setContextMenu({ ...contextMenu, isOpen: false })}
-          onRename={handleRename}
+          onRename={contextMenu.source === 'mixer' ? handleRenameFromMixer : handleRenameFromTrack}
           onColorChange={handleColorChange}
           onDuplicate={handleDuplicate}
           onDelete={(trackId) => {
@@ -778,7 +820,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
           <MixerView
             tracks={tracks}
             selectedTrackId={selectedTrackId}
-            renamingTrackId={renamingTrackId}
+            renamingTrackId={renamingMixerChannelId}
             trackVolumes={trackControls.trackVolumes}
             trackPans={trackControls.trackPans}
             trackMutes={trackControls.trackMutes}
@@ -795,9 +837,10 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
             onSoloToggle={trackControls.handleSoloToggle}
             onDeleteTrack={handleDeleteTrack}
             onImport={handleImport}
-            onContextMenu={handleContextMenu}
+            onContextMenu={handleMixerContextMenu}
             onTrackRename={handleTrackRename}
             onCancelRename={handleCancelRename}
+            onTracksReorder={handleTracksReorder}
             onMasterVolumeChange={handleMasterVolumeChange}
             onMasterPanChange={handleMasterPanChange}
             onMasterMuteToggle={handleMasterMuteToggle}

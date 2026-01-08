@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { X, Plus } from 'lucide-react'
-import { setActiveTake, deleteTake, uploadTake } from '@/app/actions/studio'
+import { setActiveTake, deleteTake, uploadTake } from '@/app/actions/studio/takes'
 import { toast } from 'react-toastify'
 import { TakePreviewItem } from './TakePreviewItem'
 

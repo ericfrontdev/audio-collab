@@ -4,6 +4,8 @@ import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MixerChannel } from './MixerChannel'
 import { MasterChannel } from './MasterChannel'
+import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 
 interface TakeWithUploader {
   id: string
@@ -64,6 +66,7 @@ interface MixerViewProps {
   onContextMenu: (e: React.MouseEvent, trackId: string) => void
   onTrackRename: (trackId: string, newName: string) => void
   onCancelRename: () => void
+  onTracksReorder: (trackIds: string[]) => void
   onMasterVolumeChange: (volume: number) => void
   onMasterPanChange: (pan: number) => void
   onMasterMuteToggle: () => void
@@ -93,11 +96,23 @@ export function MixerView({
   onContextMenu,
   onTrackRename,
   onCancelRename,
+  onTracksReorder,
   onMasterVolumeChange,
   onMasterPanChange,
   onMasterMuteToggle,
   onAddTrack,
 }: MixerViewProps) {
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const oldIndex = tracks.findIndex((t) => t.id === active.id)
+      const newIndex = tracks.findIndex((t) => t.id === over.id)
+
+      const newTracks = arrayMove(tracks, oldIndex, newIndex)
+      onTracksReorder(newTracks.map((t) => t.id))
+    }
+  }
   return (
     <div className="flex flex-col h-full bg-zinc-950 border-r border-zinc-800">
       {/* Header */}
@@ -129,40 +144,50 @@ export function MixerView({
               </div>
             </div>
           ) : (
-            <div className="flex h-full">
-              {tracks.map((track) => {
-                const activeTake = track.takes?.find((t) => t.is_active) || track.takes?.[0]
-                const uploader = activeTake?.uploader
+            <DndContext
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={tracks.map((t) => t.id)}
+                strategy={horizontalListSortingStrategy}
+              >
+                <div className="flex h-full">
+                  {tracks.map((track) => {
+                    const activeTake = track.takes?.find((t) => t.is_active) || track.takes?.[0]
+                    const uploader = activeTake?.uploader
 
-                return (
-                  <MixerChannel
-                    key={track.id}
-                    trackId={track.id}
-                    trackName={track.name}
-                    trackColor={track.color}
-                    volume={trackVolumes.get(track.id) ?? 80}
-                    pan={trackPans.get(track.id) ?? 0}
-                    isMuted={trackMutes.has(track.id)}
-                    isSoloed={trackSolos.has(track.id)}
-                    isSelected={selectedTrackId === track.id}
-                    isRenaming={renamingTrackId === track.id}
-                    audioLevel={trackAudioLevels.get(track.id)?.level ?? 0}
-                    audioPeak={trackAudioLevels.get(track.id)?.peak ?? 0}
-                    onVolumeChange={onVolumeChange}
-                    onPanChange={onPanChange}
-                    onMuteToggle={onMuteToggle}
-                    onSoloToggle={onSoloToggle}
-                    onSelect={onTrackSelect}
-                    onDelete={onDeleteTrack}
-                    onImport={onImport}
-                    onContextMenu={onContextMenu}
-                    onRename={onTrackRename}
-                    onCancelRename={onCancelRename}
-                    uploaderUsername={uploader?.username}
-                  />
-                )
-              })}
-            </div>
+                    return (
+                      <MixerChannel
+                        key={track.id}
+                        trackId={track.id}
+                        trackName={track.name}
+                        trackColor={track.color}
+                        volume={trackVolumes.get(track.id) ?? 80}
+                        pan={trackPans.get(track.id) ?? 0}
+                        isMuted={trackMutes.has(track.id)}
+                        isSoloed={trackSolos.has(track.id)}
+                        isSelected={selectedTrackId === track.id}
+                        isRenaming={renamingTrackId === track.id}
+                        audioLevel={trackAudioLevels.get(track.id)?.level ?? 0}
+                        audioPeak={trackAudioLevels.get(track.id)?.peak ?? 0}
+                        onVolumeChange={onVolumeChange}
+                        onPanChange={onPanChange}
+                        onMuteToggle={onMuteToggle}
+                        onSoloToggle={onSoloToggle}
+                        onSelect={onTrackSelect}
+                        onDelete={onDeleteTrack}
+                        onImport={onImport}
+                        onContextMenu={onContextMenu}
+                        onRename={onTrackRename}
+                        onCancelRename={onCancelRename}
+                        uploaderUsername={uploader?.username}
+                      />
+                    )
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
 

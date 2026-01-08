@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createTrack } from '@/app/actions/studio';
+import { createTrack } from '@/app/actions/studio/tracks';
 import { toast } from 'react-toastify';
 import { ProjectTrack, AUDIO_CONSTRAINTS, isAudioFile, isFileSizeValid } from '@/lib/types/studio';
 
