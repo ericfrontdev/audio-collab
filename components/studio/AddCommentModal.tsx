@@ -49,13 +49,13 @@ export function AddCommentModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40"
+        className="fixed inset-0 z-[9998]"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div
-        className="fixed z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl p-3 w-96"
+        className="fixed z-[9999] bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl p-3 w-96"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,

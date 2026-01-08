@@ -119,8 +119,10 @@ export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, tra
           setTrackMute(trackId, true)
         }
 
-        // Save to database (no debounce needed for boolean toggles)
-        onMixerSettingsChange?.(trackId, { mute: willBeMuted })
+        // Save to database after state update completes (defer to avoid render cycle issues)
+        setTimeout(() => {
+          onMixerSettingsChange?.(trackId, { mute: willBeMuted })
+        }, 0)
 
         return newMutes
       })
@@ -155,8 +157,10 @@ export function useStudioTracks({ setTrackVolume, setTrackPan, setTrackMute, tra
           })
         }
 
-        // Save to database (no debounce needed for boolean toggles)
-        onMixerSettingsChange?.(trackId, { solo: willBeSoloed })
+        // Save to database after state update completes (defer to avoid render cycle issues)
+        setTimeout(() => {
+          onMixerSettingsChange?.(trackId, { solo: willBeSoloed })
+        }, 0)
 
         return newSolos
       })
