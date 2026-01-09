@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { ProjectWorkspace } from '@/components/project/ProjectWorkspace';
+import { checkStudioAccess } from '@/app/actions/projectHall';
 
 export default async function ProjectStudioPage({
   params,
@@ -10,19 +11,15 @@ export default async function ProjectStudioPage({
   const { locale, id } = await params;
   const supabase = await createClient();
 
-  // Check authentication
+  // Get current user (optional - public studios don't require auth)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect(`/${locale}/auth/login`);
-  }
-
   // Fetch project to verify it exists
   const { data: project, error } = await supabase
     .from('projects')
-    .select('id, title, owner_id, club_id')
+    .select('id, title, owner_id, club_id, studio_visibility')
     .eq('id', id)
     .maybeSingle();
 
@@ -30,25 +27,21 @@ export default async function ProjectStudioPage({
     notFound();
   }
 
-  // Check if user is a project member
-  const { data: membership } = await supabase
-    .from('project_members')
-    .select('id, role')
-    .eq('project_id', id)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  // Check studio access permissions
+  const { canAccess, isReadOnly } = await checkStudioAccess(id, user?.id);
 
-  if (!membership) {
-    // User is not a member of this project
-    redirect(`/${locale}/projects`);
+  if (!canAccess) {
+    // No access - redirect back to project Hall
+    redirect(`/${locale}/projects/${id}`);
   }
 
   return (
     <ProjectWorkspace
       projectId={id}
-      currentUserId={user.id}
+      currentUserId={user?.id}
       ownerId={project.owner_id}
       locale={locale}
+      readOnly={isReadOnly}
     />
   );
 }

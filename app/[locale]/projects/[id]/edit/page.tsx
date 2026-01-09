@@ -213,6 +213,51 @@ export default function EditProjectPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Studio Visibility
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  Control who can access the studio workspace
+                </p>
+                <div className="space-y-2">
+                  <label className="flex items-start">
+                    <input
+                      type="radio"
+                      name="studio_visibility"
+                      value="members_only"
+                      defaultChecked={project.studio_visibility === 'members_only' || !project.studio_visibility}
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 mt-0.5"
+                    />
+                    <div className="ml-3">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Members Only
+                      </span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Only project members can access the studio
+                      </p>
+                    </div>
+                  </label>
+                  <label className="flex items-start">
+                    <input
+                      type="radio"
+                      name="studio_visibility"
+                      value="public"
+                      defaultChecked={project.studio_visibility === 'public'}
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 mt-0.5"
+                    />
+                    <div className="ml-3">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Public (Read-Only)
+                      </span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Anyone can view the studio in read-only mode
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div className="flex justify-end space-x-3">
                 <Link
                   href={`/projects/${projectId}`}

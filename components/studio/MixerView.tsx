@@ -71,6 +71,7 @@ interface MixerViewProps {
   onMasterPanChange: (pan: number) => void
   onMasterMuteToggle: () => void
   onAddTrack: () => void
+  readOnly?: boolean
 }
 
 export function MixerView({
@@ -101,6 +102,7 @@ export function MixerView({
   onMasterPanChange,
   onMasterMuteToggle,
   onAddTrack,
+  readOnly = false,
 }: MixerViewProps) {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event

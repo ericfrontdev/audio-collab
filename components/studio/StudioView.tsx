@@ -34,6 +34,7 @@ interface StudioViewProps {
   currentUserId?: string
   ownerId?: string
   locale?: string
+  readOnly?: boolean
 }
 
 interface TakeWithUploader {
@@ -88,7 +89,7 @@ interface TrackWithDetails extends ProjectTrack {
   mixer_settings?: MixerSettings | null
 }
 
-export function StudioView({ projectId, currentUserId, ownerId, locale }: StudioViewProps) {
+export function StudioView({ projectId, currentUserId, ownerId, locale, readOnly = false }: StudioViewProps) {
   const [tracks, setTracks] = useState<TrackWithDetails[]>([])
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -648,7 +649,17 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
         onPlayPause={playback.handlePlayPause}
         onStop={playback.handleStop}
         onToggleMixer={() => setIsMixerOpen(!isMixerOpen)}
+        readOnly={readOnly}
       />
+
+      {/* Read-Only Mode Banner */}
+      {readOnly && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2">
+          <p className="text-sm text-yellow-400 text-center font-medium">
+            👁️ View-Only Mode - You're viewing this studio in read-only mode. Join the project to edit and collaborate.
+          </p>
+        </div>
+      )}
 
       {/* Main Studio Layout */}
       <div className="flex flex-1 overflow-hidden">
@@ -672,6 +683,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
           onTrackRename={handleTrackRename}
           onCancelRename={handleCancelRename}
           onTracksReorder={handleTracksReorder}
+          readOnly={readOnly}
         />
 
         {/* Center: Timeline & Waveforms */}
@@ -684,12 +696,14 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
                 </div>
                 <h3 className="text-lg font-medium text-white mb-2">No tracks yet</h3>
                 <p className="text-gray-400 mb-6">
-                  Upload your first audio track to get started
+                  {readOnly ? 'This project has no audio tracks yet' : 'Upload your first audio track to get started'}
                 </p>
-                <Button onClick={() => setIsUploadModalOpen(true)}>
-                  <UploadIcon className="w-4 h-4 mr-2" />
-                  Upload Track
-                </Button>
+                {!readOnly && (
+                  <Button onClick={() => setIsUploadModalOpen(true)}>
+                    <UploadIcon className="w-4 h-4 mr-2" />
+                    Upload Track
+                  </Button>
+                )}
               </div>
             </div>
           ) : (
@@ -845,6 +859,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale }: Studio
             onMasterPanChange={handleMasterPanChange}
             onMasterMuteToggle={handleMasterMuteToggle}
             onAddTrack={handleAddTrack}
+            readOnly={readOnly}
           />
         </div>
       )}

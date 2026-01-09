@@ -10,9 +10,10 @@ interface ProjectWorkspaceProps {
   currentUserId?: string
   ownerId?: string
   locale?: string
+  readOnly?: boolean
 }
 
-export function ProjectWorkspace({ projectId, currentUserId, ownerId, locale }: ProjectWorkspaceProps) {
+export function ProjectWorkspace({ projectId, currentUserId, ownerId, locale, readOnly = false }: ProjectWorkspaceProps) {
   const [isChatOpen, setIsChatOpen] = useState(true)
 
   return (
@@ -24,11 +25,12 @@ export function ProjectWorkspace({ projectId, currentUserId, ownerId, locale }: 
           currentUserId={currentUserId}
           ownerId={ownerId}
           locale={locale}
+          readOnly={readOnly}
         />
       </div>
 
-      {/* Chat sidebar */}
-      {isChatOpen ? (
+      {/* Chat sidebar - hide in read-only mode */}
+      {!readOnly && isChatOpen ? (
         <div className="w-96 flex-shrink-0 border-l border-zinc-800 flex flex-col">
           {/* Chat header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900">
@@ -49,7 +51,7 @@ export function ProjectWorkspace({ projectId, currentUserId, ownerId, locale }: 
             <ProjectChat projectId={projectId} currentUserId={currentUserId} />
           </div>
         </div>
-      ) : (
+      ) : !readOnly ? (
         /* Collapsed chat button */
         <div className="flex-shrink-0 border-l border-zinc-800">
           <button
@@ -60,7 +62,7 @@ export function ProjectWorkspace({ projectId, currentUserId, ownerId, locale }: 
             <MessageSquare className="w-6 h-6" />
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

@@ -12,6 +12,7 @@ interface TransportControlsProps {
   onPlayPause: () => void
   onStop: () => void
   onToggleMixer?: () => void
+  readOnly?: boolean
 }
 
 export function TransportControls({
@@ -22,6 +23,7 @@ export function TransportControls({
   onPlayPause,
   onStop,
   onToggleMixer,
+  readOnly = false,
 }: TransportControlsProps) {
   const router = useRouter()
 
@@ -92,25 +94,27 @@ export function TransportControls({
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-        <Button
-          variant={isMixerOpen ? 'default' : 'outline'}
-          size="sm"
-          onClick={onToggleMixer}
-          className="hidden sm:flex"
-        >
-          <Sliders className="w-4 h-4 lg:mr-2" />
-          <span className="hidden lg:inline">Mixer</span>
-        </Button>
-        <Button variant="outline" size="sm" className="hidden lg:flex">
-          <Share2 className="w-4 h-4 lg:mr-2" />
-          <span className="hidden lg:inline">Share</span>
-        </Button>
-        <Button size="sm">
-          <UploadIcon className="w-4 h-4 lg:mr-2" />
-          <span className="hidden lg:inline">Export</span>
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <Button
+            variant={isMixerOpen ? 'default' : 'outline'}
+            size="sm"
+            onClick={onToggleMixer}
+            className="hidden sm:flex"
+          >
+            <Sliders className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Mixer</span>
+          </Button>
+          <Button variant="outline" size="sm" className="hidden lg:flex">
+            <Share2 className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Share</span>
+          </Button>
+          <Button size="sm">
+            <UploadIcon className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">Export</span>
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

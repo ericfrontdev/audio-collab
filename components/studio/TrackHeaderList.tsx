@@ -32,6 +32,7 @@ interface TrackHeaderListProps {
   onTrackRename: (trackId: string, newName: string) => void
   onCancelRename: () => void
   onTracksReorder: (trackIds: string[]) => void
+  readOnly?: boolean
 }
 
 export function TrackHeaderList({
@@ -53,6 +54,7 @@ export function TrackHeaderList({
   onTrackRename,
   onCancelRename,
   onTracksReorder,
+  readOnly = false,
 }: TrackHeaderListProps) {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event

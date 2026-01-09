@@ -83,10 +83,11 @@ export async function updateProject(projectId: string, prevState: any, formData:
   const bpm = formData.get('bpm') ? parseInt(formData.get('bpm') as string) : null
   const key = formData.get('key') as string || null
   const mode = formData.get('mode') as 'private' | 'public' | 'remixable'
+  const studio_visibility = formData.get('studio_visibility') as 'members_only' | 'public' || 'members_only'
 
   const { error } = await supabase
     .from('projects')
-    .update({ title, description, bpm, key, mode, updated_at: new Date().toISOString() })
+    .update({ title, description, bpm, key, mode, studio_visibility, updated_at: new Date().toISOString() })
     .eq('id', projectId)
 
   if (error) {
