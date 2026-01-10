@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import * as Tone from 'tone'
 import type { CanvasWaveformRef } from '../CanvasWaveform'
+import type { CompedSection } from '@/lib/types/studio'
 
 interface TrackPlayer {
   player: Tone.Player
@@ -8,6 +9,14 @@ interface TrackPlayer {
   panner: Tone.Panner
   analyser: AnalyserNode
   toneAnalyser: Tone.Analyser
+}
+
+interface TrackPlayerSet {
+  trackId: string
+  originalTakeId: string
+  originalPlayer: TrackPlayer
+  retakePlayers: Map<string, TrackPlayer>
+  compedSections: CompedSection[]
 }
 
 interface AudioLevelCallback {
@@ -19,8 +28,11 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
   const [currentTime, setCurrentTime] = useState(0)
   const [maxDuration, setMaxDuration] = useState(0)
 
-  // Map of track ID to Tone.js player
+  // Map of track ID to Tone.js player (legacy - for tracks without comping)
   const playersRef = useRef<Map<string, TrackPlayer>>(new Map())
+
+  // Map of track ID to player sets (for tracks with retakes/comping)
+  const trackPlayerSetsRef = useRef<Map<string, TrackPlayerSet>>(new Map())
 
   // Master channel nodes
   const masterPannerRef = useRef<Tone.Panner | null>(null)
@@ -82,6 +94,41 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
   useEffect(() => {
     audioLevelCallbackRef.current = onAudioLevel
   }, [onAudioLevel])
+
+  // Update comped playback - switch mutes based on comped sections
+  const updateCompedPlayback = useCallback(() => {
+    if (!isPlayingRef.current) return
+
+    const currentTime = Tone.Transport.seconds
+
+    trackPlayerSetsRef.current.forEach((set) => {
+      // Find if currentTime is in a comped section
+      const activeSection = set.compedSections.find(
+        s => currentTime >= s.start_time && currentTime < s.end_time
+      )
+
+      if (activeSection) {
+        // Play retake, mute original using volume (more reliable than player.mute)
+        set.originalPlayer.volume.volume.rampTo(-100, 0.01) // Mute original instantly
+
+        set.retakePlayers.forEach((retakePlayer, takeId) => {
+          if (takeId === activeSection.take_id) {
+            // Unmute this retake
+            retakePlayer.volume.volume.rampTo(0, 0.01) // 0 dB = unity gain
+          } else {
+            // Mute other retakes
+            retakePlayer.volume.volume.rampTo(-100, 0.01)
+          }
+        })
+      } else {
+        // Play original, mute all retakes
+        set.originalPlayer.volume.volume.rampTo(0, 0.01) // Unmute original
+        set.retakePlayers.forEach(retakePlayer => {
+          retakePlayer.volume.volume.rampTo(-100, 0.01) // Mute all retakes
+        })
+      }
+    })
+  }, [])
 
   // Update visual progress and audio levels
   const updateVisuals = useCallback(() => {
@@ -213,8 +260,11 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
       audioLevelCallbackRef.current?.('master', masterLevel, newMasterPeak)
     }
 
+    // Update comped playback switching
+    updateCompedPlayback()
+
     animationFrameRef.current = requestAnimationFrame(updateVisuals)
-  }, [])
+  }, [updateCompedPlayback])
 
   // Load or update a track's audio
   const loadTrack = useCallback(async (trackId: string, audioUrl: string, volume: number = 0.8, pan: number = 0) => {
@@ -271,9 +321,9 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
       // Connect panner to both Tone analyser and native analyser
       pannerNode.connect(toneAnalyser)
 
-      // Also connect to native analyser using Tone.connect
+      // Also connect to native analyser using Tone.connect (for monitoring only)
       Tone.connect(pannerNode, analyser as any)
-      Tone.connect(analyser as any, audioContext.destination)
+      // DO NOT connect analyser to destination - that would bypass mute control!
 
       // Don't sync or start - we'll manage playback manually
       player.loop = false
@@ -293,6 +343,110 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
       return duration
     } catch (error) {
       console.error('Error loading track:', error)
+      return 0
+    }
+  }, [])
+
+  // Load a track with retakes and comped sections
+  const loadTrackWithRetakes = useCallback(async (
+    trackId: string,
+    originalTakeId: string,
+    originalAudioUrl: string,
+    retakesWithSections: Array<{ takeId: string; audioUrl: string; sections: CompedSection[] }>,
+    volume: number = 0.8,
+    pan: number = 0
+  ) => {
+    // Remove existing player set if any
+    const existing = trackPlayerSetsRef.current.get(trackId)
+    if (existing) {
+      try {
+        existing.originalPlayer.player.stop()
+        existing.originalPlayer.player.dispose()
+        existing.originalPlayer.volume.dispose()
+        existing.originalPlayer.panner.dispose()
+
+        existing.retakePlayers.forEach(retakePlayer => {
+          retakePlayer.player.stop()
+          retakePlayer.player.dispose()
+          retakePlayer.volume.dispose()
+          retakePlayer.panner.dispose()
+        })
+      } catch (e) {
+        // Ignore disposal errors
+      }
+      trackPlayerSetsRef.current.delete(trackId)
+    }
+
+    try {
+      // Helper function to create a single player
+      const createPlayer = async (audioUrl: string): Promise<TrackPlayer> => {
+        const player = new Tone.Player(audioUrl)
+        const volumeNode = new Tone.Volume(Tone.gainToDb(volume))
+        const pannerNode = new Tone.Panner(pan)
+
+        await player.load(audioUrl)
+
+        player.connect(volumeNode)
+        volumeNode.connect(pannerNode)
+
+        if (masterVolumeRef.current) {
+          pannerNode.connect(masterVolumeRef.current)
+        } else {
+          pannerNode.toDestination()
+        }
+
+        const audioContext = Tone.getContext().rawContext as AudioContext
+        const analyser = audioContext.createAnalyser()
+        analyser.fftSize = 512
+        analyser.smoothingTimeConstant = 0.8
+
+        const toneAnalyser = new Tone.Analyser('fft', 512)
+        pannerNode.connect(toneAnalyser)
+        Tone.connect(pannerNode, analyser as any)
+        // DO NOT connect analyser to destination - that would bypass mute control!
+
+        player.loop = false
+
+        return {
+          player,
+          volume: volumeNode,
+          panner: pannerNode,
+          analyser,
+          toneAnalyser,
+        }
+      }
+
+      // Load original
+      const originalPlayer = await createPlayer(originalAudioUrl)
+
+      // Load retakes with sections
+      const retakePlayers = new Map<string, TrackPlayer>()
+      for (const retake of retakesWithSections) {
+        const retakePlayer = await createPlayer(retake.audioUrl)
+        // Mute by setting volume to -100 dB (essentially silence)
+        retakePlayer.volume.volume.value = -100
+        retakePlayers.set(retake.takeId, retakePlayer)
+      }
+
+      // Collect all sections
+      const allSections = retakesWithSections.flatMap(r => r.sections)
+
+      // Store player set
+      trackPlayerSetsRef.current.set(trackId, {
+        trackId,
+        originalTakeId,
+        originalPlayer,
+        retakePlayers,
+        compedSections: allSections,
+      })
+
+      // Update max duration
+      const duration = originalPlayer.player.buffer.duration
+      setMaxDuration((prev) => Math.max(prev, duration))
+
+      return duration
+    } catch (error) {
+      console.error('Error loading track with retakes:', error)
       return 0
     }
   }, [])
@@ -389,6 +543,16 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
         }
       })
 
+      // Stop all player sets (original + retakes)
+      trackPlayerSetsRef.current.forEach((set) => {
+        try {
+          set.originalPlayer.player.stop()
+          set.retakePlayers.forEach(retakePlayer => retakePlayer.player.stop())
+        } catch (e) {
+          // Ignore stop errors
+        }
+      })
+
       setIsPlaying(false)
       isPlayingRef.current = false
 
@@ -410,6 +574,16 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
         }
       })
 
+      // Stop all player sets
+      trackPlayerSetsRef.current.forEach((set) => {
+        try {
+          set.originalPlayer.player.stop()
+          set.retakePlayers.forEach(retakePlayer => retakePlayer.player.stop())
+        } catch (e) {
+          // Ignore if already stopped
+        }
+      })
+
       // STEP 2: Start all players immediately at the same offset
       // Use relative time notation "+0" to start as soon as possible
       playersRef.current.forEach((track) => {
@@ -417,6 +591,16 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
           track.player.start("+0", startTime)
         } catch (e) {
           console.error('Error starting player:', e)
+        }
+      })
+
+      // Start all player sets (original + retakes)
+      trackPlayerSetsRef.current.forEach((set) => {
+        try {
+          set.originalPlayer.player.start("+0", startTime)
+          set.retakePlayers.forEach(retakePlayer => retakePlayer.player.start("+0", startTime))
+        } catch (e) {
+          console.error('Error starting player set:', e)
         }
       })
 
@@ -449,6 +633,16 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
       }
     })
 
+    // Stop all player sets
+    trackPlayerSetsRef.current.forEach((set) => {
+      try {
+        set.originalPlayer.player.stop()
+        set.retakePlayers.forEach(retakePlayer => retakePlayer.player.stop())
+      } catch (e) {
+        // Ignore stop errors
+      }
+    })
+
     setIsPlaying(false)
     isPlayingRef.current = false
     setCurrentTime(0)
@@ -473,6 +667,16 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
       }
     })
 
+    // Stop all player sets
+    trackPlayerSetsRef.current.forEach((set) => {
+      try {
+        set.originalPlayer.player.stop()
+        set.retakePlayers.forEach(retakePlayer => retakePlayer.player.stop())
+      } catch (e) {
+        // Ignore errors
+      }
+    })
+
     // Update transport position
     Tone.Transport.seconds = time
     setCurrentTime(time)
@@ -484,6 +688,16 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
           track.player.start("+0", time)
         } catch (e) {
           console.error('Error restarting player after seek:', e)
+        }
+      })
+
+      // Restart player sets
+      trackPlayerSetsRef.current.forEach((set) => {
+        try {
+          set.originalPlayer.player.start("+0", time)
+          set.retakePlayers.forEach(retakePlayer => retakePlayer.player.start("+0", time))
+        } catch (e) {
+          console.error('Error restarting player set after seek:', e)
         }
       })
     }
@@ -590,6 +804,7 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
     handleSeek,
     handleWaveformReady,
     loadTrack,
+    loadTrackWithRetakes,
     removeTrack,
     setTrackVolume,
     setTrackPan,

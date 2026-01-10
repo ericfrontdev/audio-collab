@@ -15,13 +15,20 @@ import {
 } from '@/app/actions/studio/tracks'
 import { addTrackComment } from '@/app/actions/studio/comments'
 import { updateMixerSettings } from '@/app/actions/studio/mixer'
-import { ProjectTrack } from '@/lib/types/studio'
+import {
+  createCompedSection,
+  deleteCompedSection,
+  toggleRetakeFolder,
+  activateFullRetake,
+} from '@/app/actions/studio/compedSections'
+import { ProjectTrack, CompedSection } from '@/lib/types/studio'
 import { toast } from 'react-toastify'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { AddCommentModal } from './AddCommentModal'
 import { TransportControls } from './TransportControls'
 import { TrackHeaderList } from './TrackHeaderList'
 import { WaveformTrackRow } from './WaveformTrackRow'
+import { CompableWaveformRow } from './CompableWaveformRow'
 import { TrackContextMenu } from './TrackContextMenu'
 import { MixerView } from './MixerView'
 import { TimelineRuler } from './TimelineRuler'
@@ -31,6 +38,7 @@ import { useStudioTimeline } from './hooks/useStudioTimeline'
 
 interface StudioViewProps {
   projectId: string
+  projectTitle: string
   currentUserId?: string
   ownerId?: string
   locale?: string
@@ -87,13 +95,16 @@ interface TrackWithDetails extends ProjectTrack {
   takes?: TakeWithUploader[]
   comments?: CommentWithProfile[]
   mixer_settings?: MixerSettings | null
+  compedSections?: CompedSection[]
+  isRetakeFolderOpen?: boolean
 }
 
-export function StudioView({ projectId, currentUserId, ownerId, locale, readOnly = false }: StudioViewProps) {
+export function StudioView({ projectId, projectTitle, currentUserId, ownerId, locale, readOnly = false }: StudioViewProps) {
   const [tracks, setTracks] = useState<TrackWithDetails[]>([])
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean
     trackId: string
@@ -225,17 +236,33 @@ export function StudioView({ projectId, currentUserId, ownerId, locale, readOnly
   }, [])
 
   // Load studio data
-  const loadStudioData = async () => {
-    setIsLoading(true)
+  const loadStudioData = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true)
     const result = await getProjectStudioData(projectId)
     if (result.success && result.tracks) {
-      setTracks(result.tracks as TrackWithDetails[])
-      if (result.tracks.length > 0 && !selectedTrackId) {
-        setSelectedTrackId(result.tracks[0].id)
-      }
+      console.log('📦 Loaded tracks data:', result.tracks.map(t => ({
+        id: t.id,
+        name: t.name,
+        takes: t.takes?.map((tk: any) => ({ id: tk.id, is_active: tk.is_active }))
+      })))
+      // Force a complete re-render by creating new object references
+      const tracksWithTimestamp = result.tracks.map(t => ({
+        ...t,
+        _refreshKey: Date.now()
+      }))
+      setTracks(tracksWithTimestamp as TrackWithDetails[])
+      // Only set selectedTrackId on initial load if there's no track selected
+      setSelectedTrackId(prev => {
+        if (!prev && result.tracks && result.tracks.length > 0) {
+          return result.tracks[0].id
+        }
+        return prev
+      })
+      // Force complete UI refresh
+      setRefreshKey(prev => prev + 1)
     }
-    setIsLoading(false)
-  }
+    if (!silent) setIsLoading(false)
+  }, [projectId])
 
   useEffect(() => {
     loadStudioData()
@@ -297,7 +324,34 @@ export function StudioView({ projectId, currentUserId, ownerId, locale, readOnly
           const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
           const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
 
-          playback.loadTrack(track.id, activeTake.audio_url, volume, pan)
+          // Check if this track has comped sections
+          const compedSections = track.compedSections || []
+
+          if (compedSections.length > 0) {
+            // Build retakes with sections
+            const retakesWithSections = track.takes
+              ?.filter(t => t.id !== activeTake.id)
+              .map(take => ({
+                takeId: take.id,
+                audioUrl: take.audio_url,
+                sections: compedSections.filter(s => s.take_id === take.id)
+              }))
+              .filter(r => r.sections.length > 0) || []
+
+            // Load with comping
+            playback.loadTrackWithRetakes(
+              track.id,
+              activeTake.id,
+              activeTake.audio_url,
+              retakesWithSections,
+              volume,
+              pan
+            )
+          } else {
+            // Load simple (no comping)
+            playback.loadTrack(track.id, activeTake.audio_url, volume, pan)
+          }
+
           loadedAudioUrlsRef.current.set(track.id, activeTake.audio_url)
         }
       } else {
@@ -357,10 +411,268 @@ export function StudioView({ projectId, currentUserId, ownerId, locale, readOnly
     setIsUploadModalOpen(true)
   }
 
-  const handleToggleTakes = (trackId: string) => {
-    // TODO: Implement takes dropdown
-    toast.info('Takes management coming soon')
+  const handleToggleTakes = async (trackId: string) => {
+    const track = tracks.find(t => t.id === trackId)
+    if (!track) return
+
+    const newState = !track.isRetakeFolderOpen
+
+    // Optimistic update
+    setTracks(prevTracks =>
+      prevTracks.map(t =>
+        t.id === trackId ? { ...t, isRetakeFolderOpen: newState } : t
+      )
+    )
+
+    // Update server
+    const result = await toggleRetakeFolder(trackId, newState)
+    if (!result.success) {
+      toast.error(result.error || 'Failed to toggle retake folder')
+      loadStudioData() // Revert on error
+    }
   }
+
+  // Helper to reload a track's audio (used after section changes)
+  const reloadTrackAudio = useCallback(async (trackId: string) => {
+    const track = tracks.find(t => t.id === trackId)
+    if (!track) return
+
+    // Get active take (original)
+    const activeTakes = track.takes?.filter(t => t.is_active).sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    ) || []
+    const allTakes = [...(track.takes || [])].sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+    const activeTake = activeTakes.length > 0 ? activeTakes[0] : allTakes[0]
+
+    if (!activeTake?.audio_url) return
+
+    const mixerSettings = track.mixer_settings
+    const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
+    const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
+
+    // Check if this track has comped sections
+    const compedSections = track.compedSections || []
+
+    if (compedSections.length > 0) {
+      // Build retakes with sections
+      const retakesWithSections = track.takes
+        ?.filter(t => t.id !== activeTake.id)
+        .map(take => ({
+          takeId: take.id,
+          audioUrl: take.audio_url,
+          sections: compedSections.filter(s => s.take_id === take.id)
+        }))
+        .filter(r => r.sections.length > 0) || []
+
+      // Load with comping
+      playback.loadTrackWithRetakes(
+        trackId,
+        activeTake.id,
+        activeTake.audio_url,
+        retakesWithSections,
+        volume,
+        pan
+      )
+    } else {
+      // Load simple (no comping)
+      playback.loadTrack(trackId, activeTake.audio_url, volume, pan)
+    }
+  }, [tracks, playback])
+
+  const handleSectionCreated = useCallback(async (trackId: string, takeId: string, startTime: number, endTime: number) => {
+    console.log('📝 Creating comped section:', { trackId, takeId, startTime, endTime })
+    const result = await createCompedSection(trackId, takeId, startTime, endTime)
+
+    if (result.success && result.section) {
+      toast.success('Section added')
+
+      // Get current track state
+      const track = tracks.find(t => t.id === trackId)
+      if (!track) return
+
+      // Build updated sections list
+      const updatedSections = [...(track.compedSections || []), result.section]
+
+      // Optimistic update - add section to track
+      setTracks(prevTracks =>
+        prevTracks.map(t => {
+          if (t.id === trackId) {
+            return {
+              ...t,
+              compedSections: updatedSections
+            }
+          }
+          return t
+        })
+      )
+
+      // Reload audio with the updated sections (don't wait for state update)
+      const activeTake = track.takes?.find(t => t.is_active)
+      if (!activeTake?.audio_url) return
+
+      const mixerSettings = track.mixer_settings
+      const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
+      const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
+
+      // Build retakes with sections using the updated sections list
+      const retakesWithSections = track.takes
+        ?.filter(t => t.id !== activeTake.id)
+        .map(take => ({
+          takeId: take.id,
+          audioUrl: take.audio_url,
+          sections: updatedSections.filter(s => s.take_id === take.id)
+        }))
+        .filter(r => r.sections.length > 0) || []
+
+      // Load with comping
+      playback.loadTrackWithRetakes(
+        trackId,
+        activeTake.id,
+        activeTake.audio_url,
+        retakesWithSections,
+        volume,
+        pan
+      )
+    } else {
+      toast.error(result.error || 'Failed to create section')
+    }
+  }, [tracks, playback])
+
+  const handleSectionDeleted = useCallback(async (trackId: string, sectionId: string) => {
+    console.log('🗑️ Deleting comped section:', sectionId)
+    const result = await deleteCompedSection(sectionId)
+
+    if (result.success) {
+      toast.success('Section removed')
+
+      // Get current track state
+      const track = tracks.find(t => t.id === trackId)
+      if (!track) return
+
+      // Build updated sections list (without deleted section)
+      const updatedSections = (track.compedSections || []).filter(s => s.id !== sectionId)
+
+      // Optimistic update - remove section from track
+      setTracks(prevTracks =>
+        prevTracks.map(t => {
+          if (t.id === trackId) {
+            return {
+              ...t,
+              compedSections: updatedSections
+            }
+          }
+          return t
+        })
+      )
+
+      // Reload audio without this section (don't wait for state update)
+      const activeTake = track.takes?.find(t => t.is_active)
+      if (!activeTake?.audio_url) return
+
+      const mixerSettings = track.mixer_settings
+      const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
+      const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
+
+      if (updatedSections.length > 0) {
+        // Build retakes with sections using the updated sections list
+        const retakesWithSections = track.takes
+          ?.filter(t => t.id !== activeTake.id)
+          .map(take => ({
+            takeId: take.id,
+            audioUrl: take.audio_url,
+            sections: updatedSections.filter(s => s.take_id === take.id)
+          }))
+          .filter(r => r.sections.length > 0) || []
+
+        // Load with comping
+        playback.loadTrackWithRetakes(
+          trackId,
+          activeTake.id,
+          activeTake.audio_url,
+          retakesWithSections,
+          volume,
+          pan
+        )
+      } else {
+        // No more sections - load simple
+        playback.loadTrack(trackId, activeTake.audio_url, volume, pan)
+      }
+    } else {
+      toast.error(result.error || 'Failed to delete section')
+    }
+  }, [tracks, playback])
+
+  const handleRetakeActivated = useCallback(async (trackId: string, takeId: string, isCurrentlyActive: boolean) => {
+    // If clicking on an already active retake, deactivate it and reactivate the original
+    if (isCurrentlyActive) {
+      console.log('🔄 Deactivating retake and returning to original')
+      const track = tracks.find(t => t.id === trackId)
+      if (!track || !track.takes) return
+
+      // Find the original take (first created)
+      const originalTake = [...track.takes].sort((a: any, b: any) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )[0]
+
+      if (!originalTake) return
+
+      try {
+        const result = await activateFullRetake(trackId, originalTake.id)
+        if (result.success) {
+          toast.success('Returned to original take')
+          await loadStudioData(true) // Silent reload
+        } else {
+          toast.error(result.error || 'Failed to deactivate retake')
+        }
+      } catch (error) {
+        console.error('❌ Exception in deactivating retake:', error)
+        toast.error('An error occurred')
+      }
+      return
+    }
+
+    // Normal activation
+    console.log('🎵 Activating full retake:', { trackId, takeId })
+
+    try {
+      const result = await activateFullRetake(trackId, takeId)
+      console.log('✅ Retake activation result:', result)
+
+      if (result.success) {
+        toast.success('Retake activated')
+        console.log('🔄 Reloading studio data...')
+        await loadStudioData(true) // Silent reload
+        console.log('✅ Studio data reloaded')
+      } else {
+        console.error('❌ Activation failed:', result.error)
+        toast.error(result.error || 'Failed to activate retake')
+      }
+    } catch (error) {
+      console.error('❌ Exception in handleRetakeActivated:', error)
+      toast.error('An error occurred while activating retake')
+    }
+  }, [loadStudioData, tracks])
+
+  const handleDeleteRetake = useCallback(async (takeId: string) => {
+    console.log('🗑️ Deleting retake:', takeId)
+
+    try {
+      const { deleteTake } = await import('@/app/actions/studio/takes')
+      const result = await deleteTake(takeId)
+
+      if (result.success) {
+        toast.success('Retake deleted')
+        await loadStudioData()
+      } else {
+        toast.error(result.error || 'Failed to delete retake')
+      }
+    } catch (error) {
+      console.error('❌ Exception in handleDeleteRetake:', error)
+      toast.error('An error occurred while deleting retake')
+    }
+  }, [loadStudioData])
 
   const handleTrackContextMenu = (e: React.MouseEvent, trackId: string) => {
     e.preventDefault()
@@ -642,6 +954,7 @@ export function StudioView({ projectId, currentUserId, ownerId, locale, readOnly
 
       {/* Header with Transport Controls */}
       <TransportControls
+        projectName={projectTitle}
         isPlaying={playback.isPlaying}
         currentTime={playback.currentTime}
         hasTracksLoaded={tracks.length > 0}
@@ -683,6 +996,8 @@ export function StudioView({ projectId, currentUserId, ownerId, locale, readOnly
           onTrackRename={handleTrackRename}
           onCancelRename={handleCancelRename}
           onTracksReorder={handleTracksReorder}
+          onRetakeActivated={handleRetakeActivated}
+          onDeleteRetake={handleDeleteRetake}
           readOnly={readOnly}
         />
 
@@ -734,35 +1049,86 @@ export function StudioView({ projectId, currentUserId, ownerId, locale, readOnly
                 {/* Waveforms container */}
                 <div className="flex-1 overflow-y-auto">
                   {tracks.map((track) => {
-                      // Get active takes and sort by creation date (most recent first)
-                      const activeTakes = track.takes?.filter((t) => t.is_active).sort((a, b) =>
-                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                      ) || []
-                      const allTakes = [...(track.takes || [])].sort((a, b) =>
-                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                      // OPTION A: Original always stays on top, retakes below
+                      // Sort all takes by creation date (oldest first)
+                      const allTakesSorted = [...(track.takes || [])].sort((a, b) =>
+                        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
                       )
-                      // Use the most recent active take, or the most recent take if none are active
-                      const activeTake = activeTakes.length > 0 ? activeTakes[0] : allTakes[0]
+
+                      // Original = first take created (always on top)
+                      const originalTake = allTakesSorted[0]
+
+                      // Retakes = all other takes (always below, sorted by creation)
+                      const retakes = allTakesSorted.slice(1)
+                      const isExpanded = track.isRetakeFolderOpen || false
+
+                      // Check if original is active (for coloring)
+                      const isOriginalActive = originalTake?.is_active || false
+
+                      // Get comped sections for this track
+                      const compedSections = track.compedSections || []
+
+                      // Create a unique key that changes when active state changes or on refresh
+                      const trackKey = `${track.id}-${refreshKey}`
+
                       return (
-                        <WaveformTrackRow
-                          key={track.id}
-                          trackId={track.id}
-                          trackColor={track.color}
-                          activeTake={activeTake}
-                          loadedDuration={trackDurations.get(track.id) || 0}
-                          maxDuration={maxDuration}
-                          comments={track.comments}
-                          currentUserId={currentUserId}
-                          onWaveformReady={(duration) => handleWaveformReady(track.id, duration)}
-                          onClick={handleWaveformClick}
-                          waveformRef={(ref) => {
-                            if (ref) {
-                              playback.waveformRefs.current.set(track.id, ref)
-                            } else {
-                              playback.waveformRefs.current.delete(track.id)
-                            }
-                          }}
-                        />
+                        <div key={trackKey} className="relative">
+                          {/* Original track waveform (always on top) */}
+                          <CompableWaveformRow
+                            trackId={track.id}
+                            trackColor={track.color}
+                            activeTake={originalTake}
+                            loadedDuration={trackDurations.get(track.id) || 0}
+                            maxDuration={maxDuration}
+                            comments={track.comments}
+                            currentUserId={currentUserId}
+                            isRetake={false}
+                            isActive={isOriginalActive}
+                            compedSections={compedSections}
+                            onWaveformReady={(duration) => handleWaveformReady(track.id, duration)}
+                            waveformRef={(ref) => {
+                              if (ref) {
+                                playback.waveformRefs.current.set(track.id, ref)
+                              } else {
+                                playback.waveformRefs.current.delete(track.id)
+                              }
+                            }}
+                            onClick={handleWaveformClick}
+                            onSectionCreated={undefined} // Original track doesn't create sections
+                            onSectionDeleted={(sectionId) => handleSectionDeleted(track.id, sectionId)}
+                            readOnly={readOnly}
+                          />
+
+                          {/* Retake waveforms (if expanded) */}
+                          {isExpanded && retakes.map((retake, idx) => {
+                            // Get sections for this retake
+                            const retakeSections = compedSections.filter(s => s.take_id === retake.id)
+
+                            return (
+                              <CompableWaveformRow
+                                key={retake.id}
+                                trackId={track.id}
+                                trackColor={track.color}
+                                activeTake={retake}
+                                loadedDuration={trackDurations.get(track.id) || 0}
+                                maxDuration={maxDuration}
+                                comments={undefined} // Retakes don't have separate comments
+                                currentUserId={currentUserId}
+                                isRetake={true}
+                                isActive={retake.is_active}
+                                compedSections={retakeSections}
+                                onWaveformReady={() => {}} // Don't update duration for retakes
+                                waveformRef={() => {}} // Retakes don't need refs
+                                onClick={undefined} // Retakes don't open comment modal
+                                onSectionCreated={(startTime, endTime) =>
+                                  handleSectionCreated(track.id, retake.id, startTime, endTime)
+                                }
+                                onSectionDeleted={(sectionId) => handleSectionDeleted(track.id, sectionId)}
+                                readOnly={readOnly}
+                              />
+                            )
+                          })}
+                        </div>
                       )
                   })}
                 </div>

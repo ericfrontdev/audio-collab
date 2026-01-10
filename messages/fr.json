@@ -1,12 +1,30 @@
 {
   "common": {
     "appName": "AudioCollab",
-    "tagline": "Studio Musical Collaboratif"
+    "tagline": "Studio Musical Collaboratif",
+    "footerText": "Créé par des musiciens indépendants pour des musiciens indépendants",
+    "copyright": "© 2026 AudioCollab",
+    "editProfile": "Modifier le Profil",
+    "signOut": "Se déconnecter",
+    "following": "Abonnements",
+    "followers": "Abonnés",
+    "soundcloud": "SoundCloud",
+    "instagram": "Instagram",
+    "twitter": "Twitter / X",
+    "youtube": "YouTube",
+    "website": "Site Web"
   },
   "nav": {
-    "projects": "Projets",
+    "feed": "Fil d'actualité",
+    "explore": "Explorer",
+    "notifications": "Notifications",
+    "messages": "Messages",
     "clubs": "Clubs",
     "profile": "Profil",
+    "settings": "Paramètres",
+    "projects": "Projets",
+    "myProjects": "Mes Projets",
+    "clubProjects": "Projets de Club",
     "login": "Connexion",
     "logout": "Déconnexion",
     "signup": "S'inscrire"
@@ -42,12 +60,32 @@
   "projects": {
     "title": "Projets",
     "myProjects": "Mes Projets",
+    "myProjectsSubtitle": "Gérez et collaborez sur vos projets musicaux",
     "noProjects": "Aucun projet pour le moment. Commencez à créer !",
+    "noProjectsYet": "Aucun projet pour le moment",
+    "createFirstProject": "Créez votre premier projet pour commencer à collaborer",
+    "createYourFirstProject": "Créez Votre Premier Projet",
     "newProject": "Nouveau Projet",
+    "status": {
+      "active": "Actif",
+      "in_progress": "En cours",
+      "completed": "Terminé",
+      "on_hold": "En pause"
+    },
+    "card": {
+      "createdBy": "Créé par",
+      "me": "moi",
+      "unknown": "Inconnu"
+    },
     "create": {
       "title": "Créer un Nouveau Projet",
+      "subtitle": "Démarrez un nouveau projet collaboratif dans",
       "projectTitle": "Titre du Projet",
+      "projectName": "Nom du Projet",
+      "projectNamePlaceholder": "Mon Super Morceau",
       "description": "Description",
+      "descriptionPlaceholder": "Décrivez votre projet...",
+      "descriptionOptional": "Optionnel - Ajoutez des détails sur votre projet",
       "bpm": "BPM",
       "key": "Tonalité",
       "tags": "Tags",
@@ -57,7 +95,10 @@
       "modePublic": "Public",
       "modeRemixable": "Remixable",
       "submit": "Créer le Projet",
-      "cancel": "Annuler"
+      "creating": "Création...",
+      "cancel": "Annuler",
+      "success": "Projet créé avec succès !",
+      "error": "Échec de la création du projet"
     },
     "edit": {
       "title": "Modifier le Projet",
@@ -75,24 +116,96 @@
       "noStems": "Aucune piste pour le moment",
       "versions": "Versions",
       "comments": "Commentaires"
+    },
+    "clubProjects": {
+      "title": "Projets de Club",
+      "subtitle": "Parcourez et rejoignez les projets de vos clubs",
+      "showAll": "Tout Afficher",
+      "hideNotJoined": "Masquer Non Rejoints",
+      "noProjects": "Aucun projet disponible. Rejoignez un club pour voir les projets de club !",
+      "noJoinedProjects": "Aucun projet rejoint. Rejoignez un projet pour le voir ici !",
+      "openProject": "Ouvrir le Projet"
     }
   },
   "clubs": {
     "title": "Clubs Musicaux",
-    "subtitle": "Rejoignez des clubs, partagez vos projets et collaborez",
+    "subtitle": "Rejoignez des communautés par genre, partagez des projets et collaborez avec des musiciens",
     "noClubs": "Aucun club pour le moment",
-    "member": "Membre",
-    "members": "membres",
+    "noClubsDescription": "Les clubs apparaîtront ici une fois créés",
+    "defaultDescription": "Une communauté pour les amateurs et créateurs de musique",
+    "joined": "Membre",
+    "memberSingular": "membre",
+    "memberPlural": "membres",
     "projects": "projets",
     "joinClub": "Rejoindre le Club",
     "leaveClub": "Quitter le Club",
+    "genres": {
+      "Lo-fi": "Lo-fi",
+      "Hip-Hop": "Hip-Hop",
+      "Jazz": "Jazz",
+      "Rock": "Rock",
+      "Electronic": "Électronique",
+      "Pop": "Pop",
+      "R&B": "R&B",
+      "Indie": "Indie",
+      "Metal": "Metal",
+      "Country": "Country",
+      "Classical": "Classique",
+      "Ambient": "Ambiance",
+      "Blues": "Blues"
+    },
+    "descriptions": {
+      "Lo-fi": "Beats détendus et ambiances relaxantes",
+      "Hip-Hop": "Rap, beats et musique urbaine",
+      "Jazz": "Improvisation et mélodies douces",
+      "Rock": "Hymnes à la guitare et énergie",
+      "Electronic": "Synthés, EDM et sons numériques",
+      "Pop": "Mélodies accrocheuses et hits grand public",
+      "R&B": "Rhythm and blues avec soul",
+      "Indie": "Sons indépendants et alternatifs",
+      "Metal": "Riffs lourds et énergie intense",
+      "Country": "Récits et ambiances acoustiques",
+      "Classical": "Compositions orchestrales et intemporelles",
+      "Ambient": "Sons atmosphériques et expérimentaux"
+    },
+    "feed": {
+      "joinToView": "Rejoignez le club pour voir le fil",
+      "privateDescription": "Les fils de clubs sont privés aux membres seulement. Rejoignez {clubName} pour participer aux discussions.",
+      "loading": "Chargement du fil du club...",
+      "tryAgain": "Réessayer",
+      "noPosts": "Aucun post pour le moment",
+      "beFirst": "Soyez le premier à lancer une conversation dans {clubName} !"
+    },
     "tabs": {
       "overview": "Aperçu",
+      "feed": "Fil",
       "discussions": "Discussions",
       "projects": "Projets",
       "challenges": "Défis",
       "remixes": "Remixes",
-      "members": "Membres"
+      "members": "Membres",
+      "about": "À propos"
+    },
+    "projectsTab": {
+      "title": "Projets",
+      "newProject": "Nouveau Projet",
+      "noProjects": "Aucun projet pour le moment",
+      "createFirstProject": "Créer le Premier Projet"
+    },
+    "membersTab": {
+      "title": "Membres",
+      "noMembers": "Aucun membre pour le moment"
+    },
+    "aboutTab": {
+      "title": "À propos",
+      "description": "Description",
+      "noDescription": "Aucune description disponible",
+      "genre": "Genre",
+      "rules": "Règles",
+      "stats": "Statistiques"
+    },
+    "sidebar": {
+      "aboutThisClub": "À propos de ce club"
     },
     "overview": {
       "discussionsCount": "Discussions",
@@ -184,6 +297,22 @@
     "creating": "Création du remix..."
   },
   "profile": {
+    "view": {
+      "banner": "Bannière du profil",
+      "editProfile": "Modifier le Profil",
+      "roles": "RÔLES",
+      "genres": "GENRES",
+      "clubs": "CLUBS",
+      "links": "LIENS",
+      "soundcloud": "SoundCloud",
+      "instagram": "Instagram",
+      "youtube": "YouTube",
+      "website": "Site Web",
+      "posts": "Publications",
+      "projects": "Projets",
+      "noProjects": "Aucun projet pour le moment.",
+      "createFirstProject": "Créez votre premier projet !"
+    },
     "edit": {
       "title": "Modifier le Profil",
       "subtitle": "Mettez à jour vos informations de profil",
@@ -261,6 +390,594 @@
       "noCollaborators": "Aucun collaborateur pour le moment",
       "instrument": "Instrument",
       "role": "Rôle"
+    }
+  },
+  "projectHall": {
+    "hero": {
+      "members": "membres",
+      "member": "membre",
+      "created": "Créé le",
+      "untitledProject": "Projet Sans Titre"
+    },
+    "info": {
+      "title": "Informations du Projet",
+      "bpm": "BPM",
+      "key": "Tonalité",
+      "mode": "Mode",
+      "visibility": "Visibilité",
+      "studioAccess": "Accès au Studio",
+      "status": "Statut",
+      "studioVisibility": "Visibilité du Studio",
+      "modeValues": {
+        "private": "Privé",
+        "public": "Public",
+        "remixable": "Remixable"
+      },
+      "studioVisibilityValues": {
+        "membersOnly": "Membres Seulement",
+        "public": "Studio Public"
+      },
+      "statusValues": {
+        "active": "Actif",
+        "inProgress": "En Cours",
+        "completed": "Terminé",
+        "archived": "Archivé"
+      }
+    },
+    "members": {
+      "title": "Membres"
+    },
+    "timeline": {
+      "title": "Chronologie",
+      "projectCreated": "Projet Créé",
+      "lastUpdated": "Dernière Mise à Jour",
+      "completed": "Terminé",
+      "versionsSaved": "version enregistrée",
+      "versionsSavedPlural": "versions enregistrées",
+      "relativeTime": {
+        "today": "Aujourd'hui",
+        "yesterday": "Hier",
+        "daysAgo": "il y a {days} jours",
+        "weeksAgo": "il y a {weeks} semaines",
+        "monthsAgo": "il y a {months} mois",
+        "yearsAgo": "il y a {years} ans"
+      }
+    },
+    "discussion": {
+      "title": "Discussion",
+      "placeholder": "Partagez une mise à jour, posez une question ou lancez une discussion... (Entrée pour poster, Maj+Entrée pour nouvelle ligne)",
+      "post": "Publier",
+      "posting": "Publication...",
+      "charCount": "{current}/{max}",
+      "noPosts": "Aucun message pour le moment",
+      "beFirst": "Soyez le premier à lancer une discussion !",
+      "loginPrompt": "Connectez-vous pour rejoindre la discussion",
+      "errors": {
+        "mustLogin": "Vous devez être connecté pour publier",
+        "empty": "Le message ne peut pas être vide",
+        "tooLong": "Message trop long (max 2000 caractères)"
+      },
+      "success": "Message publié avec succès !"
+    },
+    "hallPost": {
+      "unknownUser": "Utilisateur Inconnu",
+      "deletePost": "Supprimer le message",
+      "success": {
+        "deleted": "Message supprimé avec succès !"
+      },
+      "errors": {
+        "deleteFailed": "Échec de la suppression du message",
+        "deleteError": "Une erreur s'est produite lors de la suppression"
+      }
+    },
+    "coverUpload": {
+      "dropzone": "Déposez l'image de couverture ici ou cliquez pour téléverser",
+      "recommended": "Recommandé : 1200x400px (ratio 3:1)",
+      "formats": "JPEG, PNG, WEBP, GIF (max 5 Mo)",
+      "chooseFile": "Choisir un Fichier",
+      "uploading": "Téléversement...",
+      "removing": "Suppression...",
+      "removeCover": "Supprimer la Couverture",
+      "noCover": "Aucune image de couverture",
+      "errors": {
+        "invalidType": "Type de fichier invalide. Seuls JPEG, PNG, WEBP et GIF sont autorisés.",
+        "tooLarge": "Fichier trop volumineux. Taille maximale : 5 Mo.",
+        "uploadFailed": "Échec du téléversement de l'image de couverture",
+        "deleteFailed": "Échec de la suppression de l'image de couverture",
+        "uploadError": "Une erreur s'est produite lors du téléversement",
+        "deleteError": "Une erreur s'est produite lors de la suppression"
+      },
+      "success": {
+        "uploaded": "Image de couverture téléversée avec succès !",
+        "deleted": "Image de couverture supprimée avec succès !"
+      }
+    },
+    "enterStudio": {
+      "enter": "Entrer dans le Studio",
+      "viewReadOnly": "Voir le Studio (Lecture Seule)",
+      "private": "Studio Privé",
+      "privateHint": "(Membres seulement)"
+    },
+    "backToClub": {
+      "back": "Retour vers le club",
+      "private": "Club Privé"
+    },
+    "joinProject": {
+      "button": "Rejoindre le Projet",
+      "joining": "En cours...",
+      "error": "Vous êtes déjà membre de ce projet"
+    },
+    "readOnlyBanner": "👁️ Mode Lecture Seule - Vous consultez ce studio en mode lecture seule. Rejoignez le projet pour éditer et collaborer."
+  },
+  "home": {
+    "hero": {
+      "badge": "Lancement Bêta - Gratuit pour les Premiers Utilisateurs",
+      "title1": "Collaboration Musicale Nouvelle Génération",
+      "title2": "pour les Musiciens Indépendants",
+      "subtitle": "Commentez sur les formes d'onde avec des horodatages précis. Ajustez le volume, le panoramique, solo et muet pour un mixage approximatif en temps réel. Collaborez sans friction.",
+      "socialProof": "🎁 Les 1 000 premiers utilisateurs obtiennent des avantages à vie"
+    },
+    "problem": {
+      "title": "Fatigué de l'Ancienne Méthode ?",
+      "issue1": "Envoyer des pistes par email aller-retour",
+      "issue2": "Perdre l'historique des versions",
+      "issue3": "Retours vagues comme 'ça sonne bien'",
+      "issue4": "Sessions DAW qui ne s'ouvrent pas"
+    },
+    "solution": {
+      "title": "La Méthode AudioCollab",
+      "benefit1": "Collaboration en temps réel dans le navigateur",
+      "benefit2": "Historique complet des versions",
+      "benefit3": "Commentaires précis sur les formes d'onde",
+      "benefit4": "Fonctionne avec n'importe quel DAW"
+    },
+    "features": {
+      "title": "Tout Ce Dont Vous Avez Besoin",
+      "subtitle": "Outils puissants conçus pour la collaboration musicale moderne",
+      "waveform": {
+        "title": "Commentaires sur Forme d'Onde",
+        "description": "Épinglez des retours à des moments exacts dans la piste"
+      },
+      "mixing": {
+        "title": "Outils de Mixage Approximatif",
+        "description": "Ajustez volume, panoramique, solo et muet en temps réel"
+      },
+      "versions": {
+        "title": "Contrôle de Version",
+        "description": "Ne perdez jamais une prise avec le versionnement automatique"
+      },
+      "studio": {
+        "title": "Studios de Projet",
+        "description": "Organisez pistes, commentaires et collaborateurs"
+      },
+      "remix": {
+        "title": "Remixez Tout",
+        "description": "Forkez des projets pour créer vos propres versions"
+      },
+      "clubs": {
+        "title": "Clubs Musicaux",
+        "description": "Rejoignez des communautés et collaborez avec des musiciens"
+      }
+    },
+    "cta": {
+      "title": "Prêt à Collaborer ?",
+      "subtitle": "Rejoignez des milliers de musiciens créant ensemble",
+      "button": "Obtenir un Accès Anticipé"
+    }
+  },
+  "dashboard": {
+    "title": "Tableau de Bord",
+    "subtitle": "Bon retour sur AudioCollab",
+    "logout": "Déconnexion",
+    "profileInformation": "Informations du Profil",
+    "username": "Nom d'utilisateur",
+    "displayName": "Nom d'affichage",
+    "email": "Email",
+    "yourProjects": "Vos Projets",
+    "noProjectsYet": "Aucun projet pour le moment. Commencez à créer !",
+    "recentActivity": "Activité Récente",
+    "quickActions": "Actions Rapides"
+  },
+  "quickActions": {
+    "title": "Actions Rapides",
+    "newProject": "Nouveau Projet",
+    "myProjects": "Mes Projets",
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "selectClub": "Veuillez sélectionner un club pour créer votre projet",
+    "mustJoinClub": "Vous devez rejoindre le club pour créer un projet"
+  },
+  "explore": {
+    "title": "Explorer les Projets",
+    "subtitle": "Découvrez les projets musicaux publics de la communauté AudioCollab",
+    "filters": {
+      "all": "Tous les Projets",
+      "genre": "Genre",
+      "recent": "Récents",
+      "popular": "Populaires"
+    },
+    "noProjectsYet": "Aucun projet pour le moment",
+    "noProjectsDescription": "Soyez le premier à créer un projet et à le partager avec la communauté !",
+    "noProjects": "Aucun projet trouvé",
+    "loading": "Chargement des projets..."
+  },
+  "messaging": {
+    "title": "Messages",
+    "subtitle": "Envoyez des messages privés à d'autres utilisateurs",
+    "selectConversation": "Sélectionnez une conversation pour commencer à échanger",
+    "startNewConversation": "ou démarrez une nouvelle conversation",
+    "privateMessaging": "Messagerie Privée",
+    "privateMessagingDescription": "Envoyez des messages privés à d'autres musiciens. Démarrez des conversations, collaborez sur des projets et développez votre réseau.",
+    "newConversation": "Nouvelle Conversation",
+    "newMessage": "Nouveau Message",
+    "search": "Rechercher des utilisateurs...",
+    "typeMessage": "Tapez un message... (Ctrl+Entrée pour envoyer)",
+    "send": "Envoyer",
+    "ctrlEnterToSend": "Ctrl+Entrée pour envoyer",
+    "noConversationsYet": "Aucune conversation pour le moment",
+    "noConversations": "Démarrez une nouvelle conversation pour commencer",
+    "noMessagesYet": "Aucun message pour le moment",
+    "sendMessageToStart": "Envoyez un message pour démarrer la conversation",
+    "noUsersFound": "Aucun utilisateur trouvé",
+    "you": "Vous",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "errors": {
+      "cannotEmpty": "Le message ne peut pas être vide",
+      "loadFailed": "Échec du chargement des conversations",
+      "sendFailed": "Échec de l'envoi du message",
+      "searchFailed": "Échec de la recherche d'utilisateurs",
+      "conversationFailed": "Échec de la création de la conversation"
+    },
+    "success": {
+      "updated": "Message modifié",
+      "deleted": "Message supprimé"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Restez informé de votre activité",
+    "comingSoon": "Bientôt Disponible",
+    "description": "Nous construisons un système de notifications complet pour vous tenir au courant de toute votre activité AudioCollab. Restez à l'écoute pour des mises à jour en temps réel sur vos projets, collaborations et interactions communautaires.",
+    "upcomingFeatures": "Fonctionnalités à Venir",
+    "features": {
+      "projectUpdates": {
+        "title": "Mises à Jour de Projet",
+        "description": "Soyez notifié quand quelqu'un commente vos pistes ou vous mentionne"
+      },
+      "newFollowers": {
+        "title": "Nouveaux Abonnés",
+        "description": "Sachez quand quelqu'un commence à suivre votre profil"
+      },
+      "likesReactions": {
+        "title": "J'aime & Réactions",
+        "description": "Voyez quand les gens aiment vos posts, projets ou pistes"
+      },
+      "collaborationRequests": {
+        "title": "Demandes de Collaboration",
+        "description": "Recevez des notifications quand quelqu'un veut collaborer sur un projet"
+      }
+    },
+    "feedback": "Vous souhaitez suggérer un type de notification ? Faites-le nous savoir par le biais des commentaires !"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Gérez votre compte et vos préférences",
+    "comingSoon": "Bientôt Disponible",
+    "description": "Nous travaillons dur pour vous offrir une expérience de paramètres complète. Bientôt, vous pourrez personnaliser votre expérience AudioCollab selon vos préférences.",
+    "upcomingFeatures": "Fonctionnalités à Venir",
+    "features": {
+      "language": {
+        "title": "Préférences de Langue",
+        "description": "Choisissez votre langue préférée pour l'interface"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Gérez vos préférences d'emails et de notifications push"
+      },
+      "audio": {
+        "title": "Préférences Audio",
+        "description": "Configurez le taux d'échantillonnage, la taille du buffer pour le studio"
+      },
+      "privacy": {
+        "title": "Confidentialité & Sécurité",
+        "description": "Contrôlez qui peut voir votre contenu et bloquer des utilisateurs"
+      },
+      "account": {
+        "title": "Paramètres du Compte",
+        "description": "Changez votre mot de passe et gérez votre compte"
+      }
+    },
+    "feedback": "Vous souhaitez suggérer une fonctionnalité ? Faites-le nous savoir par le biais des commentaires !"
+  },
+  "onboarding": {
+    "welcome": "Bienvenue sur AudioCollab",
+    "stepLabels": {
+      "createProfile": "Créer le Profil",
+      "joinClubs": "Rejoindre des Clubs",
+      "getStarted": "Commencer"
+    },
+    "step1": {
+      "title": "Créez votre profil",
+      "subtitle": "Parlez-nous de vous et de votre musique",
+      "username": "Nom d'utilisateur",
+      "usernameDescription": "Votre identifiant unique sur AudioCollab",
+      "displayName": "Nom d'affichage",
+      "displayNamePlaceholder": "Optionnel",
+      "displayNameDescription": "Comment vous souhaitez être appelé (optionnel)",
+      "profilePicture": "Photo de Profil",
+      "avatarPreview": "Aperçu de l'avatar",
+      "uploadPicture": "Téléchargez votre photo de profil (optionnel)",
+      "bio": "Bio",
+      "bioPlaceholder": "Parlez-nous de votre parcours musical...",
+      "musicalRoles": "Rôles Musicaux",
+      "addCustomRole": "Ajouter un rôle personnalisé...",
+      "add": "Ajouter",
+      "genres": "Genres",
+      "addCustomGenre": "Ajouter un genre personnalisé...",
+      "socialLinks": "Liens Sociaux",
+      "socialLinksDescription": "Connectez vos profils sociaux (optionnel)",
+      "soundcloud": "SoundCloud",
+      "instagram": "Instagram",
+      "twitter": "X (Twitter)",
+      "youtube": "YouTube",
+      "website": "Site Web",
+      "creatingProfile": "Création du profil...",
+      "nextJoinClubs": "Suivant : Rejoindre des Clubs"
+    },
+    "step2": {
+      "title": "Rejoindre des Clubs",
+      "subtitle": "Trouvez votre communauté (vous pouvez passer cette étape)",
+      "comingSoon": "Fonctionnalité des clubs bientôt disponible...",
+      "skipForNow": "Passer pour le moment",
+      "nextGetStarted": "Suivant : Commencer"
+    },
+    "step3": {
+      "createFirstProject": "Créez Votre Premier Projet",
+      "createProjectDescription": "Commencez à créer de la musique avec des collaborateurs",
+      "exploreFeed": "Explorer le Fil d'Actualité",
+      "exploreFeedDescription": "Découvrez des projets et connectez-vous avec des musiciens",
+      "enterAudioCollab": "Entrer dans AudioCollab"
+    },
+    "errors": {
+      "usernameRequired": "Le nom d'utilisateur est requis",
+      "somethingWentWrong": "Une erreur s'est produite. Veuillez réessayer."
+    },
+    "next": "Suivant",
+    "skip": "Passer",
+    "finish": "Commencer"
+  },
+  "studio": {
+    "trackHeader": {
+      "dragToReorder": "Glisser pour réordonner",
+      "importAudio": "Importer audio",
+      "takes": "Prises",
+      "noRetakes": "Aucune retake pour l'instant",
+      "solo": "Solo",
+      "mute": "Muet"
+    },
+    "uploadModal": {
+      "title": "Téléverser Audio",
+      "forTrack": "Pour la piste :",
+      "uploadType": "Type de Téléversement",
+      "newTrack": "Nouvelle Piste",
+      "newTrackDesc": "Créer une nouvelle piste",
+      "addTake": "Ajouter une Prise",
+      "addTakeDesc": "Ajouter à une piste existante",
+      "createFirstTrack": "Créez votre première piste pour activer l'ajout de prises",
+      "trackName": "Nom de la Piste",
+      "trackNamePlaceholder": "ex: Voix principale, Basse, Batterie",
+      "selectTrack": "Sélectionner une Piste",
+      "chooseTrack": "Choisissez une piste...",
+      "audioFile": "Fichier Audio",
+      "chooseFile": "Choisir un fichier audio",
+      "supportedFormats": "Formats supportés : MP3, WAV, FLAC, M4A, OGG (max {maxSize} Mo)",
+      "fileSize": "Taille du fichier :",
+      "uploading": "Téléversement...",
+      "cancel": "Annuler",
+      "upload": "Téléverser",
+      "required": "*",
+      "success": {
+        "trackCreated": "Piste créée avec succès !",
+        "takeAdded": "Prise ajoutée avec succès !"
+      },
+      "errors": {
+        "selectFile": "Veuillez sélectionner un fichier audio",
+        "enterName": "Veuillez entrer un nom de piste",
+        "selectTrack": "Veuillez sélectionner une piste",
+        "invalidFile": "Veuillez sélectionner un fichier audio valide (MP3, WAV, FLAC, M4A ou OGG)",
+        "fileTooLarge": "La taille du fichier doit être inférieure à {maxSize} Mo"
+      }
+    },
+    "commentModal": {
+      "placeholder": "Ajouter un commentaire...",
+      "yourAvatar": "Votre avatar"
+    },
+    "transport": {
+      "back": "Retour",
+      "backTooltip": "Retour vers le Hall",
+      "play": "Lecture",
+      "pause": "Pause",
+      "stop": "Arrêt",
+      "mixer": "Mixeur",
+      "share": "Partager",
+      "export": "Exporter",
+      "saved": "Enregistré à l'instant"
+    },
+    "tracks": {
+      "title": "PISTES",
+      "add": "Ajouter",
+      "addTrack": "Ajouter une Piste",
+      "noTracks": "Aucune piste",
+      "upload": "Téléverser une Piste",
+      "create": "Créer une nouvelle piste",
+      "name": "Nom de la piste",
+      "namePlaceholder": "ex : Voix principale, Basse, Batterie"
+    },
+    "upload": {
+      "title": "Téléverser Audio",
+      "selectFile": "Sélectionnez un fichier audio",
+      "dragDrop": "ou glissez-déposez",
+      "formats": "MP3, WAV, FLAC, M4A, ou OGG (max 100 Mo)",
+      "trackName": "Nom de la Piste",
+      "uploading": "Téléversement...",
+      "processing": "Traitement...",
+      "errors": {
+        "selectValid": "Veuillez sélectionner un fichier audio valide (MP3, WAV, FLAC, M4A, ou OGG)",
+        "selectFile": "Veuillez sélectionner un fichier audio",
+        "enterName": "Veuillez entrer un nom de piste",
+        "uploadFailed": "Échec du téléversement de la piste"
+      }
+    },
+    "takes": {
+      "title": "Gérer les Takes",
+      "noTakes": "Aucune take disponible",
+      "activate": "Définir comme Active",
+      "delete": "Supprimer la Take",
+      "uploadNew": "Téléverser une Nouvelle Take",
+      "errors": {
+        "cannotDeleteActive": "Impossible de supprimer la take active",
+        "cannotDeleteLast": "Impossible de supprimer la dernière take",
+        "deleteFailed": "Échec de la suppression de la take"
+      },
+      "success": {
+        "activated": "Take activée avec succès",
+        "deleted": "Take supprimée avec succès"
+      }
+    },
+    "comments": {
+      "add": "Ajouter un commentaire...",
+      "placeholder": "Ajouter un commentaire...",
+      "at": "à",
+      "noComments": "Aucun commentaire pour le moment"
+    },
+    "mixer": {
+      "title": "Mixeur",
+      "volume": "Volume",
+      "pan": "Panoramique",
+      "solo": "Solo",
+      "mute": "Muet",
+      "master": "Master",
+      "errors": {
+        "saveFailed": "Échec de l'enregistrement des paramètres du mixeur",
+        "onlyCreator": "Seul le créateur de la piste peut modifier ce paramètre"
+      }
+    },
+    "contextMenu": {
+      "rename": "Renommer",
+      "duplicate": "Dupliquer",
+      "delete": "Supprimer"
+    },
+    "retakes": {
+      "activate": "Activer la retake",
+      "deactivate": "Désactiver la retake"
+    },
+    "comping": {
+      "deleteSection": "Supprimer la section"
+    },
+    "messages": {
+      "rotationRequired": "Rotation requise",
+      "rotateDevice": "Veuillez faire pivoter votre appareil en mode paysage pour utiliser le studio",
+      "trackCreated": "Piste créée",
+      "takesComingSoon": "Gestion des takes bientôt disponible..."
+    }
+  },
+  "feed": {
+    "title": "Fil d'actualité",
+    "discoverClubs": "Découvrir des Clubs",
+    "whatsHappening": "Quoi de neuf",
+    "whatsHappeningDescription": "Partagez vos dernières pistes, collaborez avec d'autres musiciens et découvrez de nouvelles musiques de la communauté.",
+    "timeAgo": {
+      "justNow": "à l'instant",
+      "minutesAgo": "il y a {minutes}m",
+      "hoursAgo": "il y a {hours}h",
+      "daysAgo": "il y a {days}j"
+    },
+    "create": {
+      "placeholder": "Que se passe-t-il dans votre univers musical ?",
+      "shareLink": "Partager un lien",
+      "linkPlaceholder": "https://exemple.com",
+      "uploading": "Téléversement...",
+      "posting": "Publication...",
+      "post": "Publier",
+      "postingTo": "Publication dans",
+      "postEmpty": "La publication ne peut pas être vide",
+      "postSuccess": "Publié avec succès !",
+      "postFailed": "Échec de la création de la publication",
+      "errors": {
+        "audioSize": "Le fichier audio doit faire moins de 20 Mo",
+        "videoSize": "La vidéo doit faire moins de 50 Mo",
+        "linkInvalid": "Le lien doit être une URL valide"
+      }
+    },
+    "actions": {
+      "like": "J'aime",
+      "comment": "Commenter",
+      "share": "Partager"
+    },
+    "comments": {
+      "write": "Écrire un commentaire...",
+      "writeReply": "Écrire une réponse...",
+      "reply": "Répondre",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "errors": {
+        "cannotEmpty": "Le commentaire ne peut pas être vide"
+      },
+      "success": {
+        "added": "Commentaire ajouté !",
+        "updated": "Commentaire modifié !",
+        "deleted": "Commentaire supprimé !"
+      }
+    },
+    "share": {
+      "title": "Partager le Post",
+      "conversation": "Envoyer dans une conversation",
+      "personalFeed": "Fil Personnel",
+      "writeComment": "Écrivez votre commentaire...",
+      "searchUser": "Rechercher un utilisateur...",
+      "noConversations": "Aucune conversation",
+      "errors": {
+        "loadFailed": "Échec du chargement des conversations"
+      },
+      "success": {
+        "sharedConversation": "Post partagé dans la conversation",
+        "sharedFeed": "Post partagé sur le fil"
+      }
+    },
+    "noPosts": "Aucun post pour le moment"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Tableau de Bord Admin",
+      "subtitle": "Gérez votre plateforme AudioCollab",
+      "stats": {
+        "totalUsers": "Total d'Utilisateurs",
+        "totalProjects": "Total de Projets",
+        "totalClubs": "Total de Clubs"
+      },
+      "recentUsers": "Utilisateurs Récents",
+      "recentProjects": "Projets Récents"
+    },
+    "clubs": {
+      "create": "Créer un Nouveau Club",
+      "name": "Nom du Club",
+      "namePlaceholder": "ex : Blues, Jazz, Rock",
+      "slug": "Slug",
+      "slugPlaceholder": "ex : blues, jazz, rock",
+      "description": "Description",
+      "descriptionPlaceholder": "Décrivez ce genre musical...",
+      "avatar": "Téléverser un Avatar",
+      "banner": "Téléverser une Bannière",
+      "errors": {
+        "createFailed": "Club créé mais échec de la mise à jour des images",
+        "avatarFailed": "Échec du téléversement de l'avatar",
+        "bannerFailed": "Échec du téléversement de la bannière"
+      },
+      "success": {
+        "created": "Club créé avec succès !",
+        "updated": "Club mis à jour avec succès !"
+      }
     }
   }
 }

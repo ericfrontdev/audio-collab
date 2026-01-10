@@ -2,11 +2,15 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { SupabaseError } from './utils';
+import { unstable_noStore as noStore } from 'next/cache';
 
 /**
  * Get all tracks with their details for a project
  */
 export async function getProjectStudioData(projectId: string) {
+  // Disable Next.js caching for this function
+  noStore();
+
   try {
     const supabase = await createClient();
 
@@ -34,6 +38,13 @@ export async function getProjectStudioData(projectId: string) {
       .select('*')
       .in('track_id', trackIds)
       .order('created_at', { ascending: false });
+
+    // Get all comped sections for these tracks
+    const { data: compedSections } = await supabase
+      .from('project_comped_sections')
+      .select('*')
+      .in('track_id', trackIds)
+      .order('start_time', { ascending: true });
 
     // Get all comments for these tracks
     const { data: comments } = await supabase
@@ -78,6 +89,8 @@ export async function getProjectStudioData(projectId: string) {
           ...comment,
           profile: profiles?.find(p => p.id === comment.user_id) || null,
         })) || [],
+      compedSections: compedSections?.filter(s => s.track_id === track.id) || [],
+      isRetakeFolderOpen: track.is_retake_folder_open || false,
       mixer_settings: mixerSettings?.find(m => m.track_id === track.id) || null,
     }));
 

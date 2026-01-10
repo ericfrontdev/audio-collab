@@ -6,6 +6,7 @@ import { VUMeter } from './VUMeter'
 import { VolumeControl } from './VolumeControl'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useTranslations } from 'next-intl'
 
 interface TrackHeaderProps {
   trackId: string
@@ -52,6 +53,7 @@ export function TrackHeader({
   onRename,
   onCancelRename,
 }: TrackHeaderProps) {
+  const t = useTranslations('studio.trackHeader')
   const [isHovering, setIsHovering] = useState(false)
   const [editingName, setEditingName] = useState(trackName)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -104,7 +106,7 @@ export function TrackHeader({
       ref={setNodeRef}
       style={{ ...style, borderLeft: `3px solid ${trackColor}` }}
       className={`
-        relative flex w-52 h-[70px] flex-shrink-0
+        relative flex w-60 h-[70px] flex-shrink-0
         border-r border-b border-zinc-800
         transition-colors
         ${isSelected ? 'bg-zinc-800/60' : 'bg-zinc-900/60 hover:bg-zinc-800/40'}
@@ -120,7 +122,7 @@ export function TrackHeader({
         {...listeners}
         className="flex items-center justify-center w-8 h-full cursor-grab active:cursor-grabbing text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-700 flex-shrink-0 transition-colors"
         onClick={(e) => e.stopPropagation()}
-        title="Drag to reorder"
+        title={t('dragToReorder')}
       >
         <GripVertical className="w-5 h-5" />
       </button>
@@ -158,10 +160,10 @@ export function TrackHeader({
               e.stopPropagation()
               onImport(trackId)
             }}
-            className="w-5 h-5 flex items-center justify-center rounded-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors outline outline-1 outline-black"
-            title="Import audio"
+            className="w-6 h-6 flex items-center justify-center rounded-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors outline outline-1 outline-black"
+            title={t('importAudio')}
           >
-            <Upload className="w-3 h-3" />
+            <Upload className="w-3.5 h-3.5" />
           </button>
 
           {/* Solo button */}
@@ -171,7 +173,7 @@ export function TrackHeader({
               onSoloToggle(trackId)
             }}
             className={`
-              w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-sm transition-all outline outline-1 outline-black
+              w-6 h-6 flex items-center justify-center text-[11px] font-bold rounded-sm transition-all outline outline-1 outline-black
               ${
                 isSoloed
                   ? 'bg-green-600 text-white shadow-lg shadow-green-600/50'
@@ -189,7 +191,7 @@ export function TrackHeader({
               onMuteToggle(trackId)
             }}
             className={`
-              w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded-sm transition-all outline outline-1 outline-black
+              w-6 h-6 flex items-center justify-center text-[11px] font-bold rounded-sm transition-all outline outline-1 outline-black
               ${
                 isMuted
                   ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-600/50'
@@ -204,10 +206,10 @@ export function TrackHeader({
         {/* Row 2: Waveform icon + Fader + Stack button */}
         <div className="flex-1 px-2 pb-2 flex items-center gap-2">
           {/* Waveform icon */}
-          <div className="w-4 h-4 flex items-center justify-center text-zinc-600">
+          <div className="w-5 h-5 flex items-center justify-center text-zinc-600">
             <svg
-              width="14"
-              height="14"
+              width="18"
+              height="18"
               viewBox="0 0 14 14"
               fill="currentColor"
             >
@@ -222,24 +224,36 @@ export function TrackHeader({
           </div>
 
           {/* Volume fader */}
-          <VolumeControl
-            value={volume}
-            onChange={(newVolume) => onVolumeChange(trackId, newVolume)}
-            color={trackColor}
-            className="flex-1"
-          />
+          <div className="flex-1 max-w-[130px]">
+            <VolumeControl
+              value={volume}
+              onChange={(newVolume) => onVolumeChange(trackId, newVolume)}
+              color={trackColor}
+              className="w-full"
+            />
+          </div>
 
           {/* Takes stack button */}
           <button
             onClick={(e) => {
               e.stopPropagation()
-              onToggleTakes(trackId)
+              if (takesCount > 0) {
+                onToggleTakes(trackId)
+              }
             }}
-            className="w-5 h-5 flex items-center justify-center rounded-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors relative outline outline-1 outline-black"
-            title={`Takes (${takesCount})`}
+            disabled={takesCount === 0}
+            className={`
+              w-6 h-6 flex items-center justify-center rounded-sm transition-colors relative outline outline-1 outline-black
+              ${
+                takesCount === 0
+                  ? 'bg-zinc-900/50 text-zinc-700 cursor-not-allowed opacity-40'
+                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white cursor-pointer'
+              }
+            `}
+            title={takesCount === 0 ? t('noRetakes') : `${t('takes')} (${takesCount})`}
           >
-            <Layers className="w-3 h-3" />
-            {takesCount > 0 && (
+            <Layers className="w-3.5 h-3.5" />
+            {takesCount > 1 && (
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#9363f7] rounded-full flex items-center justify-center text-[8px] text-white font-bold">
                 {takesCount}
               </div>

@@ -53,6 +53,16 @@ export interface ProjectMixerSettings {
   updated_at: string;
 }
 
+export interface CompedSection {
+  id: string;
+  track_id: string;
+  take_id: string;
+  start_time: number; // Seconds
+  end_time: number; // Seconds
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * Extended types with related data (for UI components)
  */
@@ -63,6 +73,12 @@ export interface ProjectTrackWithDetails extends ProjectTrack {
   comments: ProjectTrackComment[];
   mixer_settings: ProjectMixerSettings;
   take_count: number;
+}
+
+export interface TrackWithRetakes extends ProjectTrack {
+  takes: ProjectTake[];
+  compedSections: CompedSection[];
+  isRetakeFolderOpen: boolean;
 }
 
 export interface ProjectTrackCommentWithProfile extends ProjectTrackComment {
