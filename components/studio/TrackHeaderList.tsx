@@ -37,7 +37,7 @@ interface TrackHeaderListProps {
   onCancelRename: () => void
   onTracksReorder: (trackIds: string[]) => void
   onRetakeActivated: (trackId: string, takeId: string, isCurrentlyActive: boolean) => void
-  onDeleteRetake: (takeId: string) => void
+  onDeleteRetake: (trackId: string, takeId: string, retakeNumber: number) => void
   readOnly?: boolean
 }
 
@@ -187,7 +187,7 @@ export function TrackHeaderList({
                           onSelect={onTrackSelect}
                           onImport={onImport}
                           onActivate={() => onRetakeActivated(track.id, retake.id, retake.is_active)}
-                          onDeleteRetake={onDeleteRetake}
+                          onDeleteRetake={(takeId) => onDeleteRetake(track.id, takeId, idx + 1)}
                           onContextMenu={onContextMenu}
                           readOnly={readOnly}
                         />

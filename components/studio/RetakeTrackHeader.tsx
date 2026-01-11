@@ -198,9 +198,7 @@ export function RetakeTrackHeader({
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                if (confirm(`Delete retake #${retakeNumber}?`)) {
-                  onDeleteRetake(takeId)
-                }
+                onDeleteRetake(takeId)
               }}
               className="w-6 h-6 flex items-center justify-center rounded-sm bg-zinc-800 hover:bg-red-600 text-zinc-400 hover:text-white transition-colors outline outline-1 outline-black"
               title="Delete retake"

@@ -15,6 +15,7 @@ import {
 } from '@/app/actions/studio/tracks'
 import { addTrackComment } from '@/app/actions/studio/comments'
 import { updateMixerSettings } from '@/app/actions/studio/mixer'
+import { deleteTake } from '@/app/actions/studio/takes'
 import {
   createCompedSection,
   deleteCompedSection,
@@ -35,6 +36,7 @@ import { TimelineRuler } from './TimelineRuler'
 import { useTonePlayback } from './hooks/useTonePlayback'
 import { useStudioTracks } from './hooks/useStudioTracks'
 import { useStudioTimeline } from './hooks/useStudioTimeline'
+import { useTranslations } from 'next-intl'
 
 interface StudioViewProps {
   projectId: string
@@ -100,6 +102,8 @@ interface TrackWithDetails extends ProjectTrack {
 }
 
 export function StudioView({ projectId, projectTitle, currentUserId, ownerId, locale, readOnly = false }: StudioViewProps) {
+  const t = useTranslations('studio.confirmDialog')
+
   const [tracks, setTracks] = useState<TrackWithDetails[]>([])
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -110,6 +114,12 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     trackId: string
     trackName: string
   }>({ isOpen: false, trackId: '', trackName: '' })
+  const [deleteRetakeConfirmation, setDeleteRetakeConfirmation] = useState<{
+    isOpen: boolean
+    trackId: string
+    takeId: string
+    retakeNumber: number
+  }>({ isOpen: false, trackId: '', takeId: '', retakeNumber: 0 })
   const [commentModal, setCommentModal] = useState<{
     isOpen: boolean
     trackId: string
@@ -655,25 +665,6 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     }
   }, [loadStudioData, tracks])
 
-  const handleDeleteRetake = useCallback(async (takeId: string) => {
-    console.log('🗑️ Deleting retake:', takeId)
-
-    try {
-      const { deleteTake } = await import('@/app/actions/studio/takes')
-      const result = await deleteTake(takeId)
-
-      if (result.success) {
-        toast.success('Retake deleted')
-        await loadStudioData()
-      } else {
-        toast.error(result.error || 'Failed to delete retake')
-      }
-    } catch (error) {
-      console.error('❌ Exception in handleDeleteRetake:', error)
-      toast.error('An error occurred while deleting retake')
-    }
-  }, [loadStudioData])
-
   const handleTrackContextMenu = (e: React.MouseEvent, trackId: string) => {
     e.preventDefault()
     const track = tracks.find(t => t.id === trackId)
@@ -810,6 +801,38 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
 
   const cancelDeleteTrack = () => {
     setDeleteConfirmation({ isOpen: false, trackId: '', trackName: '' })
+  }
+
+  const handleDeleteRetake = (trackId: string, takeId: string, retakeNumber: number) => {
+    setDeleteRetakeConfirmation({ isOpen: true, trackId, takeId, retakeNumber })
+  }
+
+  const confirmDeleteRetake = async () => {
+    const { trackId, takeId, retakeNumber } = deleteRetakeConfirmation
+    setDeleteRetakeConfirmation({ isOpen: false, trackId: '', takeId: '', retakeNumber: 0 })
+
+    const result = await deleteTake(takeId)
+    if (result.success) {
+      // Update tracks state to remove the deleted take
+      setTracks((prevTracks) =>
+        prevTracks.map((track) => {
+          if (track.id === trackId) {
+            return {
+              ...track,
+              takes: track.takes?.filter((t) => t.id !== takeId) || []
+            }
+          }
+          return track
+        })
+      )
+      toast.success(`Retake #${retakeNumber} deleted successfully`)
+    } else {
+      toast.error(result.error || 'Failed to delete retake')
+    }
+  }
+
+  const cancelDeleteRetake = () => {
+    setDeleteRetakeConfirmation({ isOpen: false, trackId: '', takeId: '', retakeNumber: 0 })
   }
 
   // Master channel handlers
@@ -1152,16 +1175,28 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         targetTrackId={selectedTrackId}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Track Confirmation Dialog */}
       <ConfirmDialog
         isOpen={deleteConfirmation.isOpen}
-        title="Delete Track"
-        message={`Are you sure you want to delete "${deleteConfirmation.trackName}"? This will permanently delete the track and all its audio files.`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={t('deleteTrack.title')}
+        message={t('deleteTrack.message', { trackName: deleteConfirmation.trackName })}
+        confirmText={t('deleteTrack.confirm')}
+        cancelText={t('deleteTrack.cancel')}
         variant="danger"
         onConfirm={confirmDeleteTrack}
         onCancel={cancelDeleteTrack}
+      />
+
+      {/* Delete Retake Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteRetakeConfirmation.isOpen}
+        title={t('deleteRetake.title')}
+        message={t('deleteRetake.message', { retakeNumber: deleteRetakeConfirmation.retakeNumber })}
+        confirmText={t('deleteRetake.confirm')}
+        cancelText={t('deleteRetake.cancel')}
+        variant="danger"
+        onConfirm={confirmDeleteRetake}
+        onCancel={cancelDeleteRetake}
       />
 
       {/* Add Comment Modal */}

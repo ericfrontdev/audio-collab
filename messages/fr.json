@@ -868,6 +868,20 @@
       "duplicate": "Dupliquer",
       "delete": "Supprimer"
     },
+    "confirmDialog": {
+      "deleteTrack": {
+        "title": "Supprimer la piste",
+        "message": "Êtes-vous sûr de vouloir supprimer \"{trackName}\" ? Cela supprimera définitivement la piste et tous ses fichiers audio.",
+        "confirm": "Supprimer",
+        "cancel": "Annuler"
+      },
+      "deleteRetake": {
+        "title": "Supprimer la retake",
+        "message": "Êtes-vous sûr de vouloir supprimer la retake #{retakeNumber} ? Cette action est irréversible.",
+        "confirm": "Supprimer",
+        "cancel": "Annuler"
+      }
+    },
     "retakes": {
       "activate": "Activer la retake",
       "deactivate": "Désactiver la retake"

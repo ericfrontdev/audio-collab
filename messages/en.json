@@ -867,6 +867,20 @@
       "duplicate": "Duplicate",
       "delete": "Delete"
     },
+    "confirmDialog": {
+      "deleteTrack": {
+        "title": "Delete Track",
+        "message": "Are you sure you want to delete \"{trackName}\"? This will permanently delete the track and all its audio files.",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      },
+      "deleteRetake": {
+        "title": "Delete Retake",
+        "message": "Are you sure you want to delete retake #{retakeNumber}? This cannot be undone.",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      }
+    },
     "retakes": {
       "activate": "Activate retake",
       "deactivate": "Deactivate retake"
