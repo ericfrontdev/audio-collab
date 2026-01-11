@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Edit3, Copy, Trash2 } from 'lucide-react'
 import { ColorPicker } from '@/components/ui/ColorPicker'
+import { useTranslations } from 'next-intl'
 
 interface TrackContextMenuProps {
   trackId: string
@@ -27,6 +28,7 @@ export function TrackContextMenu({
   onDuplicate,
   onDelete,
 }: TrackContextMenuProps) {
+  const t = useTranslations('studio.contextMenu')
   const menuRef = useRef<HTMLDivElement>(null)
   const [showColorPicker, setShowColorPicker] = useState(true)
 
@@ -101,7 +103,7 @@ export function TrackContextMenu({
           className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 flex items-center gap-3"
         >
           <Edit3 className="w-4 h-4" />
-          <span>Rename</span>
+          <span>{t('rename')}</span>
           <span className="ml-auto text-xs text-zinc-500">⌘R</span>
         </button>
 
@@ -113,7 +115,7 @@ export function TrackContextMenu({
           className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 flex items-center gap-3"
         >
           <Copy className="w-4 h-4" />
-          <span>Duplicate</span>
+          <span>{t('duplicate')}</span>
           <span className="ml-auto text-xs text-zinc-500">⌘D</span>
         </button>
 
@@ -125,7 +127,7 @@ export function TrackContextMenu({
           className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-zinc-800 flex items-center gap-3"
         >
           <Trash2 className="w-4 h-4" />
-          <span>Delete</span>
+          <span>{t('delete')}</span>
           <span className="ml-auto text-xs text-zinc-500">⌘⌫</span>
         </button>
       </div>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { createTrack } from '@/app/actions/studio/tracks';
 import { toast } from 'react-toastify';
 import { ProjectTrack, AUDIO_CONSTRAINTS, isAudioFile, isFileSizeValid } from '@/lib/types/studio';
+import { useTranslations } from 'next-intl';
 
 // Generate waveform peaks from audio file
 // Generates a fixed number of peaks per second for consistent visual scaling
@@ -63,6 +64,8 @@ export function UploadTrackModal({
   droppedFile,
   targetTrackId,
 }: UploadTrackModalProps) {
+  const t = useTranslations('studio.uploadModal');
+
   // Find target track if specified
   const targetTrack = targetTrackId ? existingTracks.find((t) => t.id === targetTrackId) : null;
 
@@ -91,13 +94,13 @@ export function UploadTrackModal({
     if (droppedFile && isOpen) {
       // Validate file type
       if (!isAudioFile(droppedFile)) {
-        toast.error('Please select a valid audio file (MP3, WAV, FLAC, M4A, or OGG)');
+        toast.error(t('errors.invalidFile'));
         return;
       }
 
       // Validate file size
       if (!isFileSizeValid(droppedFile)) {
-        toast.error(`File size must be less than ${AUDIO_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024)}MB`);
+        toast.error(t('errors.fileTooLarge', { maxSize: AUDIO_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024) }));
         return;
       }
 
@@ -133,7 +136,7 @@ export function UploadTrackModal({
 
     // Validate file size
     if (!isFileSizeValid(file)) {
-      toast.error(`File size must be less than ${AUDIO_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      toast.error(t('errors.fileTooLarge', { maxSize: AUDIO_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024) }));
       return;
     }
 
@@ -145,17 +148,17 @@ export function UploadTrackModal({
 
     try {
       if (!selectedFile) {
-        toast.error('Please select an audio file');
+        toast.error(t('errors.selectFile'));
         return;
       }
 
       if (uploadType === 'new-track' && !trackName.trim()) {
-        toast.error('Please enter a track name');
+        toast.error(t('errors.enterName'));
         return;
       }
 
       if (uploadType === 'add-take' && !selectedTrackId) {
-        toast.error('Please select a track');
+        toast.error(t('errors.selectTrack'));
         return;
       }
 
@@ -313,8 +316,8 @@ export function UploadTrackModal({
       setUploadProgress(100);
       toast.success(
         uploadType === 'new-track'
-          ? 'Track created successfully!'
-          : 'Take added successfully!'
+          ? t('success.trackCreated')
+          : t('success.takeAdded')
       );
 
       // Reset form
@@ -353,10 +356,10 @@ export function UploadTrackModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
           <div>
-            <h2 className="text-xl font-semibold text-white">Upload Audio</h2>
+            <h2 className="text-xl font-semibold text-white">{t('title')}</h2>
             {targetTrack && (
               <p className="text-sm text-zinc-400 mt-1">
-                Pour la piste : <span className="text-white font-medium">{targetTrack.name}</span>
+                {t('forTrack')} <span className="text-white font-medium">{targetTrack.name}</span>
               </p>
             )}
           </div>
@@ -375,7 +378,7 @@ export function UploadTrackModal({
           {!targetTrackId && (
             <div>
               <label className="block text-sm font-medium text-white mb-3">
-                Upload Type
+                {t('uploadType')}
               </label>
               <div className="flex gap-4">
                 <label className="flex-1">
@@ -389,8 +392,8 @@ export function UploadTrackModal({
                     className="sr-only peer"
                   />
                   <div className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-zinc-700 cursor-pointer peer-checked:border-primary peer-checked:bg-primary/10 hover:border-zinc-600 transition-all">
-                    <div className="text-sm font-medium text-white">New Track</div>
-                    <div className="text-xs text-gray-400 mt-1">Create a new track</div>
+                    <div className="text-sm font-medium text-white">{t('newTrack')}</div>
+                    <div className="text-xs text-gray-400 mt-1">{t('newTrackDesc')}</div>
                   </div>
                 </label>
 
@@ -405,14 +408,14 @@ export function UploadTrackModal({
                     className="sr-only peer"
                   />
                   <div className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-zinc-700 cursor-pointer peer-checked:border-primary peer-checked:bg-primary/10 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed hover:border-zinc-600 transition-all">
-                    <div className="text-sm font-medium text-white">Add Take</div>
-                    <div className="text-xs text-gray-400 mt-1">Add to existing track</div>
+                    <div className="text-sm font-medium text-white">{t('addTake')}</div>
+                    <div className="text-xs text-gray-400 mt-1">{t('addTakeDesc')}</div>
                   </div>
                 </label>
               </div>
               {existingTracks.length === 0 && (
                 <p className="mt-2 text-xs text-gray-500">
-                  Create your first track to enable adding takes
+                  {t('createFirstTrack')}
                 </p>
               )}
             </div>
@@ -422,14 +425,14 @@ export function UploadTrackModal({
           {uploadType === 'new-track' && (
             <div>
               <label htmlFor="trackName" className="block text-sm font-medium text-white mb-2">
-                Track Name <span className="text-red-500">*</span>
+                {t('trackName')} <span className="text-red-500">{t('required')}</span>
               </label>
               <input
                 type="text"
                 id="trackName"
                 value={trackName}
                 onChange={(e) => setTrackName(e.target.value)}
-                placeholder="e.g., Lead Vocals, Bass, Drums"
+                placeholder={t('trackNamePlaceholder')}
                 disabled={isUploading}
                 className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
                 maxLength={100}
@@ -441,7 +444,7 @@ export function UploadTrackModal({
           {!targetTrackId && uploadType === 'add-take' && existingTracks.length > 0 && (
             <div>
               <label htmlFor="trackSelect" className="block text-sm font-medium text-white mb-2">
-                Select Track <span className="text-red-500">*</span>
+                {t('selectTrack')} <span className="text-red-500">{t('required')}</span>
               </label>
               <select
                 id="trackSelect"
@@ -450,7 +453,7 @@ export function UploadTrackModal({
                 disabled={isUploading}
                 className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
               >
-                <option value="">Choose a track...</option>
+                <option value="">{t('chooseTrack')}</option>
                 {existingTracks.map((track) => (
                   <option key={track.id} value={track.id}>
                     {track.name}
@@ -463,13 +466,13 @@ export function UploadTrackModal({
           {/* File Input */}
           <div>
             <label className="block text-sm font-medium text-white mb-2">
-              Audio File <span className="text-red-500">*</span>
+              {t('audioFile')} <span className="text-red-500">{t('required')}</span>
             </label>
             <div className="flex items-center gap-3">
               <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-zinc-700 hover:border-primary/50 cursor-pointer transition-colors">
                 <Upload className="w-5 h-5 text-gray-400" />
                 <span className="text-sm text-gray-400">
-                  {selectedFile ? selectedFile.name : 'Choose audio file'}
+                  {selectedFile ? selectedFile.name : t('chooseFile')}
                 </span>
                 <input
                   type="file"
@@ -491,11 +494,11 @@ export function UploadTrackModal({
               )}
             </div>
             <p className="mt-2 text-xs text-gray-500">
-              Supported formats: MP3, WAV, FLAC, M4A, OGG (max {AUDIO_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024)}MB)
+              {t('supportedFormats', { maxSize: AUDIO_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024) })}
             </p>
             {selectedFile && (
               <div className="mt-2 text-xs text-gray-400">
-                File size: {(selectedFile.size / (1024 * 1024)).toFixed(2)}MB
+                {t('fileSize')} {(selectedFile.size / (1024 * 1024)).toFixed(2)}MB
               </div>
             )}
           </div>
@@ -504,7 +507,7 @@ export function UploadTrackModal({
           {isUploading && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Uploading...</span>
+                <span className="text-gray-400">{t('uploading')}</span>
                 <span className="text-white">{uploadProgress}%</span>
               </div>
               <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
@@ -524,16 +527,16 @@ export function UploadTrackModal({
               onClick={resetAndClose}
               disabled={isUploading}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={isUploading || !selectedFile}>
               {isUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Uploading...
+                  {t('uploading')}
                 </>
               ) : (
-                'Upload'
+                t('upload')
               )}
             </Button>
           </div>

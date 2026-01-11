@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 interface AddCommentModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function AddCommentModal({
   onSubmit,
   onClose,
 }: AddCommentModalProps) {
+  const t = useTranslations('studio.commentModal');
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -69,7 +71,7 @@ export function AddCommentModal({
             {userAvatar ? (
               <Image
                 src={userAvatar}
-                alt="Your avatar"
+                alt={t('yourAvatar')}
                 width={32}
                 height={32}
                 className="rounded-full"
@@ -87,7 +89,7 @@ export function AddCommentModal({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Add a comment..."
+            placeholder={t('placeholder')}
             className="flex-1 bg-zinc-800 text-white text-sm px-3 py-2 rounded-lg border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             autoFocus
             maxLength={1000}
