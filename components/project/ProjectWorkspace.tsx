@@ -7,13 +7,14 @@ import { StudioView } from '../studio/StudioView'
 
 interface ProjectWorkspaceProps {
   projectId: string
+  projectTitle: string
   currentUserId?: string
   ownerId?: string
   locale?: string
   readOnly?: boolean
 }
 
-export function ProjectWorkspace({ projectId, currentUserId, ownerId, locale, readOnly = false }: ProjectWorkspaceProps) {
+export function ProjectWorkspace({ projectId, projectTitle, currentUserId, ownerId, locale, readOnly = false }: ProjectWorkspaceProps) {
   const [isChatOpen, setIsChatOpen] = useState(true)
 
   return (
@@ -22,6 +23,7 @@ export function ProjectWorkspace({ projectId, currentUserId, ownerId, locale, re
       <div className="flex-1 overflow-hidden">
         <StudioView
           projectId={projectId}
+          projectTitle={projectTitle}
           currentUserId={currentUserId}
           ownerId={ownerId}
           locale={locale}

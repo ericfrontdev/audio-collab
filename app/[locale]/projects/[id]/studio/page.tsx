@@ -38,6 +38,7 @@ export default async function ProjectStudioPage({
   return (
     <ProjectWorkspace
       projectId={id}
+      projectTitle={project.title}
       currentUserId={user?.id}
       ownerId={project.owner_id}
       locale={locale}
