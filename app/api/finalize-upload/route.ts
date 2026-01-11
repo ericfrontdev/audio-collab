@@ -47,13 +47,17 @@ export async function POST(request: NextRequest) {
       .from('project-audio')
       .getPublicUrl(filePath)
 
-    // Deactivate all existing takes for this track
-    await supabase
+    // Check if this is the first take for this track
+    const { count: existingTakesCount } = await supabase
       .from('project_takes')
-      .update({ is_active: false })
+      .select('*', { count: 'exact', head: true })
       .eq('track_id', trackId)
 
+    const isFirstTake = existingTakesCount === 0
+
     // Create take record
+    // For retakes (not first take), is_active defaults to false
+    // For first take, the trigger will set it to true
     const { data: take, error: takeError } = await supabase
       .from('project_takes')
       .insert({
@@ -62,7 +66,7 @@ export async function POST(request: NextRequest) {
         duration: 0, // Will be updated later if needed
         file_size: fileSize || null,
         file_format: fileFormat || null,
-        is_active: true,
+        is_active: isFirstTake, // Only first take is active, retakes are inactive by default
         uploaded_by: user.id,
         waveform_data: waveformData || null,
       })
