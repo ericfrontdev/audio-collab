@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layouts/AppLayout';
 import { ClubHeader } from '@/components/clubs/ClubHeader';
 import { ClubTabs } from '@/components/clubs/ClubTabs';
 import { RightSidebar } from '@/components/navigation/RightSidebar';
+import { getTranslations } from 'next-intl/server';
 
 // Types for club members with profile data
 interface ClubMemberProfile {
@@ -41,6 +42,9 @@ export default async function ClubPage({
   params: Promise<{ locale: string; slug: string }>;
 }) {
   const { locale, slug } = await params;
+  const tSidebar = await getTranslations('clubs.sidebar');
+  const tAbout = await getTranslations('clubs.aboutTab');
+  const tDescriptions = await getTranslations('clubs.descriptions');
   const supabase = await createClient();
 
   // Get current user
@@ -188,16 +192,17 @@ export default async function ClubPage({
           <RightSidebar
             profile={userProfile}
             quickActionsProps={{ clubId: club.id, isMember }}
+            showFooter={true}
           >
             {/* Club Info Card */}
             <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
-              <h3 className="text-sm font-semibold text-white mb-2">About this club</h3>
+              <h3 className="text-sm font-semibold text-white mb-2">{tSidebar('aboutThisClub')}</h3>
               <p className="text-xs text-gray-400 leading-relaxed">
-                {club.description || 'No description available'}
+                {tDescriptions(club.genre as any) || club.description || tAbout('noDescription')}
               </p>
               {club.rules && (
                 <div className="mt-3 pt-3 border-t border-zinc-800">
-                  <h4 className="text-xs font-semibold text-white mb-1">Rules</h4>
+                  <h4 className="text-xs font-semibold text-white mb-1">{tAbout('rules')}</h4>
                   <p className="text-xs text-gray-400 leading-relaxed">{club.rules}</p>
                 </div>
               )}

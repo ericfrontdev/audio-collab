@@ -1,0 +1,979 @@
+{
+  "common": {
+    "appName": "AudioCollab",
+    "tagline": "Collaborative Music Studio",
+    "footerText": "Made by indie musicians for indie musicians",
+    "copyright": "© 2026 AudioCollab",
+    "editProfile": "Edit Profile",
+    "signOut": "Sign out",
+    "following": "Following",
+    "followers": "Followers",
+    "soundcloud": "SoundCloud",
+    "instagram": "Instagram",
+    "twitter": "Twitter / X",
+    "youtube": "YouTube",
+    "website": "Website"
+  },
+  "nav": {
+    "feed": "Feed",
+    "explore": "Explore",
+    "notifications": "Notifications",
+    "messages": "Messages",
+    "clubs": "Clubs",
+    "profile": "Profile",
+    "settings": "Settings",
+    "projects": "Projects",
+    "myProjects": "My Projects",
+    "clubProjects": "Club Projects",
+    "login": "Login",
+    "logout": "Logout",
+    "signup": "Sign Up"
+  },
+  "home": {
+    "title": "AudioCollab",
+    "subtitle": "Collaborative Music Studio",
+    "description": "Create, collaborate, and remix music with musicians around the world"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your AudioCollab account",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signupLink": "Sign up"
+    },
+    "signup": {
+      "title": "Create your account",
+      "subtitle": "Join AudioCollab and start collaborating",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Optional",
+      "displayNameHint": "Leave blank to use your email prefix",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Create Account",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "myProjects": "My Projects",
+    "myProjectsSubtitle": "Manage and collaborate on your music projects",
+    "noProjects": "No projects yet. Start creating!",
+    "noProjectsYet": "No projects yet",
+    "createFirstProject": "Create your first project to start collaborating",
+    "createYourFirstProject": "Create Your First Project",
+    "newProject": "New Project",
+    "status": {
+      "active": "Active",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "on_hold": "On Hold"
+    },
+    "card": {
+      "createdBy": "Created by",
+      "me": "me",
+      "unknown": "Unknown"
+    },
+    "create": {
+      "title": "Create New Project",
+      "subtitle": "Start a new collaborative project in",
+      "projectTitle": "Project Title",
+      "projectName": "Project Name",
+      "projectNamePlaceholder": "My Awesome Track",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe your project...",
+      "descriptionOptional": "Optional - Add details about your project",
+      "bpm": "BPM",
+      "key": "Key",
+      "tags": "Tags",
+      "tagsPlaceholder": "Add tags (comma separated)",
+      "mode": "Visibility",
+      "modePrivate": "Private",
+      "modePublic": "Public",
+      "modeRemixable": "Remixable",
+      "submit": "Create Project",
+      "creating": "Creating...",
+      "cancel": "Cancel",
+      "success": "Project created successfully!",
+      "error": "Failed to create project"
+    },
+    "edit": {
+      "title": "Edit Project",
+      "submit": "Save Changes"
+    },
+    "delete": {
+      "confirm": "Are you sure you want to delete this project?",
+      "button": "Delete Project"
+    },
+    "details": {
+      "owner": "Owner",
+      "createdAt": "Created",
+      "updatedAt": "Updated",
+      "stems": "Stems",
+      "noStems": "No stems yet",
+      "versions": "Versions",
+      "comments": "Comments"
+    },
+    "clubProjects": {
+      "title": "Club Projects",
+      "subtitle": "Browse and join projects from your clubs",
+      "showAll": "Show All",
+      "hideNotJoined": "Hide Not Joined",
+      "noProjects": "No projects available. Join a club to see club projects!",
+      "noJoinedProjects": "No joined projects. Join a project to see it here!",
+      "openProject": "Open Project"
+    }
+  },
+  "clubs": {
+    "title": "Musical Clubs",
+    "subtitle": "Join genre-based communities, share projects, and collaborate with musicians",
+    "noClubs": "No clubs yet",
+    "noClubsDescription": "Clubs will appear here once they are created",
+    "defaultDescription": "A community for music lovers and creators",
+    "joined": "Joined",
+    "memberSingular": "member",
+    "memberPlural": "members",
+    "projects": "projects",
+    "joinClub": "Join Club",
+    "leaveClub": "Leave Club",
+    "genres": {
+      "Lo-fi": "Lo-fi",
+      "Hip-Hop": "Hip-Hop",
+      "Jazz": "Jazz",
+      "Rock": "Rock",
+      "Electronic": "Electronic",
+      "Pop": "Pop",
+      "R&B": "R&B",
+      "Indie": "Indie",
+      "Metal": "Metal",
+      "Country": "Country",
+      "Classical": "Classical",
+      "Ambient": "Ambient",
+      "Blues": "Blues"
+    },
+    "descriptions": {
+      "Lo-fi": "Chill beats and relaxing vibes",
+      "Hip-Hop": "Rap, beats, and urban music",
+      "Jazz": "Improvisation and smooth melodies",
+      "Rock": "Guitar-driven anthems and energy",
+      "Electronic": "Synths, EDM, and digital sounds",
+      "Pop": "Catchy melodies and mainstream hits",
+      "R&B": "Rhythm and blues with soul",
+      "Indie": "Independent and alternative sounds",
+      "Metal": "Heavy riffs and intense energy",
+      "Country": "Storytelling and acoustic vibes",
+      "Classical": "Orchestral and timeless compositions",
+      "Ambient": "Atmospheric and experimental sounds"
+    },
+    "feed": {
+      "joinToView": "Join the club to see the feed",
+      "privateDescription": "Club feeds are private to members only. Join {clubName} to participate in discussions.",
+      "loading": "Loading club feed...",
+      "tryAgain": "Try again",
+      "noPosts": "No posts yet",
+      "beFirst": "Be the first to start a conversation in {clubName}!"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "feed": "Feed",
+      "discussions": "Discussions",
+      "projects": "Projects",
+      "challenges": "Challenges",
+      "remixes": "Remixes",
+      "members": "Members",
+      "about": "About"
+    },
+    "projectsTab": {
+      "title": "Projects",
+      "newProject": "New Project",
+      "noProjects": "No projects yet",
+      "createFirstProject": "Create First Project"
+    },
+    "membersTab": {
+      "title": "Members",
+      "noMembers": "No members yet"
+    },
+    "aboutTab": {
+      "title": "About",
+      "description": "Description",
+      "noDescription": "No description available",
+      "genre": "Genre",
+      "rules": "Rules",
+      "stats": "Stats"
+    },
+    "sidebar": {
+      "aboutThisClub": "About this club"
+    },
+    "overview": {
+      "discussionsCount": "Discussions",
+      "projectsCount": "Projects",
+      "challengesCount": "Challenges",
+      "membersCount": "Members"
+    },
+    "discussions": {
+      "title": "Discussions",
+      "newDiscussion": "New Discussion",
+      "noDiscussions": "No discussions yet",
+      "emptyMessage": "Share ideas, ask questions, or start a conversation",
+      "beFirst": "Be the first to start a conversation!",
+      "replies": "replies"
+    },
+    "projects": {
+      "title": "Club Projects",
+      "createProject": "Create Project",
+      "noProjects": "No projects shared yet"
+    },
+    "challenges": {
+      "title": "Club Challenges",
+      "noChallenges": "No challenges yet",
+      "status": {
+        "active": "Active",
+        "upcoming": "Upcoming",
+        "ended": "Ended"
+      },
+      "starts": "Starts",
+      "ends": "Ends"
+    },
+    "remixes": {
+      "title": "Club Remixes",
+      "noRemixes": "No remixes yet",
+      "emptyMessage": "Club members haven't created any remixes yet. Be the first!",
+      "badge": "Remix",
+      "remixOf": "Remix of"
+    },
+    "members": {
+      "title": "Club Members",
+      "noMembers": "No members yet",
+      "role": {
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "joined": "Joined"
+    }
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage your AudioCollab platform",
+    "nav": {
+      "dashboard": "Dashboard",
+      "clubs": "Clubs",
+      "users": "Users",
+      "projects": "Projects",
+      "backToSite": "Back to Site"
+    },
+    "stats": {
+      "totalUsers": "Total Users",
+      "totalProjects": "Total Projects",
+      "totalClubs": "Total Clubs"
+    },
+    "recentUsers": "Recent Users",
+    "recentProjects": "Recent Projects",
+    "clubs": {
+      "title": "Manage Clubs",
+      "subtitle": "Create and manage musical genre clubs",
+      "newClub": "New Club",
+      "noClubs": "No clubs created yet. Create your first musical genre club!",
+      "table": {
+        "name": "Name",
+        "slug": "Slug",
+        "visibility": "Visibility",
+        "members": "Members",
+        "projects": "Projects",
+        "actions": "Actions",
+        "view": "View",
+        "edit": "Edit"
+      }
+    }
+  },
+  "remixes": {
+    "title": "Remixes",
+    "remixThisProject": "Remix this project",
+    "badge": "Remix",
+    "remixOf": "Remix of",
+    "noRemixes": "No remixes yet",
+    "creating": "Creating remix..."
+  },
+  "profile": {
+    "view": {
+      "banner": "Profile banner",
+      "editProfile": "Edit Profile",
+      "roles": "ROLES",
+      "genres": "GENRES",
+      "clubs": "CLUBS",
+      "links": "LINKS",
+      "soundcloud": "SoundCloud",
+      "instagram": "Instagram",
+      "youtube": "YouTube",
+      "website": "Website",
+      "posts": "Posts",
+      "projects": "Projects",
+      "noProjects": "No projects yet.",
+      "createFirstProject": "Create your first project!"
+    },
+    "edit": {
+      "title": "Edit Profile",
+      "subtitle": "Update your profile information",
+      "username": "Username",
+      "usernameHint": "Username cannot be changed",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Your display name",
+      "avatar": "Avatar",
+      "avatarChange": "Change Avatar",
+      "banner": "Banner Image",
+      "bannerChange": "Change Banner",
+      "bio": "Bio",
+      "bioPlaceholder": "Tell us about yourself...",
+      "musicalRoles": "Musical Roles",
+      "genres": "Genres",
+      "socialLinks": "Social Links",
+      "soundcloud": "SoundCloud URL",
+      "instagram": "Instagram URL",
+      "twitter": "Twitter URL",
+      "youtube": "YouTube URL",
+      "website": "Website URL",
+      "privacy": "Privacy",
+      "publicProfile": "Public Profile",
+      "publicProfileHint": "Make your profile visible to everyone",
+      "submit": "Save Changes",
+      "cancel": "Cancel",
+      "success": "Profile updated successfully!",
+      "error": "Failed to update profile"
+    }
+  },
+  "multitrack": {
+    "stems": {
+      "title": "Stems",
+      "addStem": "Add Stem",
+      "noStems": "No stems yet",
+      "upload": "Upload Stem",
+      "name": "Stem Name",
+      "volume": "Volume",
+      "pan": "Pan",
+      "mute": "Mute",
+      "solo": "Solo",
+      "delete": "Delete"
+    },
+    "player": {
+      "play": "Play",
+      "pause": "Pause",
+      "stop": "Stop",
+      "mixer": "Mixer",
+      "waveform": "Waveform",
+      "timeline": "Timeline"
+    },
+    "comments": {
+      "timeline": "Timeline Comments",
+      "noComments": "No timeline comments yet",
+      "addComment": "Add comment at this time",
+      "atTime": "at"
+    },
+    "discussions": {
+      "title": "Discussion",
+      "noMessages": "No messages yet",
+      "startConversation": "Start the conversation",
+      "typeMessage": "Type a message...",
+      "send": "Send"
+    },
+    "versions": {
+      "title": "Versions",
+      "noVersions": "No versions yet",
+      "createVersion": "Create Version",
+      "label": "Version Label",
+      "notes": "Notes"
+    },
+    "collaborators": {
+      "title": "Collaborators",
+      "addCollaborator": "Add Collaborator",
+      "noCollaborators": "No collaborators yet",
+      "instrument": "Instrument",
+      "role": "Role"
+    }
+  },
+  "projectHall": {
+    "hero": {
+      "members": "members",
+      "member": "member",
+      "created": "Created",
+      "untitledProject": "Untitled Project"
+    },
+    "info": {
+      "title": "Project Info",
+      "bpm": "BPM",
+      "key": "Key",
+      "mode": "Mode",
+      "visibility": "Visibility",
+      "studioAccess": "Studio Access",
+      "status": "Status",
+      "studioVisibility": "Studio Visibility",
+      "modeValues": {
+        "private": "Private",
+        "public": "Public",
+        "remixable": "Remixable"
+      },
+      "studioVisibilityValues": {
+        "membersOnly": "Members Only",
+        "public": "Public Studio"
+      },
+      "statusValues": {
+        "active": "Active",
+        "inProgress": "In Progress",
+        "completed": "Completed",
+        "archived": "Archived"
+      }
+    },
+    "members": {
+      "title": "Members"
+    },
+    "timeline": {
+      "title": "Timeline",
+      "projectCreated": "Project Created",
+      "lastUpdated": "Last Updated",
+      "completed": "Completed",
+      "versionsSaved": "version saved",
+      "versionsSavedPlural": "versions saved",
+      "relativeTime": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "daysAgo": "{days} days ago",
+        "weeksAgo": "{weeks} weeks ago",
+        "monthsAgo": "{months} months ago",
+        "yearsAgo": "{years} years ago"
+      }
+    },
+    "discussion": {
+      "title": "Discussion",
+      "placeholder": "Share an update, ask a question, or start a discussion... (Enter to post, Shift+Enter for new line)",
+      "post": "Post",
+      "posting": "Posting...",
+      "charCount": "{current}/{max}",
+      "noPosts": "No posts yet",
+      "beFirst": "Be the first to start a discussion!",
+      "loginPrompt": "Log in to join the discussion",
+      "errors": {
+        "mustLogin": "You must be logged in to post",
+        "empty": "Post cannot be empty",
+        "tooLong": "Post too long (max 2000 characters)"
+      },
+      "success": "Post created successfully!"
+    },
+    "hallPost": {
+      "unknownUser": "Unknown User",
+      "deletePost": "Delete post",
+      "success": {
+        "deleted": "Post deleted successfully!"
+      },
+      "errors": {
+        "deleteFailed": "Failed to delete post",
+        "deleteError": "An error occurred while deleting"
+      }
+    },
+    "coverUpload": {
+      "dropzone": "Drop cover image here or click to upload",
+      "recommended": "Recommended: 1200x400px (3:1 ratio)",
+      "formats": "JPEG, PNG, WEBP, GIF (max 5MB)",
+      "chooseFile": "Choose File",
+      "uploading": "Uploading...",
+      "removing": "Deleting...",
+      "removeCover": "Remove Cover",
+      "noCover": "No cover image",
+      "errors": {
+        "invalidType": "Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed.",
+        "tooLarge": "File too large. Maximum size is 5MB.",
+        "uploadFailed": "Failed to upload cover image",
+        "deleteFailed": "Failed to delete cover image",
+        "uploadError": "An error occurred while uploading",
+        "deleteError": "An error occurred while deleting"
+      },
+      "success": {
+        "uploaded": "Cover image uploaded successfully!",
+        "deleted": "Cover image deleted successfully!"
+      }
+    },
+    "enterStudio": {
+      "enter": "Enter Studio",
+      "viewReadOnly": "View Studio (Read-Only)",
+      "private": "Private Studio",
+      "privateHint": "(Members only)"
+    },
+    "joinProject": {
+      "button": "Join Project",
+      "joining": "Joining...",
+      "error": "Already a member of this project"
+    },
+    "readOnlyBanner": "👁️ View-Only Mode - You're viewing this studio in read-only mode. Join the project to edit and collaborate."
+  },
+  "home": {
+    "hero": {
+      "badge": "Beta Launch - Free for Early Adopters",
+      "title1": "Next-Gen Music Collaboration",
+      "title2": "for Independent Musicians",
+      "subtitle": "Comment on waveforms with precise timestamps. Adjust volume, pan, solo and mute for rough mixing in real-time. Collaborate with zero friction.",
+      "socialProof": "🎁 First 1,000 users get lifetime perks"
+    },
+    "problem": {
+      "title": "Tired of the Old Way?",
+      "issue1": "Emailing tracks back and forth",
+      "issue2": "Losing version history",
+      "issue3": "Vague feedback like 'sounds good'",
+      "issue4": "DAW sessions that won't open"
+    },
+    "solution": {
+      "title": "The AudioCollab Way",
+      "benefit1": "Real-time collaboration in the browser",
+      "benefit2": "Full version history",
+      "benefit3": "Precise waveform comments",
+      "benefit4": "Works with any DAW"
+    },
+    "features": {
+      "title": "Everything You Need",
+      "subtitle": "Powerful tools built for modern music collaboration",
+      "waveform": {
+        "title": "Waveform Comments",
+        "description": "Pin feedback to exact moments in the track"
+      },
+      "mixing": {
+        "title": "Rough Mixing Tools",
+        "description": "Adjust volume, pan, solo and mute in real-time"
+      },
+      "versions": {
+        "title": "Version Control",
+        "description": "Never lose a take with automatic versioning"
+      },
+      "studio": {
+        "title": "Project Studios",
+        "description": "Organize tracks, comments, and collaborators"
+      },
+      "remix": {
+        "title": "Remix Anything",
+        "description": "Fork projects to create your own versions"
+      },
+      "clubs": {
+        "title": "Music Clubs",
+        "description": "Join communities and collaborate with musicians"
+      }
+    },
+    "cta": {
+      "title": "Ready to Collaborate?",
+      "subtitle": "Join thousands of musicians creating together",
+      "button": "Get Early Access"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Welcome back to AudioCollab",
+    "logout": "Logout",
+    "profileInformation": "Profile Information",
+    "username": "Username",
+    "displayName": "Display Name",
+    "email": "Email",
+    "yourProjects": "Your Projects",
+    "noProjectsYet": "No projects yet. Start creating!",
+    "recentActivity": "Recent Activity",
+    "quickActions": "Quick Actions"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "newProject": "New Project",
+    "myProjects": "My Projects",
+    "profile": "Profile",
+    "settings": "Settings",
+    "selectClub": "Please select a club to create your project in",
+    "mustJoinClub": "You must join the club to create a project"
+  },
+  "explore": {
+    "title": "Explore Projects",
+    "subtitle": "Discover public music projects from the AudioCollab community",
+    "filters": {
+      "all": "All Projects",
+      "genre": "Genre",
+      "recent": "Recent",
+      "popular": "Popular"
+    },
+    "noProjectsYet": "No projects yet",
+    "noProjectsDescription": "Be the first to create a project and share it with the community!",
+    "noProjects": "No projects found",
+    "loading": "Loading projects..."
+  },
+  "messaging": {
+    "title": "Messages",
+    "subtitle": "Send private messages to other users",
+    "selectConversation": "Select a conversation to start messaging",
+    "startNewConversation": "or start a new conversation",
+    "privateMessaging": "Private Messaging",
+    "privateMessagingDescription": "Send private messages to other musicians. Start conversations, collaborate on projects, and build your network.",
+    "newConversation": "New Conversation",
+    "newMessage": "New Message",
+    "search": "Search users...",
+    "typeMessage": "Type a message... (Ctrl+Enter to send)",
+    "send": "Send",
+    "ctrlEnterToSend": "Ctrl+Enter to send",
+    "noConversationsYet": "No conversations yet",
+    "noConversations": "Start a new conversation to get started",
+    "noMessagesYet": "No messages yet",
+    "sendMessageToStart": "Send a message to start the conversation",
+    "noUsersFound": "No users found",
+    "you": "You",
+    "delete": "Delete",
+    "edit": "Edit",
+    "errors": {
+      "cannotEmpty": "Message cannot be empty",
+      "loadFailed": "Failed to load conversations",
+      "sendFailed": "Failed to send message",
+      "searchFailed": "Failed to search users",
+      "conversationFailed": "Failed to create conversation"
+    },
+    "success": {
+      "updated": "Message updated",
+      "deleted": "Message deleted"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Stay updated with your activity",
+    "comingSoon": "Coming Soon",
+    "description": "We're building a comprehensive notification system to keep you updated on all your AudioCollab activity. Stay tuned for real-time updates on your projects, collaborations, and community interactions.",
+    "upcomingFeatures": "Upcoming Features",
+    "features": {
+      "projectUpdates": {
+        "title": "Project Updates",
+        "description": "Get notified when someone comments on your tracks or mentions you"
+      },
+      "newFollowers": {
+        "title": "New Followers",
+        "description": "Know when someone starts following your profile"
+      },
+      "likesReactions": {
+        "title": "Likes & Reactions",
+        "description": "See when people like your posts, projects, or tracks"
+      },
+      "collaborationRequests": {
+        "title": "Collaboration Requests",
+        "description": "Receive notifications when someone wants to collaborate on a project"
+      }
+    },
+    "feedback": "Want to suggest a notification type? Let us know through feedback!"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account and preferences",
+    "comingSoon": "Coming Soon",
+    "description": "We're working hard to bring you a comprehensive settings experience. Soon you'll be able to customize your AudioCollab experience to your preferences.",
+    "upcomingFeatures": "Upcoming Features",
+    "features": {
+      "language": {
+        "title": "Language Preferences",
+        "description": "Choose your preferred language for the interface"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Manage email and push notification preferences"
+      },
+      "audio": {
+        "title": "Audio Preferences",
+        "description": "Configure sample rate, buffer size for studio"
+      },
+      "privacy": {
+        "title": "Privacy & Security",
+        "description": "Control who can see your content and block users"
+      },
+      "account": {
+        "title": "Account Settings",
+        "description": "Change password and manage your account"
+      }
+    },
+    "feedback": "Want to suggest a feature? Let us know through feedback!"
+  },
+  "onboarding": {
+    "welcome": "Welcome to AudioCollab",
+    "stepLabels": {
+      "createProfile": "Create Profile",
+      "joinClubs": "Join Clubs",
+      "getStarted": "Get Started"
+    },
+    "step1": {
+      "title": "Create your profile",
+      "subtitle": "Tell us about yourself and your music",
+      "username": "Username",
+      "usernameDescription": "Your unique identifier on AudioCollab",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Optional",
+      "displayNameDescription": "How you want to be called (optional)",
+      "profilePicture": "Profile Picture",
+      "avatarPreview": "Avatar preview",
+      "uploadPicture": "Upload your profile picture (optional)",
+      "bio": "Bio",
+      "bioPlaceholder": "Tell us about your music journey...",
+      "musicalRoles": "Musical Roles",
+      "addCustomRole": "Add custom role...",
+      "add": "Add",
+      "genres": "Genres",
+      "addCustomGenre": "Add custom genre...",
+      "socialLinks": "Social Links",
+      "socialLinksDescription": "Connect your social profiles (optional)",
+      "soundcloud": "SoundCloud",
+      "instagram": "Instagram",
+      "twitter": "X (Twitter)",
+      "youtube": "YouTube",
+      "website": "Website",
+      "creatingProfile": "Creating profile...",
+      "nextJoinClubs": "Next: Join Clubs"
+    },
+    "step2": {
+      "title": "Join Clubs",
+      "subtitle": "Find your community (you can skip this step)",
+      "comingSoon": "Clubs feature coming soon...",
+      "skipForNow": "Skip for now",
+      "nextGetStarted": "Next: Get Started"
+    },
+    "step3": {
+      "createFirstProject": "Create Your First Project",
+      "createProjectDescription": "Start creating music with collaborators",
+      "exploreFeed": "Explore the Feed",
+      "exploreFeedDescription": "Discover projects and connect with musicians",
+      "enterAudioCollab": "Enter AudioCollab"
+    },
+    "errors": {
+      "usernameRequired": "Username is required",
+      "somethingWentWrong": "Something went wrong. Please try again."
+    },
+    "next": "Next",
+    "skip": "Skip",
+    "finish": "Get Started"
+  },
+  "studio": {
+    "trackHeader": {
+      "dragToReorder": "Drag to reorder",
+      "importAudio": "Import audio",
+      "takes": "Takes",
+      "noRetakes": "No retakes yet",
+      "solo": "Solo",
+      "mute": "Mute"
+    },
+    "uploadModal": {
+      "title": "Upload Audio",
+      "forTrack": "For track:",
+      "uploadType": "Upload Type",
+      "newTrack": "New Track",
+      "newTrackDesc": "Create a new track",
+      "addTake": "Add Take",
+      "addTakeDesc": "Add to existing track",
+      "createFirstTrack": "Create your first track to enable adding takes",
+      "trackName": "Track Name",
+      "trackNamePlaceholder": "e.g., Lead Vocals, Bass, Drums",
+      "selectTrack": "Select Track",
+      "chooseTrack": "Choose a track...",
+      "audioFile": "Audio File",
+      "chooseFile": "Choose audio file",
+      "supportedFormats": "Supported formats: MP3, WAV, FLAC, M4A, OGG (max {maxSize}MB)",
+      "fileSize": "File size:",
+      "uploading": "Uploading...",
+      "cancel": "Cancel",
+      "upload": "Upload",
+      "required": "*",
+      "success": {
+        "trackCreated": "Track created successfully!",
+        "takeAdded": "Take added successfully!"
+      },
+      "errors": {
+        "selectFile": "Please select an audio file",
+        "enterName": "Please enter a track name",
+        "selectTrack": "Please select a track",
+        "invalidFile": "Please select a valid audio file (MP3, WAV, FLAC, M4A, or OGG)",
+        "fileTooLarge": "File size must be less than {maxSize}MB"
+      }
+    },
+    "commentModal": {
+      "placeholder": "Add a comment...",
+      "yourAvatar": "Your avatar"
+    },
+    "transport": {
+      "back": "Back",
+      "backTooltip": "Back to the Hall",
+      "play": "Play",
+      "pause": "Pause",
+      "stop": "Stop",
+      "mixer": "Mixer",
+      "share": "Share",
+      "export": "Export",
+      "saved": "Saved just now"
+    },
+    "tracks": {
+      "title": "TRACKS",
+      "add": "Add",
+      "addTrack": "Add Track",
+      "noTracks": "No tracks",
+      "upload": "Upload Track",
+      "create": "Create a new track",
+      "name": "Track name",
+      "namePlaceholder": "e.g., Lead Vocals, Bass, Drums"
+    },
+    "upload": {
+      "title": "Upload Audio",
+      "selectFile": "Select an audio file",
+      "dragDrop": "or drag and drop",
+      "formats": "MP3, WAV, FLAC, M4A, or OGG (max 100MB)",
+      "trackName": "Track Name",
+      "uploading": "Uploading...",
+      "processing": "Processing...",
+      "errors": {
+        "selectValid": "Please select a valid audio file (MP3, WAV, FLAC, M4A, or OGG)",
+        "selectFile": "Please select an audio file",
+        "enterName": "Please enter a track name",
+        "uploadFailed": "Failed to upload track"
+      }
+    },
+    "takes": {
+      "title": "Manage Takes",
+      "noTakes": "No takes available",
+      "activate": "Set as Active",
+      "delete": "Delete Take",
+      "uploadNew": "Upload New Take",
+      "errors": {
+        "cannotDeleteActive": "Cannot delete the active take",
+        "cannotDeleteLast": "Cannot delete the last remaining take",
+        "deleteFailed": "Failed to delete take"
+      },
+      "success": {
+        "activated": "Take activated successfully",
+        "deleted": "Take deleted successfully"
+      }
+    },
+    "comments": {
+      "add": "Add a comment...",
+      "placeholder": "Add a comment...",
+      "at": "at",
+      "noComments": "No comments yet"
+    },
+    "mixer": {
+      "title": "Mixer",
+      "volume": "Volume",
+      "pan": "Pan",
+      "solo": "Solo",
+      "mute": "Mute",
+      "master": "Master",
+      "errors": {
+        "saveFailed": "Failed to save mixer settings",
+        "onlyCreator": "Only the track creator can modify this setting"
+      }
+    },
+    "contextMenu": {
+      "rename": "Rename",
+      "duplicate": "Duplicate",
+      "delete": "Delete"
+    },
+    "retakes": {
+      "activate": "Activate retake",
+      "deactivate": "Deactivate retake"
+    },
+    "comping": {
+      "deleteSection": "Delete section"
+    },
+    "messages": {
+      "rotationRequired": "Rotation required",
+      "rotateDevice": "Please rotate your device to landscape mode to use the studio",
+      "trackCreated": "Track created",
+      "takesComingSoon": "Takes management coming soon..."
+    }
+  },
+  "feed": {
+    "title": "Feed",
+    "discoverClubs": "Discover Clubs",
+    "whatsHappening": "What's happening",
+    "whatsHappeningDescription": "Share your latest tracks, collaborate with other musicians, and discover new music from the community.",
+    "timeAgo": {
+      "justNow": "just now",
+      "minutesAgo": "{minutes}m ago",
+      "hoursAgo": "{hours}h ago",
+      "daysAgo": "{days}d ago"
+    },
+    "create": {
+      "placeholder": "What's happening in your music world?",
+      "shareLink": "Share a link",
+      "linkPlaceholder": "https://example.com",
+      "uploading": "Uploading...",
+      "posting": "Posting...",
+      "post": "Post",
+      "postingTo": "Posting to",
+      "postEmpty": "Post cannot be empty",
+      "postSuccess": "Posted successfully!",
+      "postFailed": "Failed to create post",
+      "errors": {
+        "audioSize": "Audio file must be less than 20 MB",
+        "videoSize": "Video must be less than 50 MB",
+        "linkInvalid": "The link must be a valid URL"
+      }
+    },
+    "actions": {
+      "like": "Like",
+      "comment": "Comment",
+      "share": "Share"
+    },
+    "comments": {
+      "write": "Write a comment...",
+      "writeReply": "Write a reply...",
+      "reply": "Reply",
+      "edit": "Edit",
+      "delete": "Delete",
+      "errors": {
+        "cannotEmpty": "Comment cannot be empty"
+      },
+      "success": {
+        "added": "Comment added!",
+        "updated": "Comment updated!",
+        "deleted": "Comment deleted!"
+      }
+    },
+    "share": {
+      "title": "Share Post",
+      "conversation": "Send in a conversation",
+      "personalFeed": "Personal Feed",
+      "writeComment": "Write your comment...",
+      "searchUser": "Search a user...",
+      "noConversations": "No conversations",
+      "errors": {
+        "loadFailed": "Failed to load conversations"
+      },
+      "success": {
+        "sharedConversation": "Post shared in conversation",
+        "sharedFeed": "Post shared on feed"
+      }
+    },
+    "noPosts": "No posts yet"
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "subtitle": "Manage your AudioCollab platform",
+      "stats": {
+        "totalUsers": "Total Users",
+        "totalProjects": "Total Projects",
+        "totalClubs": "Total Clubs"
+      },
+      "recentUsers": "Recent Users",
+      "recentProjects": "Recent Projects"
+    },
+    "clubs": {
+      "create": "Create New Club",
+      "name": "Club Name",
+      "namePlaceholder": "e.g., Blues, Jazz, Rock",
+      "slug": "Slug",
+      "slugPlaceholder": "e.g., blues, jazz, rock",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe this musical genre...",
+      "avatar": "Upload Avatar",
+      "banner": "Upload Banner",
+      "errors": {
+        "createFailed": "Club created but failed to update images",
+        "avatarFailed": "Failed to upload avatar",
+        "bannerFailed": "Failed to upload banner"
+      },
+      "success": {
+        "created": "Club created successfully!",
+        "updated": "Club updated successfully!"
+      }
+    }
+  }
+}

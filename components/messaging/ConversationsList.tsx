@@ -8,6 +8,7 @@ import { Plus } from 'lucide-react'
 import type { Conversation } from '@/lib/types/messaging'
 import { NewMessageButton } from './NewMessageButton'
 import { Link } from '@/i18n/routing'
+import { useTranslations } from 'next-intl'
 
 interface ConversationsListProps {
   conversations: Conversation[]
@@ -15,6 +16,8 @@ interface ConversationsListProps {
 }
 
 export function ConversationsList({ conversations, currentUserId }: ConversationsListProps) {
+  const t = useTranslations('messaging')
+  const tTime = useTranslations('feed.timeAgo')
   const [showNewMessage, setShowNewMessage] = useState(false)
 
   const formatTimeAgo = (dateString: string) => {
@@ -22,10 +25,10 @@ export function ConversationsList({ conversations, currentUserId }: Conversation
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-    if (diffInSeconds < 60) return 'just now'
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
+    if (diffInSeconds < 60) return tTime('justNow')
+    if (diffInSeconds < 3600) return tTime('minutesAgo', { minutes: Math.floor(diffInSeconds / 60) })
+    if (diffInSeconds < 86400) return tTime('hoursAgo', { hours: Math.floor(diffInSeconds / 3600) })
+    if (diffInSeconds < 604800) return tTime('daysAgo', { days: Math.floor(diffInSeconds / 86400) })
     return date.toLocaleDateString()
   }
 
@@ -38,7 +41,7 @@ export function ConversationsList({ conversations, currentUserId }: Conversation
           className="w-full bg-primary hover:bg-primary/90 text-white"
         >
           <Plus className="w-5 h-5 mr-2" />
-          New Message
+          {t('newMessage')}
         </Button>
       </div>
 
@@ -46,8 +49,8 @@ export function ConversationsList({ conversations, currentUserId }: Conversation
       <div className="flex-1 overflow-y-auto space-y-2">
         {conversations.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
-            <p>No conversations yet</p>
-            <p className="text-sm mt-2">Start a new conversation to get started</p>
+            <p>{t('noConversationsYet')}</p>
+            <p className="text-sm mt-2">{t('noConversations')}</p>
           </div>
         ) : (
           conversations.map((conversation) => (
@@ -99,7 +102,7 @@ export function ConversationsList({ conversations, currentUserId }: Conversation
 
                     {conversation.last_message && (
                       <p className="text-sm text-gray-500 truncate mt-1">
-                        {conversation.last_message.user_id === currentUserId && 'You: '}
+                        {conversation.last_message.user_id === currentUserId && `${t('you')}: `}
                         {conversation.last_message.content}
                       </p>
                     )}

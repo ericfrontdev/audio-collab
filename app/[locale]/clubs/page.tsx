@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import type { ClubWithStats } from '@/types/club'
 import { AppLayout } from '@/components/layouts/AppLayout'
+import { getTranslations } from 'next-intl/server'
 
 // Genre-specific icons
 const genreIcons: Record<string, LucideIcon> = {
@@ -41,6 +42,9 @@ export default async function ClubsPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  const t = await getTranslations('clubs')
+  const tGenres = await getTranslations('clubs.genres')
+  const tDescriptions = await getTranslations('clubs.descriptions')
   const supabase = await createClient()
 
   const {
@@ -88,11 +92,10 @@ export default async function ClubsPage({
           {/* Header */}
           <div className="mb-12">
             <h1 className="text-5xl font-bold mb-3 text-white">
-              Musical Clubs
+              {t('title')}
             </h1>
             <p className="text-gray-400 text-lg">
-              Join genre-based communities, share projects, and collaborate with
-              musicians
+              {t('subtitle')}
             </p>
           </div>
 
@@ -117,11 +120,11 @@ export default async function ClubsPage({
                       {/* Content */}
                       <div>
                         <h3 className="text-lg font-bold text-white group-hover:text-primary mb-2 transition-colors duration-300">
-                          {club.name}
+                          {tGenres(club.name as any) || club.name}
                         </h3>
                         <p className="text-gray-400 group-hover:text-primary/70 text-xs leading-relaxed line-clamp-2 mb-3 transition-colors duration-300">
-                          {club.description ||
-                            'A community for music lovers and creators'}
+                          {tDescriptions(club.genre as any) || club.description ||
+                            t('defaultDescription')}
                         </p>
 
                         {/* Stats */}
@@ -132,7 +135,7 @@ export default async function ClubsPage({
                           </div>
                           {club.is_member && (
                             <div className="px-1.5 py-0.5 rounded bg-white/10 group-hover:bg-primary/20 text-white group-hover:text-primary text-[10px] font-medium transition-colors duration-300">
-                              Joined
+                              {t('joined')}
                             </div>
                           )}
                         </div>
@@ -149,10 +152,10 @@ export default async function ClubsPage({
             <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800 p-16 text-center">
               <Music className="w-20 h-20 mx-auto mb-6 text-zinc-700" />
               <h3 className="text-2xl font-semibold mb-3 text-white">
-                No clubs yet
+                {t('noClubs')}
               </h3>
               <p className="text-gray-400 text-lg">
-                Clubs will appear here once they are created
+                {t('noClubsDescription')}
               </p>
             </div>
           )}

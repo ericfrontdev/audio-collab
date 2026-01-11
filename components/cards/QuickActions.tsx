@@ -1,15 +1,18 @@
 'use client';
 
 import { Link, useRouter } from '@/i18n/routing';
-import { Music2, FolderOpen, PlusCircle, Settings } from 'lucide-react';
+import { User, FolderOpen, PlusCircle, Settings } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslations } from 'next-intl';
 
 interface QuickActionsProps {
   clubId?: string;
   isMember?: boolean;
+  username?: string;
 }
 
-export function QuickActions({ clubId, isMember }: QuickActionsProps = {}) {
+export function QuickActions({ clubId, isMember, username }: QuickActionsProps = {}) {
+  const t = useTranslations('quickActions');
   const router = useRouter();
 
   const handleNewProject = (e: React.MouseEvent) => {
@@ -17,14 +20,14 @@ export function QuickActions({ clubId, isMember }: QuickActionsProps = {}) {
 
     // If no club context, redirect to clubs page
     if (!clubId) {
-      toast.warning('Please select a club to create your project in');
+      toast.warning(t('selectClub'));
       router.push('/clubs');
       return;
     }
 
     // If in a club but not a member, show toast
     if (!isMember) {
-      toast.warning('You must join the club to create a project');
+      toast.warning(t('mustJoinClub'));
       return;
     }
 
@@ -34,30 +37,30 @@ export function QuickActions({ clubId, isMember }: QuickActionsProps = {}) {
 
   const actions = [
     {
-      name: 'New Project',
+      nameKey: 'newProject',
       href: '#',
       icon: PlusCircle,
       onClick: handleNewProject,
     },
     {
-      name: 'My Studios',
+      nameKey: 'myProjects',
       href: '/my-projects',
       icon: FolderOpen,
     },
     {
-      name: 'Request Club',
-      href: '/clubs/request',
-      icon: Music2,
+      nameKey: 'profile',
+      href: username ? `/profile/${username}` : '/profile/edit',
+      icon: User,
     },
     {
-      name: 'Settings',
+      nameKey: 'settings',
       href: '/settings',
       icon: Settings,
     },
   ];
   return (
     <div>
-      <h3 className="text-sm font-semibold text-white mb-3 px-1">Quick Actions</h3>
+      <h3 className="text-sm font-semibold text-white mb-3 px-1">{t('title')}</h3>
       <div className="grid grid-cols-2 gap-3">
         {actions.map((action) => {
           const Icon = action.icon;
@@ -67,7 +70,7 @@ export function QuickActions({ clubId, isMember }: QuickActionsProps = {}) {
                 <Icon className="w-6 h-6 text-primary" />
               </div>
               <span className="text-sm font-medium text-gray-400 group-hover:text-white transition-colors text-center">
-                {action.name}
+                {t(action.nameKey)}
               </span>
             </div>
           );
@@ -75,11 +78,11 @@ export function QuickActions({ clubId, isMember }: QuickActionsProps = {}) {
           if ('onClick' in action) {
             return (
               <button
-                key={action.name}
+                key={action.nameKey}
                 type="button"
                 onClick={action.onClick}
                 className="text-left"
-                aria-label={action.name}
+                aria-label={t(action.nameKey)}
               >
                 {content}
               </button>
@@ -87,7 +90,7 @@ export function QuickActions({ clubId, isMember }: QuickActionsProps = {}) {
           }
 
           return (
-            <Link key={action.name} href={action.href} aria-label={action.name}>
+            <Link key={action.nameKey} href={action.href} aria-label={t(action.nameKey)}>
               {content}
             </Link>
           );

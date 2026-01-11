@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { joinClub, leaveClub } from '@/app/actions/clubs';
 import type { Club } from '@/types/club';
+import { useTranslations } from 'next-intl';
 
 interface ClubHeaderProps {
   club: Club;
@@ -21,6 +22,8 @@ export function ClubHeader({ club, memberCount, isMember, userId }: ClubHeaderPr
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string || 'en';
+  const t = useTranslations('clubs');
+  const tGenres = useTranslations('clubs.genres');
 
   const handleJoinLeave = async () => {
     if (!userId) {
@@ -100,15 +103,15 @@ export function ClubHeader({ club, memberCount, isMember, userId }: ClubHeaderPr
 
               {/* Club Info */}
               <div className="pb-2">
-                <h1 className="text-3xl font-bold text-white mb-1">{club.name}</h1>
+                <h1 className="text-3xl font-bold text-white mb-1">{tGenres(club.name as any) || club.name}</h1>
                 <div className="flex items-center gap-3 text-sm">
                   <div className="flex items-center gap-1.5 text-gray-300">
                     <Users className="w-4 h-4" />
-                    <span>{memberCount} {memberCount === 1 ? 'member' : 'members'}</span>
+                    <span>{memberCount} {memberCount === 1 ? t('memberSingular') : t('memberPlural')}</span>
                   </div>
                   <span className="text-gray-500">•</span>
                   <div className="px-2 py-0.5 rounded-md bg-primary/20 text-primary text-xs font-medium">
-                    {club.genre}
+                    {tGenres(club.genre as any) || club.genre}
                   </div>
                 </div>
               </div>
@@ -123,7 +126,7 @@ export function ClubHeader({ club, memberCount, isMember, userId }: ClubHeaderPr
                   variant={currentIsMember ? 'outline' : 'default'}
                   className="min-w-[120px]"
                 >
-                  {isLoading ? '...' : currentIsMember ? 'Leave Club' : 'Join Club'}
+                  {isLoading ? '...' : currentIsMember ? t('leaveClub') : t('joinClub')}
                 </Button>
               </div>
             )}

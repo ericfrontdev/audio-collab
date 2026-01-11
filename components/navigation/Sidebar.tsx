@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Home, Compass, Bell, MessageCircle, Music, Users, User, Settings, Menu, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface SidebarProps {
   username?: string;
@@ -13,23 +14,24 @@ interface SidebarProps {
 }
 
 export function Sidebar({ username, unreadMessagesCount = 0 }: SidebarProps) {
+  const t = useTranslations('nav');
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
 
   const navigation = [
-    { name: 'Feed', href: '/feed', icon: Home },
-    { name: 'Explore', href: '/explore', icon: Compass },
-    { name: 'Notifications', href: '/notifications', icon: Bell },
-    { name: 'Messages', href: '/messages', icon: MessageCircle },
-    { name: 'Clubs', href: '/clubs', icon: Users },
-    { name: 'Profile', href: username ? `/profile/${username}` : '/profile', icon: User },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { nameKey: 'feed', href: '/feed', icon: Home },
+    { nameKey: 'explore', href: '/explore', icon: Compass },
+    { nameKey: 'notifications', href: '/notifications', icon: Bell },
+    { nameKey: 'messages', href: '/messages', icon: MessageCircle },
+    { nameKey: 'clubs', href: '/clubs', icon: Users },
+    { nameKey: 'profile', href: username ? `/profile/${username}` : '/profile', icon: User },
+    { nameKey: 'settings', href: '/settings', icon: Settings },
   ];
 
   const projectsSubMenu = [
-    { name: 'My Projects', href: '/my-projects' },
-    { name: 'Club Projects', href: '/projects' },
+    { nameKey: 'myProjects', href: '/my-projects' },
+    { nameKey: 'clubProjects', href: '/projects' },
   ];
 
   return (
@@ -79,7 +81,7 @@ export function Sidebar({ username, unreadMessagesCount = 0 }: SidebarProps) {
 
               return (
                 <Link
-                  key={item.name}
+                  key={item.nameKey}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
@@ -90,8 +92,8 @@ export function Sidebar({ username, unreadMessagesCount = 0 }: SidebarProps) {
                   )}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="text-sm font-medium">{item.name}</span>
-                  {item.name === 'Messages' && unreadMessagesCount > 0 && (
+                  <span className="text-sm font-medium">{t(item.nameKey)}</span>
+                  {item.nameKey === 'messages' && unreadMessagesCount > 0 && (
                     <span className="ml-auto bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
                       {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                     </span>
@@ -112,7 +114,7 @@ export function Sidebar({ username, unreadMessagesCount = 0 }: SidebarProps) {
                 )}
               >
                 <Music className="w-5 h-5" />
-                <span className="text-sm font-medium">Projects</span>
+                <span className="text-sm font-medium">{t('projects')}</span>
                 {isProjectsOpen ? (
                   <ChevronDown className="w-4 h-4 ml-auto" />
                 ) : (
@@ -126,7 +128,7 @@ export function Sidebar({ username, unreadMessagesCount = 0 }: SidebarProps) {
                     const isActive = pathname === subItem.href;
                     return (
                       <Link
-                        key={subItem.name}
+                        key={subItem.nameKey}
                         href={subItem.href}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={cn(
@@ -136,7 +138,7 @@ export function Sidebar({ username, unreadMessagesCount = 0 }: SidebarProps) {
                             : 'text-gray-400 hover:bg-zinc-900 hover:text-white'
                         )}
                       >
-                        {subItem.name}
+                        {t(subItem.nameKey)}
                       </Link>
                     );
                   })}
@@ -151,7 +153,7 @@ export function Sidebar({ username, unreadMessagesCount = 0 }: SidebarProps) {
 
               return (
                 <Link
-                  key={item.name}
+                  key={item.nameKey}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
@@ -162,7 +164,7 @@ export function Sidebar({ username, unreadMessagesCount = 0 }: SidebarProps) {
                   )}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="text-sm font-medium">{item.name}</span>
+                  <span className="text-sm font-medium">{t(item.nameKey)}</span>
                 </Link>
               );
             })}

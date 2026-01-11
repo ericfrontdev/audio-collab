@@ -9,12 +9,13 @@ import type { Project } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { ClubFeed } from './ClubFeed';
 import { ProjectCard } from '@/components/projects/ProjectCard';
+import { useTranslations } from 'next-intl';
 
-const tabs = [
-  { id: 'feed', label: 'Feed', icon: MessageCircle },
-  { id: 'projects', label: 'Projects', icon: Music },
-  { id: 'members', label: 'Members', icon: UsersIcon },
-  { id: 'about', label: 'About', icon: Info },
+const tabsConfig = [
+  { id: 'feed', labelKey: 'feed', icon: MessageCircle },
+  { id: 'projects', labelKey: 'projects', icon: Music },
+  { id: 'members', labelKey: 'members', icon: UsersIcon },
+  { id: 'about', labelKey: 'about', icon: Info },
 ];
 
 interface Member {
@@ -50,10 +51,15 @@ interface ClubTabsProps {
 
 export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, currentUserId, currentUserAvatar, currentUsername, locale }: ClubTabsProps) {
   const [activeTab, setActiveTab] = useState('feed');
+  const tTabs = useTranslations('clubs.tabs');
+  const tProjects = useTranslations('clubs.projectsTab');
+  const tMembers = useTranslations('clubs.membersTab');
+  const tAbout = useTranslations('clubs.aboutTab');
+  const tDescriptions = useTranslations('clubs.descriptions');
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
@@ -61,7 +67,7 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
       {/* Tabs Navigation */}
       <div className="border-b border-zinc-800 px-8">
         <div className="flex gap-6">
-          {tabs.map((tab) => {
+          {tabsConfig.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
 
@@ -76,7 +82,7 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
                 }`}
               >
                 <Icon className="w-4 h-4" />
-                <span className="text-sm font-medium">{tab.label}</span>
+                <span className="text-sm font-medium">{tTabs(tab.labelKey)}</span>
               </button>
             );
           })}
@@ -100,13 +106,13 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
             {/* Header with New Project button */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">
-                Projects ({projects.length})
+                {tProjects('title')} ({projects.length})
               </h2>
               {isMember && (
                 <Link href={`/projects/new?club=${clubId}`}>
                   <Button className="flex items-center gap-2">
                     <PlusCircle className="w-4 h-4" />
-                    New Project
+                    {tProjects('newProject')}
                   </Button>
                 </Link>
               )}
@@ -130,12 +136,12 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
             ) : (
               <div className="text-center py-12">
                 <Folder className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">No projects yet</p>
+                <p className="text-gray-500 mb-4">{tProjects('noProjects')}</p>
                 {isMember && (
                   <Link href={`/projects/new?club=${clubId}`}>
                     <Button className="flex items-center gap-2 mx-auto">
                       <PlusCircle className="w-4 h-4" />
-                      Create First Project
+                      {tProjects('createFirstProject')}
                     </Button>
                   </Link>
                 )}
@@ -147,7 +153,7 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
         {activeTab === 'members' && (
           <div>
             <h2 className="text-xl font-bold text-white mb-6">
-              Members ({members.length})
+              {tMembers('title')} ({members.length})
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {members.map((member) => (
@@ -181,7 +187,7 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
             </div>
             {members.length === 0 && (
               <div className="text-center py-12 text-gray-500">
-                <p>No members yet</p>
+                <p>{tMembers('noMembers')}</p>
               </div>
             )}
           </div>
@@ -189,20 +195,20 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
 
         {activeTab === 'about' && (
           <div className="max-w-3xl">
-            <h2 className="text-xl font-bold text-white mb-6">About {club.name}</h2>
+            <h2 className="text-xl font-bold text-white mb-6">{tAbout('title')} {club.name}</h2>
 
             <div className="space-y-6">
               {/* Description */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">Description</h3>
+                <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">{tAbout('description')}</h3>
                 <p className="text-white">
-                  {club.description || 'No description available'}
+                  {tDescriptions(club.genre as any) || club.description || tAbout('noDescription')}
                 </p>
               </div>
 
               {/* Genre */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">Genre</h3>
+                <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">{tAbout('genre')}</h3>
                 <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium">
                   {club.genre}
                 </div>
@@ -211,7 +217,7 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
               {/* Rules */}
               {club.rules && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">Rules</h3>
+                  <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">{tAbout('rules')}</h3>
                   <p className="text-white whitespace-pre-wrap">
                     {club.rules}
                   </p>
@@ -220,15 +226,15 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
 
               {/* Stats */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">Stats</h3>
+                <h3 className="text-sm font-semibold text-gray-400 uppercase mb-2">{tAbout('stats')}</h3>
                 <div className="flex gap-6">
                   <div>
                     <div className="text-2xl font-bold text-white">{members.length}</div>
-                    <div className="text-sm text-gray-500">Members</div>
+                    <div className="text-sm text-gray-500">{tMembers('title')}</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-white">{projects.length}</div>
-                    <div className="text-sm text-gray-500">Projects</div>
+                    <div className="text-sm text-gray-500">{tProjects('title')}</div>
                   </div>
                 </div>
               </div>

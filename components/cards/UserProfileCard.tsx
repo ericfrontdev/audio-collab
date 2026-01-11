@@ -20,12 +20,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useTranslations } from 'next-intl'
 
 interface UserProfileCardProps {
   profile: Profile
 }
 
 export function UserProfileCard({ profile }: UserProfileCardProps) {
+  const t = useTranslations('common')
   // Mock stats for now - these would come from the database later
   const followingCount = 482
   const followersCount = 12500
@@ -87,7 +89,7 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
               className="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800/50 text-xs text-white hover:bg-zinc-700 transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              Edit Profile
+              {t('editProfile')}
             </Link>
             <TooltipProvider delayDuration={400}>
               <Tooltip>
@@ -103,7 +105,7 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Sign out</p>
+                  <p>{t('signOut')}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -130,11 +132,11 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
           <div className="flex items-center gap-4 mt-3 text-sm">
             <div>
               <span className="font-semibold text-white">{followingCount}</span>
-              <span className="text-gray-500 ml-1">Following</span>
+              <span className="text-gray-500 ml-1">{t('following')}</span>
             </div>
             <div>
               <span className="font-semibold text-white">{followersCount}</span>
-              <span className="text-gray-500 ml-1">Followers</span>
+              <span className="text-gray-500 ml-1">{t('followers')}</span>
             </div>
           </div>
 
@@ -160,7 +162,7 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
                       </a>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>SoundCloud</p>
+                      <p>{t('soundcloud')}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -178,7 +180,7 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
                       </a>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Instagram</p>
+                      <p>{t('instagram')}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -196,7 +198,7 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
                       </a>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Twitter / X</p>
+                      <p>{t('twitter')}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -214,7 +216,7 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
                       </a>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>YouTube</p>
+                      <p>{t('youtube')}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -232,7 +234,7 @@ export function UserProfileCard({ profile }: UserProfileCardProps) {
                       </a>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Website</p>
+                      <p>{t('website')}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}

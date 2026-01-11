@@ -12,8 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { MUSICAL_ROLES, GENRES } from '@/types/profile';
 import { createProfile } from '@/app/actions/profile';
 import { createClient } from '@/lib/supabase/client';
+import { useTranslations } from 'next-intl';
 
 export default function OnboardingPage() {
+  const t = useTranslations('onboarding');
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
@@ -108,7 +110,7 @@ export default function OnboardingPage() {
     if (currentStep === 1) {
       // Validate and save profile
       if (!username.trim()) {
-        setError('Username is required');
+        setError(t('errors.usernameRequired'));
         return;
       }
 
@@ -144,7 +146,7 @@ export default function OnboardingPage() {
 
         setCurrentStep(2);
       } catch (err) {
-        setError('Something went wrong. Please try again.');
+        setError(t('errors.somethingWentWrong'));
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -206,9 +208,9 @@ export default function OnboardingPage() {
             ))}
           </div>
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
-            <span>Create Profile</span>
-            <span>Join Clubs</span>
-            <span>Get Started</span>
+            <span>{t('stepLabels.createProfile')}</span>
+            <span>{t('stepLabels.joinClubs')}</span>
+            <span>{t('stepLabels.getStarted')}</span>
           </div>
         </div>
 
@@ -217,9 +219,9 @@ export default function OnboardingPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Create your profile</CardTitle>
+                <CardTitle>{t('step1.title')}</CardTitle>
                 <CardDescription>
-                  Tell us about yourself and your music
+                  {t('step1.subtitle')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -232,7 +234,7 @@ export default function OnboardingPage() {
                 {/* Username */}
                 <div className="space-y-2">
                   <Label htmlFor="username">
-                    Username <span className="text-destructive">*</span>
+                    {t('step1.username')} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="username"
@@ -242,32 +244,32 @@ export default function OnboardingPage() {
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    Your unique identifier on AudioCollab
+                    {t('step1.usernameDescription')}
                   </p>
                 </div>
 
                 {/* Display Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name</Label>
+                  <Label htmlFor="displayName">{t('step1.displayName')}</Label>
                   <Input
                     id="displayName"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Optional"
+                    placeholder={t('step1.displayNamePlaceholder')}
                   />
                   <p className="text-xs text-muted-foreground">
-                    How you want to be called (optional)
+                    {t('step1.displayNameDescription')}
                   </p>
                 </div>
 
                 {/* Avatar Upload */}
                 <div className="space-y-2">
-                  <Label htmlFor="avatar">Profile Picture</Label>
+                  <Label htmlFor="avatar">{t('step1.profilePicture')}</Label>
                   <div className="flex items-center gap-4">
                     {avatarPreview && (
                       <img
                         src={avatarPreview}
-                        alt="Avatar preview"
+                        alt={t('step1.avatarPreview')}
                         className="w-20 h-20 rounded-full object-cover border-2 border-border"
                       />
                     )}
@@ -280,7 +282,7 @@ export default function OnboardingPage() {
                         className="cursor-pointer"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Upload your profile picture (optional)
+                        {t('step1.uploadPicture')}
                       </p>
                     </div>
                   </div>
@@ -288,19 +290,19 @@ export default function OnboardingPage() {
 
                 {/* Bio */}
                 <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
+                  <Label htmlFor="bio">{t('step1.bio')}</Label>
                   <textarea
                     id="bio"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="Tell us about your music journey..."
+                    placeholder={t('step1.bioPlaceholder')}
                     className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
 
                 {/* Musical Roles */}
                 <div className="space-y-3">
-                  <Label>Musical Roles</Label>
+                  <Label>{t('step1.musicalRoles')}</Label>
                   <div className="flex flex-wrap gap-2">
                     {MUSICAL_ROLES.filter(role => role !== 'Other').map((role) => (
                       <Badge
@@ -318,11 +320,11 @@ export default function OnboardingPage() {
                     <Input
                       value={customRole}
                       onChange={(e) => setCustomRole(e.target.value)}
-                      placeholder="Add custom role..."
+                      placeholder={t('step1.addCustomRole')}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomRole())}
                     />
                     <Button type="button" onClick={addCustomRole} variant="secondary">
-                      Add
+                      {t('step1.add')}
                     </Button>
                   </div>
                   {/* Selected roles */}
@@ -345,7 +347,7 @@ export default function OnboardingPage() {
 
                 {/* Genres */}
                 <div className="space-y-3">
-                  <Label>Genres</Label>
+                  <Label>{t('step1.genres')}</Label>
                   <div className="flex flex-wrap gap-2">
                     {GENRES.filter(genre => genre !== 'Other').map((genre) => (
                       <Badge
@@ -363,11 +365,11 @@ export default function OnboardingPage() {
                     <Input
                       value={customGenre}
                       onChange={(e) => setCustomGenre(e.target.value)}
-                      placeholder="Add custom genre..."
+                      placeholder={t('step1.addCustomGenre')}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomGenre())}
                     />
                     <Button type="button" onClick={addCustomGenre} variant="secondary">
-                      Add
+                      {t('step1.add')}
                     </Button>
                   </div>
                   {/* Selected genres */}
@@ -393,12 +395,12 @@ export default function OnboardingPage() {
             {/* Social Links Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Social Links</CardTitle>
-                <CardDescription>Connect your social profiles (optional)</CardDescription>
+                <CardTitle>{t('step1.socialLinks')}</CardTitle>
+                <CardDescription>{t('step1.socialLinksDescription')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="soundcloud">SoundCloud</Label>
+                  <Label htmlFor="soundcloud">{t('step1.soundcloud')}</Label>
                   <Input
                     id="soundcloud"
                     value={soundcloudUrl}
@@ -407,7 +409,7 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="instagram">Instagram</Label>
+                  <Label htmlFor="instagram">{t('step1.instagram')}</Label>
                   <Input
                     id="instagram"
                     value={instagramUrl}
@@ -416,7 +418,7 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="twitter">X (Twitter)</Label>
+                  <Label htmlFor="twitter">{t('step1.twitter')}</Label>
                   <Input
                     id="twitter"
                     value={twitterUrl}
@@ -425,7 +427,7 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="youtube">YouTube</Label>
+                  <Label htmlFor="youtube">{t('step1.youtube')}</Label>
                   <Input
                     id="youtube"
                     value={youtubeUrl}
@@ -434,7 +436,7 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
+                  <Label htmlFor="website">{t('step1.website')}</Label>
                   <Input
                     id="website"
                     value={websiteUrl}
@@ -447,7 +449,7 @@ export default function OnboardingPage() {
 
             <div className="flex justify-end">
               <Button onClick={handleNext} size="lg" disabled={isLoading}>
-                {isLoading ? 'Creating profile...' : 'Next: Join Clubs'}
+                {isLoading ? t('step1.creatingProfile') : t('step1.nextJoinClubs')}
               </Button>
             </div>
           </div>
@@ -457,18 +459,18 @@ export default function OnboardingPage() {
         {currentStep === 2 && (
           <Card>
             <CardHeader>
-              <CardTitle>Join Clubs</CardTitle>
+              <CardTitle>{t('step2.title')}</CardTitle>
               <CardDescription>
-                Find your community (you can skip this step)
+                {t('step2.subtitle')}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Clubs feature coming soon...</p>
+              <p className="text-muted-foreground">{t('step2.comingSoon')}</p>
               <div className="flex gap-3 mt-6">
                 <Button onClick={handleSkip} variant="outline">
-                  Skip for now
+                  {t('step2.skipForNow')}
                 </Button>
-                <Button onClick={handleNext}>Next: Get Started</Button>
+                <Button onClick={handleNext}>{t('step2.nextGetStarted')}</Button>
               </div>
             </CardContent>
           </Card>
@@ -479,25 +481,25 @@ export default function OnboardingPage() {
           <div className="space-y-4">
             <Card className="cursor-pointer hover:border-primary transition-colors">
               <CardHeader>
-                <CardTitle>Create Your First Project</CardTitle>
+                <CardTitle>{t('step3.createFirstProject')}</CardTitle>
                 <CardDescription>
-                  Start creating music with collaborators
+                  {t('step3.createProjectDescription')}
                 </CardDescription>
               </CardHeader>
             </Card>
 
             <Card className="cursor-pointer hover:border-primary transition-colors">
               <CardHeader>
-                <CardTitle>Explore the Feed</CardTitle>
+                <CardTitle>{t('step3.exploreFeed')}</CardTitle>
                 <CardDescription>
-                  Discover projects and connect with musicians
+                  {t('step3.exploreFeedDescription')}
                 </CardDescription>
               </CardHeader>
             </Card>
 
             <div className="flex justify-center mt-6">
               <Button onClick={handleNext} size="lg">
-                Enter AudioCollab
+                {t('step3.enterAudioCollab')}
               </Button>
             </div>
           </div>

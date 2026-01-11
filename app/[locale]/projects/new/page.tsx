@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { NewProjectForm } from '@/components/projects/NewProjectForm';
+import { getTranslations } from 'next-intl/server';
 
 export default async function NewProjectPage({
   params,
@@ -11,6 +12,8 @@ export default async function NewProjectPage({
   searchParams: Promise<{ club?: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations('projects.create');
+  const tGenres = await getTranslations('clubs.genres');
   const searchParamsData = await searchParams;
   const supabase = await createClient();
 
@@ -57,9 +60,9 @@ export default async function NewProjectPage({
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Create New Project</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">{t('title')}</h1>
             <p className="text-gray-400">
-              Start a new collaborative project in <span className="text-primary font-semibold">{club.name}</span>
+              {t('subtitle')} <span className="text-primary font-semibold">{tGenres(club.name as any) || club.name}</span>
             </p>
           </div>
 

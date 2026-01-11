@@ -5,6 +5,7 @@ import { useRouter } from '@/i18n/routing';
 import { createClubProject } from '@/app/actions/projects';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
+import { useTranslations } from 'next-intl';
 
 interface NewProjectFormProps {
   clubId: string;
@@ -14,6 +15,7 @@ interface NewProjectFormProps {
 
 export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps) {
   const router = useRouter();
+  const t = useTranslations('projects.create');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -29,13 +31,13 @@ export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps
       const result = await createClubProject(clubId, title, description || undefined);
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to create project');
+        throw new Error(result.error || t('error'));
       }
 
       // Project created successfully!
       console.log('Project created:', result.project);
       console.log('Redirecting to:', `/projects/${result.project.id}`);
-      toast.success('Project created successfully!');
+      toast.success(t('success'));
 
       // Redirect to the newly created project
       const projectUrl = `/projects/${result.project.id}`;
@@ -43,7 +45,7 @@ export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps
       router.push(projectUrl);
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error(err.message || 'Failed to create project');
+      toast.error(err.message || t('error'));
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +57,7 @@ export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps
         {/* Project Name */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
-            Project Name <span className="text-red-500">*</span>
+            {t('projectName')} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -64,14 +66,14 @@ export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps
             required
             maxLength={100}
             className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            placeholder="My Awesome Track"
+            placeholder={t('projectNamePlaceholder')}
           />
         </div>
 
         {/* Description */}
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-white mb-2">
-            Description
+            {t('description')}
           </label>
           <textarea
             id="description"
@@ -79,9 +81,9 @@ export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps
             rows={4}
             maxLength={500}
             className="w-full px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-            placeholder="Describe your project..."
+            placeholder={t('descriptionPlaceholder')}
           />
-          <p className="mt-2 text-xs text-gray-500">Optional - Add details about your project</p>
+          <p className="mt-2 text-xs text-gray-500">{t('descriptionOptional')}</p>
         </div>
       </div>
 
@@ -93,14 +95,14 @@ export function NewProjectForm({ clubId, clubSlug, userId }: NewProjectFormProps
           onClick={() => router.back()}
           disabled={isLoading}
         >
-          Cancel
+          {t('cancel')}
         </Button>
         <Button
           type="submit"
           disabled={isLoading}
           className="min-w-[120px]"
         >
-          {isLoading ? 'Creating...' : 'Create Project'}
+          {isLoading ? t('creating') : t('submit')}
         </Button>
       </div>
     </form>

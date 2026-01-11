@@ -55,6 +55,13 @@ export async function POST(request: NextRequest) {
 
     const isFirstTake = existingTakesCount === 0
 
+    console.log('📊 Take upload info:', {
+      trackId,
+      existingTakesCount,
+      isFirstTake,
+      willSetActive: isFirstTake
+    })
+
     // Create take record
     // For retakes (not first take), is_active defaults to false
     // For first take, the trigger will set it to true
@@ -72,6 +79,12 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single()
+
+    console.log('✅ Take created:', {
+      takeId: take?.id,
+      is_active: take?.is_active,
+      expectedActive: isFirstTake
+    })
 
     if (takeError) {
       console.error('Take creation error:', takeError)

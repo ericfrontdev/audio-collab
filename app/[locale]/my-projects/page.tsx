@@ -5,9 +5,11 @@ import { Link } from '@/i18n/routing';
 import { Folder, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProjectCard } from '@/components/projects/ProjectCard';
+import { getTranslations } from 'next-intl/server';
 
 export default async function MyProjectsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
+  const t = await getTranslations('projects');
   const supabase = await createClient();
 
   // Get current user
@@ -57,15 +59,15 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
           {/* Header */}
           <div className="mb-12 flex justify-between items-center">
             <div>
-              <h1 className="text-5xl font-bold mb-3 text-white">My Projects</h1>
+              <h1 className="text-5xl font-bold mb-3 text-white">{t('myProjects')}</h1>
               <p className="text-gray-400 text-lg">
-                Manage and collaborate on your music projects
+                {t('myProjectsSubtitle')}
               </p>
             </div>
             <Link href={`/projects/new`}>
               <Button className="flex items-center gap-2">
                 <PlusCircle className="w-4 h-4" />
-                New Project
+                {t('newProject')}
               </Button>
             </Link>
           </div>
@@ -93,14 +95,14 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
           ) : (
             <div className="text-center py-16">
               <Folder className="w-20 h-20 text-zinc-700 mx-auto mb-6" />
-              <h3 className="text-2xl font-semibold mb-3 text-white">No projects yet</h3>
+              <h3 className="text-2xl font-semibold mb-3 text-white">{t('noProjectsYet')}</h3>
               <p className="text-gray-400 mb-6 text-lg">
-                Create your first project to start collaborating
+                {t('createFirstProject')}
               </p>
               <Link href={`/projects/new`}>
                 <Button className="flex items-center gap-2 mx-auto">
                   <PlusCircle className="w-4 h-4" />
-                  Create Your First Project
+                  {t('createYourFirstProject')}
                 </Button>
               </Link>
             </div>

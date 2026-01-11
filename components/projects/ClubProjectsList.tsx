@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { JoinProjectButton } from '@/components/projects/JoinProjectButton'
 import { Filter, FilterX } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface ClubProjectsListProps {
   projects: any[]
@@ -13,6 +14,8 @@ interface ClubProjectsListProps {
 }
 
 export function ClubProjectsList({ projects, memberProjectIds, locale }: ClubProjectsListProps) {
+  const t = useTranslations('projects.clubProjects')
+  const tGenres = useTranslations('clubs.genres')
   const [hideNotJoined, setHideNotJoined] = useState(false)
 
   const memberProjectIdsSet = new Set(memberProjectIds)
@@ -26,9 +29,9 @@ export function ClubProjectsList({ projects, memberProjectIds, locale }: ClubPro
       {/* Header with title and filter button */}
       <div className="flex items-center justify-between mb-12">
         <div>
-          <h1 className="text-5xl font-bold mb-3 text-white">Club Projects</h1>
+          <h1 className="text-5xl font-bold mb-3 text-white">{t('title')}</h1>
           <p className="text-gray-400 text-lg">
-            Browse and join projects from your clubs
+            {t('subtitle')}
           </p>
         </div>
 
@@ -41,12 +44,12 @@ export function ClubProjectsList({ projects, memberProjectIds, locale }: ClubPro
           {hideNotJoined ? (
             <>
               <FilterX className="w-4 h-4" />
-              Show All
+              {t('showAll')}
             </>
           ) : (
             <>
               <Filter className="w-4 h-4" />
-              Hide Not Joined
+              {t('hideNotJoined')}
             </>
           )}
         </Button>
@@ -54,11 +57,11 @@ export function ClubProjectsList({ projects, memberProjectIds, locale }: ClubPro
 
       {!projects || projects.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-400">No projects available. Join a club to see club projects!</p>
+          <p className="text-gray-400">{t('noProjects')}</p>
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-400">No joined projects. Join a project to see it here!</p>
+          <p className="text-gray-400">{t('noJoinedProjects')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -81,17 +84,17 @@ export function ClubProjectsList({ projects, memberProjectIds, locale }: ClubPro
                 <div className="flex items-center gap-2 mb-4 text-sm text-gray-500">
                   {project.clubs && (
                     <span className="text-primary">
-                      {project.clubs.name}
+                      {tGenres(project.clubs.name as any) || project.clubs.name}
                     </span>
                   )}
                 </div>
 
                 {isMember ? (
                   <Link
-                    href={`/${locale}/projects/${project.id}/studio`}
+                    href={`/${locale}/projects/${project.id}`}
                     className="block w-full px-4 py-2 bg-primary text-white rounded-md text-center font-medium hover:bg-primary/90 transition-colors"
                   >
-                    Open Studio
+                    {t('openProject')}
                   </Link>
                 ) : (
                   <JoinProjectButton projectId={project.id} locale={locale} />

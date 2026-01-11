@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { deleteProject } from '@/app/actions/projects'
 import { toast } from 'react-toastify'
 import { useRouter } from '@/i18n/routing'
+import { useTranslations } from 'next-intl'
 
 interface ProjectCardProps {
   project: {
@@ -40,6 +41,8 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, currentUserId, locale, onDelete }: ProjectCardProps) {
   const router = useRouter()
+  const tStatus = useTranslations('projects.status')
+  const tCard = useTranslations('projects.card')
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean
     projectId: string
@@ -52,7 +55,7 @@ export function ProjectCard({ project, currentUserId, locale, onDelete }: Projec
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
   const handleDeleteClick = (e: React.MouseEvent) => {
@@ -138,7 +141,7 @@ export function ProjectCard({ project, currentUserId, locale, onDelete }: Projec
                       : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                   }`}
                 >
-                  {project.status?.replace('_', ' ')}
+                  {tStatus(project.status as any) || project.status?.replace('_', ' ')}
                 </span>
               </div>
             )}
@@ -160,7 +163,7 @@ export function ProjectCard({ project, currentUserId, locale, onDelete }: Projec
                 {projectTitle}
               </h3>
               <span className="text-xs text-primary whitespace-nowrap flex-shrink-0">
-                Created by {isOwner ? 'me' : (project.owner?.display_name || project.owner?.username || 'Unknown')}
+                {tCard('createdBy')} {isOwner ? tCard('me') : (project.owner?.display_name || project.owner?.username || tCard('unknown'))}
               </span>
             </div>
 

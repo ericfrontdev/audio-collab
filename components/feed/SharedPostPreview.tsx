@@ -3,25 +3,27 @@
 import { Link } from '@/i18n/routing'
 import type { Post } from '@/lib/types/feed'
 import { PostContent } from './PostContent'
+import { useTranslations } from 'next-intl'
 
 interface SharedPostPreviewProps {
   post: Post | null
   compact?: boolean
 }
 
-const formatTimeAgo = (dateString: string) => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-  if (diffInSeconds < 60) return 'just now'
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
-  return date.toLocaleDateString()
-}
-
 export function SharedPostPreview({ post, compact = false }: SharedPostPreviewProps) {
+  const tTime = useTranslations('feed.timeAgo')
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) return tTime('justNow')
+    if (diffInSeconds < 3600) return tTime('minutesAgo', { minutes: Math.floor(diffInSeconds / 60) })
+    if (diffInSeconds < 86400) return tTime('hoursAgo', { hours: Math.floor(diffInSeconds / 3600) })
+    if (diffInSeconds < 604800) return tTime('daysAgo', { days: Math.floor(diffInSeconds / 86400) })
+    return date.toLocaleDateString()
+  }
   // Handle deleted post
   if (!post) {
     return (

@@ -10,6 +10,7 @@ import { AppLayout } from '@/components/layouts/AppLayout';
 import { ProfilePosts } from '@/components/profile/ProfilePosts';
 import { CreatePostCard } from '@/components/feed/CreatePostCard';
 import { getProfilePosts } from '@/app/actions/feed';
+import { getTranslations } from 'next-intl/server';
 
 export default async function ProfilePage({
   params,
@@ -17,6 +18,9 @@ export default async function ProfilePage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
+  const t = await getTranslations('profile.view');
+  const tGenres = await getTranslations('clubs.genres');
+  const tStatus = await getTranslations('projects.status');
   const supabase = await createClient();
 
   // Fetch profile
@@ -106,7 +110,7 @@ export default async function ProfilePage({
           {profile.banner_url ? (
             <Image
               src={profile.banner_url}
-              alt="Profile banner"
+              alt={t('banner')}
               fill
               className="object-cover"
             />
@@ -148,7 +152,7 @@ export default async function ProfilePage({
 
               {isOwner && (
                 <Link href="/profile/edit">
-                  <Button variant="outline">Edit Profile</Button>
+                  <Button variant="outline">{t('editProfile')}</Button>
                 </Link>
               )}
             </div>
@@ -166,7 +170,7 @@ export default async function ProfilePage({
         {profile.musical_roles && profile.musical_roles.length > 0 && (
           <div className="mb-6">
             <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-              ROLES
+              {t('roles')}
             </h2>
             <div className="flex flex-wrap gap-2">
               {profile.musical_roles.map((role: string) => (
@@ -182,7 +186,7 @@ export default async function ProfilePage({
         {profile.genres && profile.genres.length > 0 && (
           <div className="mb-6">
             <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-              GENRES
+              {t('genres')}
             </h2>
             <div className="flex flex-wrap gap-2">
               {profile.genres.map((genre: string) => (
@@ -198,7 +202,7 @@ export default async function ProfilePage({
         {userClubs.length > 0 && (
           <div className="mb-6">
             <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-              CLUBS ({userClubs.length})
+              {t('clubs')} ({userClubs.length})
             </h2>
             <div className="flex flex-wrap gap-2">
               {userClubs.map((club) => (
@@ -216,7 +220,7 @@ export default async function ProfilePage({
                       <Users className="w-4 h-4 text-zinc-600" />
                     )}
                     <span className="text-sm text-white group-hover:text-primary transition-colors">
-                      {club.name}
+                      {tGenres(club.name as any) || club.name}
                     </span>
                   </div>
                 </Link>
@@ -233,7 +237,7 @@ export default async function ProfilePage({
           profile.website_url) && (
           <div className="mb-8">
             <h2 className="text-sm font-semibold text-muted-foreground mb-3">
-              LINKS
+              {t('links')}
             </h2>
             <div className="flex flex-wrap gap-3">
               {profile.soundcloud_url && (
@@ -244,7 +248,7 @@ export default async function ProfilePage({
                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Music className="w-4 h-4" />
-                  SoundCloud
+                  {t('soundcloud')}
                 </a>
               )}
               {profile.instagram_url && (
@@ -255,7 +259,7 @@ export default async function ProfilePage({
                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Instagram className="w-4 h-4" />
-                  Instagram
+                  {t('instagram')}
                 </a>
               )}
               {profile.twitter_url && (
@@ -276,7 +280,7 @@ export default async function ProfilePage({
                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Youtube className="w-4 h-4" />
-                  YouTube
+                  {t('youtube')}
                 </a>
               )}
               {profile.website_url && (
@@ -287,7 +291,7 @@ export default async function ProfilePage({
                   className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <LinkIcon className="w-4 h-4" />
-                  Website
+                  {t('website')}
                 </a>
               )}
             </div>
@@ -296,7 +300,7 @@ export default async function ProfilePage({
 
         {/* Posts */}
         <div className="mb-16">
-          <h2 className="text-2xl font-bold mb-6">Posts</h2>
+          <h2 className="text-2xl font-bold mb-6">{t('posts')}</h2>
 
           {/* Create post card - only for profile owner */}
           {isOwner && user && (
@@ -318,7 +322,7 @@ export default async function ProfilePage({
 
         {/* Projects */}
         <div className="mb-16">
-          <h2 className="text-2xl font-bold mb-6">Projects</h2>
+          <h2 className="text-2xl font-bold mb-6">{t('projects')}</h2>
           {userProjects && userProjects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {userProjects.map((project) => (
@@ -336,7 +340,7 @@ export default async function ProfilePage({
                       {project.status && (
                         <div className="absolute top-2 right-2">
                           <Badge variant="secondary" className="text-xs">
-                            {project.status.replace('_', ' ')}
+                            {tStatus(project.status as any) || project.status.replace('_', ' ')}
                           </Badge>
                         </div>
                       )}
@@ -358,7 +362,7 @@ export default async function ProfilePage({
           ) : (
             <Card className="p-8 text-center">
               <p className="text-muted-foreground">
-                No projects yet. {isOwner && "Create your first project!"}
+                {t('noProjects')} {isOwner && t('createFirstProject')}
               </p>
             </Card>
           )}

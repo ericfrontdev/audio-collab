@@ -9,6 +9,8 @@ import { uploadMediaToStorage, deleteMediaFromStorage } from '@/lib/storage/uplo
 import { fetchLinkMetadata, type LinkMetadata } from '@/app/actions/linkPreview'
 import { toast } from 'react-toastify'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations } from 'next-intl'
+import { useParams } from 'next/navigation'
 
 interface CreatePostCardProps {
   userAvatar?: string | null
@@ -20,6 +22,8 @@ interface CreatePostCardProps {
 }
 
 export function CreatePostCard({ userAvatar, username, userId, clubId, clubName, onPostCreated }: CreatePostCardProps) {
+  const t = useTranslations('feed.create')
+  const tGenres = useTranslations('clubs.genres')
   const [content, setContent] = useState('')
   const [isPosting, setIsPosting] = useState(false)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -160,7 +164,7 @@ export function CreatePostCard({ userAvatar, username, userId, clubId, clubName,
 
   const handlePost = async () => {
     if (!content.trim()) {
-      toast.error('Post cannot be empty')
+      toast.error(t('postEmpty'))
       return
     }
 
@@ -241,7 +245,7 @@ export function CreatePostCard({ userAvatar, username, userId, clubId, clubName,
           }
         }
 
-        toast.success('Posted successfully!')
+        toast.success(t('postSuccess'))
         setContent('')
         handleRemoveImage()
         handleRemoveAudio()
@@ -258,7 +262,7 @@ export function CreatePostCard({ userAvatar, username, userId, clubId, clubName,
         if (uploadedMediaUrl) {
           await deleteMediaFromStorage(uploadedMediaUrl)
         }
-        toast.error(result.error || 'Failed to create post')
+        toast.error(result.error || t('postFailed'))
         setUploadProgress(0)
       }
     } catch (error) {
@@ -266,7 +270,7 @@ export function CreatePostCard({ userAvatar, username, userId, clubId, clubName,
       if (uploadedMediaUrl) {
         await deleteMediaFromStorage(uploadedMediaUrl)
       }
-      toast.error('Failed to create post')
+      toast.error(t('postFailed'))
       setUploadProgress(0)
     } finally {
       setIsPosting(false)
@@ -301,14 +305,14 @@ export function CreatePostCard({ userAvatar, username, userId, clubId, clubName,
               <svg className="w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span className="text-xs font-medium text-primary">Posting to {clubName}</span>
+              <span className="text-xs font-medium text-primary">{t('postingTo')} {tGenres(clubName as any) || clubName}</span>
             </div>
           )}
 
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="What's happening in your music world?"
+            placeholder={t('placeholder')}
             className="w-full bg-transparent text-white placeholder-gray-500 resize-none outline-none min-h-[80px] text-lg"
             maxLength={500}
             disabled={isPosting}
@@ -418,7 +422,7 @@ export function CreatePostCard({ userAvatar, username, userId, clubId, clubName,
           {uploadProgress > 0 && uploadProgress < 100 && (
             <div className="mt-3">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-gray-400">Uploading...</span>
+                <span className="text-xs text-gray-400">{t('uploading')}</span>
                 <span className="text-xs text-gray-400">{uploadProgress}%</span>
               </div>
               <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -479,7 +483,7 @@ export function CreatePostCard({ userAvatar, username, userId, clubId, clubName,
                 disabled={!content.trim() || isPosting}
                 className="px-6 text-white"
               >
-                {isPosting ? 'Posting...' : 'Post'}
+                {isPosting ? t('posting') : t('post')}
               </Button>
             </div>
           </div>

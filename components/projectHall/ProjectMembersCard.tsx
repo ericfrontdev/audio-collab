@@ -2,6 +2,8 @@
 
 import { Users } from 'lucide-react'
 import ProjectCollaborators from '@/components/projects/ProjectCollaborators'
+import { useTranslations } from 'next-intl'
+import { useParams } from 'next/navigation'
 
 interface ProjectMembersCardProps {
   members: Array<{
@@ -22,6 +24,10 @@ interface ProjectMembersCardProps {
 }
 
 export function ProjectMembersCard({ members, isOwner, projectId }: ProjectMembersCardProps) {
+  const t = useTranslations('projectHall.members')
+  const params = useParams()
+  const locale = params.locale as string || 'en'
+
   // Format members for ProjectCollaborators component
   const formattedMembers = members.map(m => ({
     id: m.id,
@@ -41,7 +47,7 @@ export function ProjectMembersCard({ members, isOwner, projectId }: ProjectMembe
       <div className="flex items-center gap-2 mb-4">
         <Users className="w-5 h-5 text-primary" />
         <h3 className="text-lg font-semibold text-white">
-          Members
+          {t('title')}
           <span className="text-sm text-gray-400 font-normal ml-2">
             ({members.length})
           </span>
@@ -52,7 +58,7 @@ export function ProjectMembersCard({ members, isOwner, projectId }: ProjectMembe
         projectId={projectId}
         collaborators={formattedMembers}
         isOwner={isOwner}
-        locale="en"
+        locale={locale}
       />
     </div>
   )

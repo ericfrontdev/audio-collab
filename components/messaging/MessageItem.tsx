@@ -9,6 +9,7 @@ import { toast } from 'react-toastify'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { SharedPostPreview } from '@/components/feed/SharedPostPreview'
+import { useTranslations } from 'next-intl'
 
 interface MessageItemProps {
   message: Message
@@ -23,6 +24,7 @@ interface MessageItemProps {
 
 export function MessageItem({ message, isOwnMessage, otherUser }: MessageItemProps) {
   const router = useRouter()
+  const tTime = useTranslations('feed.timeAgo')
   const [showMenu, setShowMenu] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(message.content)
@@ -35,9 +37,9 @@ export function MessageItem({ message, isOwnMessage, otherUser }: MessageItemPro
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-    if (diffInSeconds < 60) return 'just now'
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+    if (diffInSeconds < 60) return tTime('justNow')
+    if (diffInSeconds < 3600) return tTime('minutesAgo', { minutes: Math.floor(diffInSeconds / 60) })
+    if (diffInSeconds < 86400) return tTime('hoursAgo', { hours: Math.floor(diffInSeconds / 3600) })
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 

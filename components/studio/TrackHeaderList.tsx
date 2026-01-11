@@ -151,6 +151,7 @@ export function TrackHeaderList({
                         isSoloed={trackSolos.has(track.id)}
                         isSelected={selectedTrackId === track.id}
                         isRenaming={renamingTrackId === track.id}
+                        isActive={isOriginalActive}
                         takesCount={retakes.length}
                         audioLevel={trackAudioLevels?.get(track.id)?.level}
                         audioPeak={trackAudioLevels?.get(track.id)?.peak}

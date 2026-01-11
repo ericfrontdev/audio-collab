@@ -15,6 +15,7 @@ import { ShareModal } from './ShareModal'
 import { usePostLike } from './hooks/usePostLike'
 import { usePostEditor } from './hooks/usePostEditor'
 import { useComments } from './hooks/useComments'
+import { useTranslations } from 'next-intl'
 
 interface FeedPostProps {
   post: Post
@@ -24,6 +25,7 @@ interface FeedPostProps {
 
 export function FeedPost({ post, currentUserId, currentUserAvatar }: FeedPostProps) {
   const router = useRouter()
+  const tTime = useTranslations('feed.timeAgo')
   const [showMenu, setShowMenu] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -80,10 +82,10 @@ export function FeedPost({ post, currentUserId, currentUserAvatar }: FeedPostPro
     const now = new Date()
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-    if (diffInSeconds < 60) return 'just now'
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
+    if (diffInSeconds < 60) return tTime('justNow')
+    if (diffInSeconds < 3600) return tTime('minutesAgo', { minutes: Math.floor(diffInSeconds / 60) })
+    if (diffInSeconds < 86400) return tTime('hoursAgo', { hours: Math.floor(diffInSeconds / 3600) })
+    if (diffInSeconds < 604800) return tTime('daysAgo', { days: Math.floor(diffInSeconds / 86400) })
     return date.toLocaleDateString()
   }
 

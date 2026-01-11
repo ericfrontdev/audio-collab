@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layouts/AppLayout'
 import { RightSidebar } from '@/components/navigation/RightSidebar'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 
 export default async function FeedPage({
   params,
@@ -12,6 +13,7 @@ export default async function FeedPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
+  const t = await getTranslations('feed')
   const supabase = await createClient()
 
   const {
@@ -60,7 +62,7 @@ export default async function FeedPage({
             {/* Header */}
             <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-lg border-b border-zinc-800">
               <div className="px-4 md:px-6 py-4">
-                <h1 className="text-2xl font-bold text-white">Feed</h1>
+                <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
               </div>
             </div>
 
@@ -88,7 +90,7 @@ export default async function FeedPage({
             {suggestedClubs && suggestedClubs.length > 0 && (
               <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
                 <h3 className="text-sm font-semibold text-white mb-4">
-                  Discover Clubs
+                  {t('discoverClubs')}
                 </h3>
                 <div className="space-y-3">
                   {suggestedClubs.map((club) => (
@@ -125,11 +127,10 @@ export default async function FeedPage({
             {/* Quick Info */}
             <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
               <h3 className="text-sm font-semibold text-white mb-3">
-                What's happening
+                {t('whatsHappening')}
               </h3>
               <p className="text-xs text-gray-400 leading-relaxed">
-                Share your latest tracks, collaborate with other musicians, and
-                discover new music from the community.
+                {t('whatsHappeningDescription')}
               </p>
             </div>
           </RightSidebar>

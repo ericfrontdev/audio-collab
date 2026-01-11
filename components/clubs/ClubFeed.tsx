@@ -5,6 +5,7 @@ import { CreatePostCard } from '@/components/feed/CreatePostCard'
 import { FeedPost } from '@/components/feed/FeedPost'
 import { getClubPosts } from '@/app/actions/feed'
 import type { Post } from '@/lib/types/feed'
+import { useTranslations } from 'next-intl'
 
 interface Club {
   id: string
@@ -21,6 +22,8 @@ interface ClubFeedProps {
 }
 
 export function ClubFeed({ club, isMember, userId, userAvatar, username }: ClubFeedProps) {
+  const t = useTranslations('clubs.feed')
+  const tGenres = useTranslations('clubs.genres')
   const [posts, setPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -74,10 +77,10 @@ export function ClubFeed({ club, isMember, userId, userAvatar, username }: ClubF
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">
-            Join the club to see the feed
+            {t('joinToView')}
           </h3>
           <p className="text-gray-400">
-            Club feeds are private to members only. Join {club.name} to participate in discussions.
+            {t('privateDescription', { clubName: tGenres(club.name as any) || club.name })}
           </p>
         </div>
       </div>
@@ -89,7 +92,7 @@ export function ClubFeed({ club, isMember, userId, userAvatar, username }: ClubF
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-400">Loading club feed...</p>
+        <p className="text-gray-400">{t('loading')}</p>
       </div>
     )
   }
@@ -104,7 +107,7 @@ export function ClubFeed({ club, isMember, userId, userAvatar, username }: ClubF
             onClick={loadPosts}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
           >
-            Try again
+            {t('tryAgain')}
           </button>
         </div>
       </div>
@@ -146,10 +149,10 @@ export function ClubFeed({ club, isMember, userId, userAvatar, username }: ClubF
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">
-              No posts yet
+              {t('noPosts')}
             </h3>
             <p className="text-gray-400">
-              Be the first to start a conversation in {club.name}!
+              {t('beFirst', { clubName: tGenres(club.name as any) || club.name })}
             </p>
           </div>
         </div>

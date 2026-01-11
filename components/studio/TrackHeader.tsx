@@ -17,6 +17,7 @@ interface TrackHeaderProps {
   isSoloed: boolean
   isSelected: boolean
   isRenaming: boolean
+  isActive?: boolean // If false, header is grayed out (retake is active instead)
   takesCount: number
   audioLevel?: number
   audioPeak?: number
@@ -40,6 +41,7 @@ export function TrackHeader({
   isSoloed,
   isSelected,
   isRenaming,
+  isActive = true, // Default to active (normal state)
   takesCount,
   audioLevel,
   audioPeak,
@@ -101,15 +103,27 @@ export function TrackHeader({
     }
   }
 
+  // Determine background and waveform colors based on active state (like RetakeTrackHeader)
+  const bgColor = isActive
+    ? (isSelected ? 'bg-zinc-800/60' : 'bg-zinc-900/60 hover:bg-zinc-800/40')
+    : 'bg-zinc-800/40'
+
+  const waveformColor = isActive ? trackColor : '#71717a' // zinc-600 when inactive
+
   return (
     <div
       ref={setNodeRef}
-      style={{ ...style, borderLeft: `3px solid ${trackColor}` }}
+      style={{
+        ...style,
+        borderLeft: `3px solid ${trackColor}`,
+        ...(isActive && { boxShadow: `inset 0 0 0 1px ${trackColor}20` })
+      }}
       className={`
         relative flex w-60 h-[70px] flex-shrink-0
         border-r border-b border-zinc-800
-        transition-colors
-        ${isSelected ? 'bg-zinc-800/60' : 'bg-zinc-900/60 hover:bg-zinc-800/40'}
+        transition-all duration-200 ease-in-out
+        ${bgColor}
+        ${isActive ? 'shadow-sm' : 'opacity-90'}
       `}
       onClick={() => onSelect(trackId)}
       onContextMenu={(e) => onContextMenu(e, trackId)}
@@ -206,7 +220,9 @@ export function TrackHeader({
         {/* Row 2: Waveform icon + Fader + Stack button */}
         <div className="flex-1 px-2 pb-2 flex items-center gap-2">
           {/* Waveform icon */}
-          <div className="w-5 h-5 flex items-center justify-center text-zinc-600">
+          <div className={`w-5 h-5 flex items-center justify-center ${
+            isActive ? 'text-zinc-600' : 'text-zinc-700'
+          }`}>
             <svg
               width="18"
               height="18"
@@ -228,7 +244,7 @@ export function TrackHeader({
             <VolumeControl
               value={volume}
               onChange={(newVolume) => onVolumeChange(trackId, newVolume)}
-              color={trackColor}
+              color={waveformColor}
               className="w-full"
             />
           </div>

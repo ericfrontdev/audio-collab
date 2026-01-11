@@ -7,6 +7,7 @@ import { createHallPost, getProjectHallData } from '@/app/actions/projectHall'
 import { toast } from 'react-toastify'
 import { useRouter } from '@/i18n/routing'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslations } from 'next-intl'
 
 interface Post {
   id: string
@@ -34,6 +35,7 @@ export function ProjectHallFeed({
   isAuthenticated
 }: ProjectHallFeedProps) {
   const router = useRouter()
+  const t = useTranslations('projectHall.discussion')
   const [posts, setPosts] = useState<Post[]>(initialPosts)
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -74,17 +76,17 @@ export function ProjectHallFeed({
     e.preventDefault()
 
     if (!isAuthenticated) {
-      toast.error('You must be logged in to post')
+      toast.error(t('errors.mustLogin'))
       return
     }
 
     if (!content.trim()) {
-      toast.error('Post cannot be empty')
+      toast.error(t('errors.empty'))
       return
     }
 
     if (content.length > 2000) {
-      toast.error('Post too long (max 2000 characters)')
+      toast.error(t('errors.tooLong'))
       return
     }
 
@@ -95,7 +97,7 @@ export function ProjectHallFeed({
 
       if (result.success) {
         setContent('')
-        toast.success('Post created successfully!')
+        toast.success(t('success'))
         // Fetch updated posts immediately
         await fetchPosts()
       } else {
@@ -125,7 +127,7 @@ export function ProjectHallFeed({
       <div className="flex items-center gap-2 mb-6">
         <MessageSquare className="w-5 h-5 text-primary" />
         <h3 className="text-lg font-semibold text-white">
-          Discussion
+          {t('title')}
           <span className="text-sm text-gray-400 font-normal ml-2">
             ({posts.length})
           </span>
@@ -139,7 +141,7 @@ export function ProjectHallFeed({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Share an update, ask a question, or start a discussion... (Enter to post, Shift+Enter for new line)"
+            placeholder={t('placeholder')}
             className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 resize-none focus:outline-none focus:border-primary transition-colors"
             rows={3}
             maxLength={2000}
@@ -147,7 +149,7 @@ export function ProjectHallFeed({
           />
           <div className="flex items-center justify-between mt-2">
             <span className="text-xs text-gray-500">
-              {content.length}/2000
+              {t('charCount', { current: content.length, max: 2000 })}
             </span>
             <button
               type="submit"
@@ -157,12 +159,12 @@ export function ProjectHallFeed({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Posting...
+                  {t('posting')}
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  Post
+                  {t('post')}
                 </>
               )}
             </button>
@@ -171,7 +173,7 @@ export function ProjectHallFeed({
       ) : (
         <div className="mb-6 p-4 bg-zinc-800 border border-zinc-700 rounded-lg text-center">
           <p className="text-sm text-gray-400">
-            Log in to join the discussion
+            {t('loginPrompt')}
           </p>
         </div>
       )}
@@ -190,9 +192,9 @@ export function ProjectHallFeed({
         ) : (
           <div className="text-center py-8">
             <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-400">No posts yet</p>
+            <p className="text-gray-400">{t('noPosts')}</p>
             <p className="text-sm text-gray-500 mt-1">
-              Be the first to start a discussion!
+              {t('beFirst')}
             </p>
           </div>
         )}

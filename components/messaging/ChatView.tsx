@@ -10,6 +10,7 @@ import { useRouter } from '@/i18n/routing'
 import { toast } from 'react-toastify'
 import type { Message } from '@/lib/types/messaging'
 import { MessageItem } from './MessageItem'
+import { useTranslations } from 'next-intl'
 
 interface ChatViewProps {
   conversationId: string
@@ -25,6 +26,7 @@ interface ChatViewProps {
 
 export function ChatView({ conversationId, otherUser, initialMessages, currentUserId }: ChatViewProps) {
   const router = useRouter()
+  const t = useTranslations('messaging')
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [content, setContent] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -57,7 +59,7 @@ export function ChatView({ conversationId, otherUser, initialMessages, currentUs
       router.refresh()
       textareaRef.current?.focus()
     } else {
-      toast.error(result.error || 'Failed to send message')
+      toast.error(result.error || t('errors.sendFailed'))
     }
 
     setIsSending(false)
@@ -104,8 +106,8 @@ export function ChatView({ conversationId, otherUser, initialMessages, currentUs
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
-            <p>No messages yet</p>
-            <p className="text-sm mt-2">Send a message to start the conversation</p>
+            <p>{t('noMessagesYet')}</p>
+            <p className="text-sm mt-2">{t('sendMessageToStart')}</p>
           </div>
         ) : (
           messages.map((message) => (
@@ -128,7 +130,7 @@ export function ChatView({ conversationId, otherUser, initialMessages, currentUs
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message... (Ctrl+Enter to send)"
+            placeholder={t('typeMessage')}
             className="flex-1 bg-zinc-800 border-zinc-700 text-white resize-none focus:ring-primary/50"
             rows={2}
             maxLength={2000}
@@ -151,7 +153,7 @@ export function ChatView({ conversationId, otherUser, initialMessages, currentUs
             {content.length}/2000
           </span>
           <span className="text-xs text-gray-500">
-            Ctrl+Enter to send
+            {t('ctrlEnterToSend')}
           </span>
         </div>
       </div>

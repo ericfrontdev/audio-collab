@@ -8,6 +8,7 @@ import { X, Search, Loader2 } from 'lucide-react'
 import { searchUsers, getOrCreateConversation } from '@/app/actions/messaging'
 import { useRouter } from '@/i18n/routing'
 import { toast } from 'react-toastify'
+import { useTranslations } from 'next-intl'
 
 interface NewMessageButtonProps {
   currentUserId: string
@@ -16,6 +17,7 @@ interface NewMessageButtonProps {
 
 export function NewMessageButton({ currentUserId, onClose }: NewMessageButtonProps) {
   const router = useRouter()
+  const t = useTranslations('messaging')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -35,7 +37,7 @@ export function NewMessageButton({ currentUserId, onClose }: NewMessageButtonPro
     if (result.success) {
       setSearchResults(result.users || [])
     } else {
-      toast.error(result.error || 'Failed to search users')
+      toast.error(result.error || t('errors.searchFailed'))
     }
 
     setIsSearching(false)
@@ -51,7 +53,7 @@ export function NewMessageButton({ currentUserId, onClose }: NewMessageButtonPro
       router.refresh()
       onClose()
     } else {
-      toast.error(result.error || 'Failed to create conversation')
+      toast.error(result.error || t('errors.conversationFailed'))
       setIsCreating(false)
     }
   }
@@ -61,7 +63,7 @@ export function NewMessageButton({ currentUserId, onClose }: NewMessageButtonPro
       <Card className="w-full max-w-md bg-zinc-900 border-zinc-800 p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white">New Message</h2>
+          <h2 className="text-xl font-bold text-white">{t('newMessage')}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors"
@@ -75,7 +77,7 @@ export function NewMessageButton({ currentUserId, onClose }: NewMessageButtonPro
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
             type="text"
-            placeholder="Search users..."
+            placeholder={t('search')}
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-10 bg-zinc-800 border-zinc-700 text-white"
@@ -90,7 +92,7 @@ export function NewMessageButton({ currentUserId, onClose }: NewMessageButtonPro
         <div className="max-h-96 overflow-y-auto space-y-2">
           {searchQuery.trim() && searchResults.length === 0 && !isSearching && (
             <div className="text-center text-gray-500 py-8">
-              <p>No users found</p>
+              <p>{t('noUsersFound')}</p>
             </div>
           )}
 

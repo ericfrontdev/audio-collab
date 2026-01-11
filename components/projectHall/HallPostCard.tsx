@@ -6,6 +6,7 @@ import { Trash2, Loader2 } from 'lucide-react'
 import { deleteHallPost } from '@/app/actions/projectHall'
 import { toast } from 'react-toastify'
 import { useRouter } from '@/i18n/routing'
+import { useTranslations } from 'next-intl'
 
 interface HallPostCardProps {
   post: {
@@ -25,10 +26,12 @@ interface HallPostCardProps {
 
 export function HallPostCard({ post, projectId, currentUserId }: HallPostCardProps) {
   const router = useRouter()
+  const tTime = useTranslations('feed.timeAgo')
+  const t = useTranslations('projectHall.hallPost')
   const [isDeleting, setIsDeleting] = useState(false)
 
   const isOwner = currentUserId === post.user_id
-  const displayName = post.profiles?.display_name || post.profiles?.username || 'Unknown User'
+  const displayName = post.profiles?.display_name || post.profiles?.username || t('unknownUser')
   const avatarUrl = post.profiles?.avatar_url
 
   const formatTimeAgo = (dateString: string) => {
@@ -37,16 +40,16 @@ export function HallPostCard({ post, projectId, currentUserId }: HallPostCardPro
     const diffInMs = now.getTime() - date.getTime()
     const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
 
-    if (diffInMinutes < 1) return 'Just now'
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    if (diffInMinutes < 1) return tTime('justNow')
+    if (diffInMinutes < 60) return tTime('minutesAgo', { minutes: diffInMinutes })
 
     const diffInHours = Math.floor(diffInMinutes / 60)
-    if (diffInHours < 24) return `${diffInHours}h ago`
+    if (diffInHours < 24) return tTime('hoursAgo', { hours: diffInHours })
 
     const diffInDays = Math.floor(diffInHours / 24)
-    if (diffInDays < 7) return `${diffInDays}d ago`
+    if (diffInDays < 7) return tTime('daysAgo', { days: diffInDays })
 
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    return date.toLocaleDateString()
   }
 
   const handleDelete = async () => {
@@ -58,14 +61,14 @@ export function HallPostCard({ post, projectId, currentUserId }: HallPostCardPro
       const result = await deleteHallPost(post.id, projectId)
 
       if (result.success) {
-        toast.success('Post deleted successfully!')
+        toast.success(t('success.deleted'))
         router.refresh()
       } else {
-        toast.error(result.error || 'Failed to delete post')
+        toast.error(result.error || t('errors.deleteFailed'))
       }
     } catch (error) {
       console.error('Delete error:', error)
-      toast.error('An error occurred while deleting')
+      toast.error(t('errors.deleteError'))
     } finally {
       setIsDeleting(false)
     }
@@ -115,7 +118,7 @@ export function HallPostCard({ post, projectId, currentUserId }: HallPostCardPro
             onClick={handleDelete}
             disabled={isDeleting}
             className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50"
-            title="Delete post"
+            title={t('deletePost')}
           >
             {isDeleting ? (
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -383,15 +383,24 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       if (updatedTrack) {
         setTracks(prev => {
           // Check if this is a new track or an existing one
-          const trackExists = prev.some(track => track.id === trackId)
-          if (trackExists) {
-            // Update existing track
+          const existingTrack = prev.find(track => track.id === trackId)
+          if (existingTrack) {
+            // Update existing track, but preserve local UI state
             return prev.map(track =>
-              track.id === trackId ? updatedTrack as TrackWithDetails : track
+              track.id === trackId
+                ? {
+                    ...(updatedTrack as TrackWithDetails),
+                    // Preserve folder open state (don't auto-open on upload)
+                    isRetakeFolderOpen: track.isRetakeFolderOpen || false
+                  }
+                : track
             )
           } else {
-            // Add new track
-            return [...prev, updatedTrack as TrackWithDetails]
+            // Add new track (folder closed by default)
+            return [...prev, {
+              ...(updatedTrack as TrackWithDetails),
+              isRetakeFolderOpen: false
+            }]
           }
         })
       }

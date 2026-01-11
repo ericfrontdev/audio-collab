@@ -5,8 +5,10 @@ import { AppLayout } from '@/components/layouts/AppLayout'
 import { ConversationsList } from '@/components/messaging/ConversationsList'
 import { RightSidebar } from '@/components/navigation/RightSidebar'
 import { MessageCircle } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 export default async function MessagesPage() {
+  const t = await getTranslations('messaging')
   const supabase = await createClient()
 
   const {
@@ -37,8 +39,8 @@ export default async function MessagesPage() {
             <div className="max-w-6xl mx-auto px-4 md:px-6 py-4">
               {/* Header */}
               <div className="mb-6">
-                <h1 className="text-2xl font-bold text-white">Messages</h1>
-                <p className="text-gray-400 mt-1">Send private messages to other users</p>
+                <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
+                <p className="text-gray-400 mt-1">{t('subtitle')}</p>
               </div>
 
               {/* Messages Container */}
@@ -56,8 +58,8 @@ export default async function MessagesPage() {
                   <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 h-full flex items-center justify-center">
                     <div className="text-center text-gray-500">
                       <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg">Select a conversation to start messaging</p>
-                      <p className="text-sm mt-2">or start a new conversation</p>
+                      <p className="text-lg">{t('selectConversation')}</p>
+                      <p className="text-sm mt-2">{t('startNewConversation')}</p>
                     </div>
                   </div>
                 </div>
@@ -70,11 +72,10 @@ export default async function MessagesPage() {
             {/* Quick Info */}
             <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
               <h3 className="text-sm font-semibold text-white mb-3">
-                Private Messaging
+                {t('privateMessaging')}
               </h3>
               <p className="text-xs text-gray-400 leading-relaxed">
-                Send private messages to other musicians. Start conversations,
-                collaborate on projects, and build your network.
+                {t('privateMessagingDescription')}
               </p>
             </div>
           </RightSidebar>
