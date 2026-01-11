@@ -103,6 +103,11 @@ interface TrackWithDetails extends ProjectTrack {
 export function StudioView({ projectId, projectTitle, currentUserId, ownerId, locale, readOnly = false }: StudioViewProps) {
   const t = useTranslations('studio.confirmDialog')
 
+  // Helper: Check if a take is the active take for its track
+  const isTakeActive = (track: TrackWithDetails, takeId: string) => {
+    return track.active_take_id === takeId
+  }
+
   const [tracks, setTracks] = useState<TrackWithDetails[]>([])
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -252,7 +257,8 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       console.log('📦 Loaded tracks data:', result.tracks.map(t => ({
         id: t.id,
         name: t.name,
-        takes: t.takes?.map((tk: any) => ({ id: tk.id, is_active: tk.is_active }))
+        active_take_id: t.active_take_id,
+        takes: t.takes?.map((tk: any) => ({ id: tk.id }))
       })))
       // Force a complete re-render by creating new object references
       const tracksWithTimestamp = result.tracks.map(t => ({
@@ -316,14 +322,8 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
 
     // Load or update existing tracks
     tracks.forEach((track) => {
-      // Get active takes
-      const activeTakes = track.takes?.filter((t) => t.is_active).sort((a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ) || []
-      const allTakes = [...(track.takes || [])].sort((a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )
-      const activeTake = activeTakes.length > 0 ? activeTakes[0] : allTakes[0]
+      // Get active take using active_take_id
+      const activeTake = track.takes?.find((t) => t.id === track.active_take_id)
 
       if (activeTake?.audio_url) {
         // Only reload if the audio URL has changed
@@ -527,7 +527,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       )
 
       // Reload audio with the updated sections (don't wait for state update)
-      const activeTake = track.takes?.find(t => t.is_active)
+      const activeTake = track.takes?.find(t => t.id === track.active_take_id)
       if (!activeTake?.audio_url) return
 
       const mixerSettings = track.mixer_settings
@@ -586,7 +586,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       )
 
       // Reload audio without this section (don't wait for state update)
-      const activeTake = track.takes?.find(t => t.is_active)
+      const activeTake = track.takes?.find(t => t.id === track.active_take_id)
       if (!activeTake?.audio_url) return
 
       const mixerSettings = track.mixer_settings
@@ -1094,7 +1094,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
                       const isExpanded = track.isRetakeFolderOpen || false
 
                       // Check if original is active (for coloring)
-                      const isOriginalActive = originalTake?.is_active || false
+                      const isOriginalActive = originalTake ? isTakeActive(track, originalTake.id) : false
 
                       // Get comped sections for this track
                       const compedSections = track.compedSections || []
@@ -1146,7 +1146,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
                                 comments={undefined} // Retakes don't have separate comments
                                 currentUserId={currentUserId}
                                 isRetake={true}
-                                isActive={retake.is_active}
+                                isActive={isTakeActive(track, retake.id)}
                                 compedSections={retakeSections}
                                 onWaveformReady={() => {}} // Don't update duration for retakes
                                 waveformRef={() => {}} // Retakes don't need refs

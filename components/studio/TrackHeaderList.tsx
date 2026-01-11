@@ -130,7 +130,7 @@ export function TrackHeaderList({
                   const isExpanded = track.isRetakeFolderOpen || false
 
                   // Check if original is active (for styling)
-                  const isOriginalActive = originalTake?.is_active || false
+                  const isOriginalActive = originalTake ? track.active_take_id === originalTake.id : false
 
                   // Use track's _refreshKey if available to force re-render
                   const trackKey = `${track.id}-${(track as any)._refreshKey || 0}`
@@ -167,32 +167,35 @@ export function TrackHeaderList({
                       />
 
                       {/* Retakes (if expanded) */}
-                      {isExpanded && retakes.map((retake: any, idx: number) => (
-                        <RetakeTrackHeader
-                          key={retake.id}
-                          trackId={track.id}
-                          takeId={retake.id}
-                          retakeNumber={idx + 1}
-                          trackName={`${track.name} - Take ${idx + 1}`}
-                          trackColor={track.color}
-                          volume={trackVolumes.get(track.id) ?? 80}
-                          isMuted={trackMutes.has(track.id)}
-                          isSoloed={trackSolos.has(track.id)}
-                          isSelected={selectedTrackId === track.id}
-                          isActive={retake.is_active}
-                          audioLevel={trackAudioLevels?.get(track.id)?.level}
-                          audioPeak={trackAudioLevels?.get(track.id)?.peak}
-                          onVolumeChange={onVolumeChange}
-                          onMuteToggle={onMuteToggle}
-                          onSoloToggle={onSoloToggle}
-                          onSelect={onTrackSelect}
-                          onImport={onImport}
-                          onActivate={() => onRetakeActivated(track.id, retake.id, retake.is_active)}
-                          onDeleteRetake={(takeId) => onDeleteRetake(track.id, takeId, idx + 1)}
-                          onContextMenu={onContextMenu}
-                          readOnly={readOnly}
-                        />
-                      ))}
+                      {isExpanded && retakes.map((retake: any, idx: number) => {
+                        const isRetakeActive = track.active_take_id === retake.id
+                        return (
+                          <RetakeTrackHeader
+                            key={retake.id}
+                            trackId={track.id}
+                            takeId={retake.id}
+                            retakeNumber={idx + 1}
+                            trackName={`${track.name} - Take ${idx + 1}`}
+                            trackColor={track.color}
+                            volume={trackVolumes.get(track.id) ?? 80}
+                            isMuted={trackMutes.has(track.id)}
+                            isSoloed={trackSolos.has(track.id)}
+                            isSelected={selectedTrackId === track.id}
+                            isActive={isRetakeActive}
+                            audioLevel={trackAudioLevels?.get(track.id)?.level}
+                            audioPeak={trackAudioLevels?.get(track.id)?.peak}
+                            onVolumeChange={onVolumeChange}
+                            onMuteToggle={onMuteToggle}
+                            onSoloToggle={onSoloToggle}
+                            onSelect={onTrackSelect}
+                            onImport={onImport}
+                            onActivate={() => onRetakeActivated(track.id, retake.id, isRetakeActive)}
+                            onDeleteRetake={(takeId) => onDeleteRetake(track.id, takeId, idx + 1)}
+                            onContextMenu={onContextMenu}
+                            readOnly={readOnly}
+                          />
+                        )
+                      })}
                     </div>
                   )
                 })}
