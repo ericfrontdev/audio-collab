@@ -120,24 +120,6 @@ export function RetakeTrackHeader({
             </button>
           )}
 
-          {/* Delete retake button */}
-          {!readOnly && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                if (confirm(`Delete retake #${retakeNumber}?`)) {
-                  onDeleteRetake(takeId)
-                }
-              }}
-              className="w-6 h-6 flex items-center justify-center rounded-sm bg-zinc-800 hover:bg-red-600 text-zinc-400 hover:text-white transition-colors outline outline-1 outline-black"
-              title="Delete retake"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-
           {/* Solo button */}
           <button
             onClick={(e) => {
@@ -177,7 +159,7 @@ export function RetakeTrackHeader({
           </button>
         </div>
 
-        {/* Row 2: Waveform icon + Fader */}
+        {/* Row 2: Waveform icon + Fader + Delete button */}
         <div className="flex-1 px-2 pb-2 flex items-center gap-2">
           {/* Waveform icon */}
           <div className={`w-5 h-5 flex items-center justify-center ${
@@ -208,6 +190,24 @@ export function RetakeTrackHeader({
               className="w-full"
             />
           </div>
+
+          {/* Delete retake button */}
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (confirm(`Delete retake #${retakeNumber}?`)) {
+                  onDeleteRetake(takeId)
+                }
+              }}
+              className="w-6 h-6 flex items-center justify-center rounded-sm bg-zinc-800 hover:bg-red-600 text-zinc-400 hover:text-white transition-colors outline outline-1 outline-black"
+              title="Delete retake"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
