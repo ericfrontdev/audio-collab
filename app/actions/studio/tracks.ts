@@ -96,7 +96,7 @@ export async function toggleTrackCollaborative(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
+    revalidatePath(`/[locale]/projects/${track.project_id}/studio`, 'page');
     return { success: true };
   } catch (error: unknown) {
     const err = error as SupabaseError;
@@ -186,7 +186,7 @@ export async function updateTrackName(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
+    revalidatePath(`/[locale]/projects/${track.project_id}/studio`, 'page');
     return { success: true };
   } catch (error: unknown) {
     const err = error as SupabaseError;
@@ -229,7 +229,7 @@ export async function updateTrackColor(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
+    revalidatePath(`/[locale]/projects/${track.project_id}/studio`, 'page');
     return { success: true };
   } catch (error: unknown) {
     const err = error as SupabaseError;
@@ -272,7 +272,7 @@ export async function updateTrack(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
+    revalidatePath(`/[locale]/projects/${track.project_id}/studio`, 'page');
     return { success: true };
   } catch (error: unknown) {
     const err = error as SupabaseError;
@@ -350,7 +350,7 @@ export async function duplicateTrack(
       await supabase.from('project_takes').insert(duplicatedTakes);
     }
 
-    revalidatePath(`/[locale]/projects/${originalTrack.project_id}/studio`);
+    revalidatePath(`/[locale]/projects/${originalTrack.project_id}/studio`, 'page');
     return { success: true, track: newTrack };
   } catch (error: unknown) {
     const err = error as SupabaseError;
@@ -420,7 +420,7 @@ export async function deleteTrack(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
+    revalidatePath(`/[locale]/projects/${track.project_id}/studio`, 'page');
     return { success: true };
   } catch (error: unknown) {
     const err = error as SupabaseError;

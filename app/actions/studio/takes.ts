@@ -116,7 +116,7 @@ export async function uploadTake(
     }
     console.log('Take record created successfully:', take);
 
-    revalidatePath(`/[locale]/projects/${track.project_id}/studio`);
+    revalidatePath(`/[locale]/projects/${track.project_id}/studio`, 'page');
     return { success: true, take };
   } catch (error: unknown) {
     const err = error as SupabaseError;
@@ -179,7 +179,7 @@ export async function setActiveTake(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${projectId}/studio`);
+    revalidatePath(`/[locale]/projects/${projectId}/studio`, 'page');
     return { success: true };
   } catch (error: unknown) {
     const err = error as SupabaseError;
@@ -251,7 +251,7 @@ export async function deleteTake(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${projectId}/studio`);
+    revalidatePath(`/[locale]/projects/${projectId}/studio`, 'page');
     return { success: true };
   } catch (error: unknown) {
     const err = error as SupabaseError;

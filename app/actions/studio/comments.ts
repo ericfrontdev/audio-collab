@@ -122,7 +122,7 @@ export async function deleteComment(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${projectId}/studio`);
+    revalidatePath(`/[locale]/projects/${projectId}/studio`, 'page');
     return { success: true };
   } catch (error: unknown) {
     const err = error as SupabaseError;
