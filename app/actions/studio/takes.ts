@@ -251,7 +251,8 @@ export async function deleteTake(
 
     if (error) throw error;
 
-    revalidatePath(`/[locale]/projects/${projectId}/studio`, 'page');
+    // Don't revalidate - the client handles optimistic update
+    // revalidatePath would cause unnecessary page reloads (3 POST requests)
     return { success: true };
   } catch (error: unknown) {
     const err = error as SupabaseError;
