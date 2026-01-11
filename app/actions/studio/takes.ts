@@ -171,11 +171,11 @@ export async function setActiveTake(
       return { success: false, error: access.error };
     }
 
-    // Update the take to be active (trigger will handle deactivating others)
+    // Update track to point to this take
     const { error } = await supabase
-      .from('project_takes')
-      .update({ is_active: true })
-      .eq('id', takeId);
+      .from('project_tracks')
+      .update({ active_take_id: takeId })
+      .eq('id', take.track_id);
 
     if (error) throw error;
 

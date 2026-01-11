@@ -48,43 +48,35 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(filePath)
 
     // Check if this is the first take for this track
-    const { count: existingTakesCount } = await supabase
-      .from('project_takes')
-      .select('*', { count: 'exact', head: true })
-      .eq('track_id', trackId)
+    const { data: trackData, error: trackDataError } = await supabase
+      .from('project_tracks')
+      .select('active_take_id')
+      .eq('id', trackId)
+      .single()
 
-    const isFirstTake = existingTakesCount === 0
+    if (trackDataError || !trackData) {
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to fetch track data'
+      }, { status: 500 })
+    }
 
-    console.log('📊 Take upload info:', {
-      trackId,
-      existingTakesCount,
-      isFirstTake,
-      willSetActive: isFirstTake
-    })
+    const isFirstTake = trackData.active_take_id === null
 
-    // Create take record
-    // For retakes (not first take), is_active defaults to false
-    // For first take, the trigger will set it to true
+    // Create take record (no is_active column anymore)
     const { data: take, error: takeError } = await supabase
       .from('project_takes')
       .insert({
         track_id: trackId,
         audio_url: publicUrl,
-        duration: 0, // Will be updated later if needed
+        duration: 0,
         file_size: fileSize || null,
         file_format: fileFormat || null,
-        is_active: isFirstTake, // Only first take is active, retakes are inactive by default
         uploaded_by: user.id,
         waveform_data: waveformData || null,
       })
       .select()
       .single()
-
-    console.log('✅ Take created:', {
-      takeId: take?.id,
-      is_active: take?.is_active,
-      expectedActive: isFirstTake
-    })
 
     if (takeError) {
       console.error('Take creation error:', takeError)
@@ -95,6 +87,19 @@ export async function POST(request: NextRequest) {
         error: 'Failed to create take record',
         errorDetails: takeError
       }, { status: 500 })
+    }
+
+    // If this is the first take, set it as active on the track
+    if (isFirstTake && take) {
+      const { error: updateError } = await supabase
+        .from('project_tracks')
+        .update({ active_take_id: take.id })
+        .eq('id', trackId)
+
+      if (updateError) {
+        console.error('Failed to set active take:', updateError)
+        // Don't fail the whole operation, just log
+      }
     }
 
     return NextResponse.json({ success: true, take })
