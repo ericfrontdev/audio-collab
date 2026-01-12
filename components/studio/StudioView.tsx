@@ -5,24 +5,8 @@ import { Upload as UploadIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UploadTrackModal } from './UploadTrackModal'
 import { getProjectStudioData } from '@/app/actions/studio/data'
-import {
-  deleteTrack,
-  createEmptyTrack,
-  updateTrackName,
-  updateTrackColor,
-  duplicateTrack,
-  reorderTracks,
-} from '@/app/actions/studio/tracks'
-import { addTrackComment } from '@/app/actions/studio/comments'
 import { updateMixerSettings } from '@/app/actions/studio/mixer'
-import { deleteTake } from '@/app/actions/studio/takes'
-import {
-  createCompedSection,
-  deleteCompedSection,
-  toggleRetakeFolder,
-} from '@/app/actions/studio/compedSections'
-import { activateRetake, deactivateRetake } from '@/app/actions/studio/retakes'
-import { ProjectTrack, CompedSection } from '@/lib/types/studio'
+import { ProjectTrack } from '@/lib/types/studio'
 import type { Track } from '@/lib/stores/useStudioStore'
 import { toast } from 'react-toastify'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -30,12 +14,12 @@ import { AddCommentModal } from './AddCommentModal'
 import { TransportControls } from './TransportControls'
 import { TrackHeaderList } from './TrackHeaderList'
 import { WaveformTrackRow } from './WaveformTrackRow'
-import { CompableWaveformRow } from './CompableWaveformRow'
 import { TrackContextMenu } from './TrackContextMenu'
 import { MixerView } from './MixerView'
 import { TimelineRuler } from './TimelineRuler'
 import { useStudioTracks } from './hooks/useStudioTracks'
 import { useStudioTimeline } from './hooks/useStudioTimeline'
+import { useStudioHandlers } from './hooks/useStudioHandlers'
 import { useTranslations } from 'next-intl'
 import { useStudioStore, usePlaybackStore, useMixerStore, useUIStore } from '@/lib/stores'
 import { useAudioEngine } from '@/hooks/useAudioEngine'
@@ -377,419 +361,63 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tracks])
 
-  const handleUploadSuccess = async (trackId: string) => {
-    // Fetch the updated track data
-    const result = await getProjectStudioData(projectId)
-    if (result.success && result.tracks) {
-      const updatedTrack = result.tracks.find(t => t.id === trackId)
-      if (updatedTrack) {
-        // Check if this is a new track or an existing one
-        const existingTrack = tracks.find(track => track.id === trackId)
-        if (existingTrack) {
-          // Update existing track, but preserve local UI state
-          updateTrackInStore(trackId, {
-            ...(updatedTrack as Track),
-            // Preserve folder open state (don't auto-open on upload)
-            is_retake_folder_open: existingTrack.is_retake_folder_open || false
-          })
-        } else {
-          // Add new track (folder closed by default)
-          const addTrackToStore = useStudioStore.getState().addTrack
-          addTrackToStore({
-            ...(updatedTrack as Track),
-            is_retake_folder_open: false
-          })
-        }
-      }
-    }
-  }
-
-  const handleAddTrack = async () => {
-    const result = await createEmptyTrack(projectId)
-    if (result.success && result.track) {
-      toast.success('Track created')
-      // Add the new track to the state with proper structure
-      const newTrack: Track = {
-        ...result.track,
-        takes: [],
-        comments: [],
-        mixer_settings: null,
-        is_retake_folder_open: false,
-      }
-      setTracks([...tracks, newTrack])
-      setSelectedTrackId(result.track.id)
-    } else {
-      toast.error(result.error || 'Failed to create track')
-    }
-  }
-
-  const handleImport = (trackId: string) => {
-    setSelectedTrackId(trackId)
-    setUploadModalOpen(true)
-  }
-
-  const handleToggleTakes = async (trackId: string) => {
-    const track = tracks.find(t => t.id === trackId)
-    if (!track) return
-
-    const newState = !track.is_retake_folder_open
-
-    // Optimistic update
-    updateTrackInStore(trackId, { is_retake_folder_open: newState })
-
-    // Update server
-    const result = await toggleRetakeFolder(trackId, newState)
-    if (!result.success) {
-      toast.error(result.error || 'Failed to toggle retake folder')
-      loadStudioData() // Revert on error
-    }
-  }
-
-  // Helper to reload a track's audio (used after section changes)
-  const reloadTrackAudio = useCallback(async (trackId: string) => {
-    const track = tracks.find(t => t.id === trackId)
-    if (!track) return
-
-    // Get active take using active_take_id
-    const activeTake = track.takes?.find((t) => t.id === track.active_take_id)
-
-    if (!activeTake?.audio_url) return
-
-    const mixerSettings = track.mixer_settings
-    const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
-    const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
-
-    // Load track audio (simple, no comping)
-    audioEngine.loadTrack(trackId, activeTake.audio_url, volume, pan)
-  }, [tracks, audioEngine])
-
-  const handleSectionCreated = useCallback(async (trackId: string, takeId: string, startTime: number, endTime: number) => {
-    console.log('📝 Creating comped section:', { trackId, takeId, startTime, endTime })
-    const result = await createCompedSection(trackId, takeId, startTime, endTime)
-
-    if (result.success && result.section) {
-      toast.success('Section added')
-
-      // Get current track state
-      const track = tracks.find(t => t.id === trackId)
-      if (!track) return
-
-      // Build updated sections list
-      const updatedSections = [...(track.compedSections || []), result.section]
-
-      // Optimistic update - add section to track
-      updateTrackInStore(trackId, { compedSections: updatedSections })
-
-      // Reload audio with the updated sections (don't wait for state update)
-      const activeTake = track.takes?.find(t => t.id === track.active_take_id)
-      if (!activeTake?.audio_url) return
-
-      const mixerSettings = track.mixer_settings
-      const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
-      const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
-
-      // Reload audio (simple, no comping)
-      audioEngine.loadTrack(trackId, activeTake.audio_url, volume, pan)
-    } else {
-      toast.error(result.error || 'Failed to create section')
-    }
-  }, [tracks, audioEngine])
-
-  const handleSectionDeleted = useCallback(async (trackId: string, sectionId: string) => {
-    console.log('🗑️ Deleting comped section:', sectionId)
-    const result = await deleteCompedSection(sectionId)
-
-    if (result.success) {
-      toast.success('Section removed')
-
-      // Get current track state
-      const track = tracks.find(t => t.id === trackId)
-      if (!track) return
-
-      // Build updated sections list (without deleted section)
-      const updatedSections = (track.compedSections || []).filter(s => s.id !== sectionId)
-
-      // Optimistic update - remove section from track
-      updateTrackInStore(trackId, { compedSections: updatedSections })
-
-      // Reload audio without this section (don't wait for state update)
-      const activeTake = track.takes?.find(t => t.id === track.active_take_id)
-      if (!activeTake?.audio_url) return
-
-      const mixerSettings = track.mixer_settings
-      const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
-      const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
-
-      // Reload audio (simple, no comping)
-      audioEngine.loadTrack(trackId, activeTake.audio_url, volume, pan)
-    } else {
-      toast.error(result.error || 'Failed to delete section')
-    }
-  }, [tracks, audioEngine])
-
-  const handleRetakeActivated = useCallback(async (trackId: string, takeId: string, isCurrentlyActive: boolean) => {
-    // If clicking on an already active retake, deactivate it and return to original
-    if (isCurrentlyActive) {
-      console.log('🔄 Deactivating retake and returning to original')
-      const result = await deactivateRetake(trackId)
-      if (result.success) {
-        toast.success('Returned to original take')
-        // Force reload by clearing the loaded URL cache
-        loadedAudioUrlsRef.current.delete(trackId)
-        await loadStudioData(true) // Silent reload
-      } else {
-        toast.error(result.error || 'Failed to deactivate retake')
-      }
-      return
-    }
-
-    // Normal activation
-    console.log('🎵 Activating retake:', { trackId, takeId })
-    const result = await activateRetake(trackId, takeId)
-
-    if (result.success) {
-      toast.success('Retake activated')
-      // Force reload by clearing the loaded URL cache
-      loadedAudioUrlsRef.current.delete(trackId)
-      await loadStudioData(true) // Silent reload
-    } else {
-      toast.error(result.error || 'Failed to activate retake')
-    }
-  }, [loadStudioData])
-
-  const handleTrackContextMenu = (e: React.MouseEvent, trackId: string) => {
-    e.preventDefault()
-    const track = tracks.find(t => t.id === trackId)
-    if (!track) return
-
-    openContextMenu(
-      trackId,
-      track.name,
-      track.color,
-      { x: e.clientX, y: e.clientY },
-      'track'
-    )
-  }
-
-  const handleMixerContextMenu = (e: React.MouseEvent, trackId: string) => {
-    e.preventDefault()
-    const track = tracks.find(t => t.id === trackId)
-    if (!track) return
-
-    openContextMenu(
-      trackId,
-      track.name,
-      track.color,
-      { x: e.clientX, y: e.clientY },
-      'mixer'
-    )
-  }
-
-  const handleRenameFromTrack = (trackId: string) => {
-    setRenamingTrackHeaderId(trackId)
-  }
-
-  const handleRenameFromMixer = (trackId: string) => {
-    setRenamingMixerChannelId(trackId)
-  }
-
-  const handleTrackRename = async (trackId: string, newName: string) => {
-    if (!newName.trim()) {
-      setRenamingTrackHeaderId(null)
-      setRenamingMixerChannelId(null)
-      return
-    }
-
-    // Optimistic update
-    updateTrackInStore(trackId, { name: newName })
-    setRenamingTrackHeaderId(null)
-    setRenamingMixerChannelId(null)
-
-    // Update server
-    const result = await updateTrackName(trackId, newName)
-    if (!result.success) {
-      toast.error(result.error || 'Failed to rename track')
-      loadStudioData()
-    }
-  }
-
-  const handleCancelRename = () => {
-    setRenamingTrackHeaderId(null)
-    setRenamingMixerChannelId(null)
-  }
-
-  const handleTracksReorder = async (trackIds: string[]) => {
-    // Optimistic update - reorder tracks locally
-    const reorderTracksInStore = useStudioStore.getState().reorderTracks
-    reorderTracksInStore(trackIds)
-
-    // Update server in background
-    const result = await reorderTracks(projectId, trackIds)
-    if (!result.success) {
-      toast.error(result.error || 'Failed to reorder tracks')
-      loadStudioData() // Revert on error
-    }
-  }
-
-  const handleColorChange = async (trackId: string, color: string) => {
-    // Optimistic update - update local state immediately
-    updateTrackInStore(trackId, { color })
-
-    // Update context menu color too
-    if (contextMenu.trackId === trackId) {
-      openContextMenu(
-        contextMenu.trackId,
-        contextMenu.trackName,
-        color, // Updated color
-        contextMenu.position,
-        contextMenu.source!
-      )
-    }
-
-    // Update server in background
-    const result = await updateTrackColor(trackId, color)
-    if (!result.success) {
-      // Revert on error
-      toast.error(result.error || 'Failed to update color')
-      loadStudioData()
-    }
-  }
-
-  const handleDuplicate = async (trackId: string) => {
-    const result = await duplicateTrack(trackId)
-    if (result.success) {
-      toast.success('Track duplicated')
-      loadStudioData()
-    } else {
-      toast.error(result.error || 'Failed to duplicate track')
-    }
-  }
-
-  const handleDeleteTrack = (trackId: string, trackName: string) => {
-    openDeleteConfirmation(trackId, trackName)
-  }
-
-  const confirmDeleteTrack = async () => {
-    const { trackId, trackName } = deleteConfirmation
-    closeDeleteConfirmation()
-
-    const result = await deleteTrack(trackId)
-    if (result.success) {
-      removeTrackFromStore(trackId)
-      if (selectedTrackId === trackId) {
-        setSelectedTrackId(null)
-      }
-      toast.success(`Track "${trackName}" deleted successfully`)
-    } else {
-      toast.error(result.error || 'Failed to delete track')
-    }
-  }
-
-  const cancelDeleteTrack = () => {
-    closeDeleteConfirmation()
-  }
-
-  const handleDeleteRetake = (trackId: string, takeId: string, retakeNumber: number) => {
-    openDeleteRetakeConfirmation(trackId, takeId, retakeNumber)
-  }
-
-  const confirmDeleteRetake = async () => {
-    const { trackId, takeId, retakeNumber } = deleteRetakeConfirmation
-    closeDeleteRetakeConfirmation()
-
-    const result = await deleteTake(takeId)
-    if (result.success) {
-      // Update tracks state to remove the deleted take
-      const removeTakeFromStore = useStudioStore.getState().removeTake
-      removeTakeFromStore(trackId, takeId)
-      toast.success(`Retake #${retakeNumber} deleted successfully`)
-    } else {
-      toast.error(result.error || 'Failed to delete retake')
-    }
-  }
-
-  const cancelDeleteRetake = () => {
-    closeDeleteRetakeConfirmation()
-  }
-
-  // Master channel handlers
-  const handleMasterVolumeChange = (volume: number) => {
-    setMasterVolume(volume)
-    audioEngine.setMasterVolume(volume)
-  }
-
-  const handleMasterPanChange = (pan: number) => {
-    setMasterPan(pan)
-    audioEngine.setMasterPan(pan)
-  }
-
-  const handleMasterMuteToggle = () => {
-    const newMute = !masterMute
-    setMasterMute(newMute)
-    audioEngine.setMasterMute(newMute)
-  }
-
-  // Handle waveform ready - store the loaded duration
-  const handleWaveformReady = useCallback((trackId: string, duration: number) => {
-    setTrackDurations((prev) => {
-      const newMap = new Map(prev)
-      newMap.set(trackId, duration)
-      return newMap
-    })
-  }, [])
-
-  const handleWaveformClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>, trackId: string) => {
-      const rect = e.currentTarget.getBoundingClientRect()
-      const x = e.clientX - rect.left
-      const percentage = x / rect.width
-      const timestamp = percentage * maxDuration
-
-      openCommentModal(
-        trackId,
-        timestamp,
-        { x: e.clientX, y: e.clientY }
-      )
-    },
-    [maxDuration, openCommentModal]
-  )
-
-  const handleCommentSubmit = useCallback(
-    async (text: string, timestamp: number) => {
-      const result = await addTrackComment(commentModal.trackId, timestamp, text)
-      if (result.success && result.comment) {
-        toast.success('Comment added!')
-        addCommentToStore(commentModal.trackId, result.comment)
-      } else {
-        toast.error(result.error || 'Failed to add comment')
-      }
-    },
-    [commentModal.trackId, addCommentToStore]
-  )
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDraggingFile(true)
-  }, [setDraggingFile])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDraggingFile(false)
-  }, [setDraggingFile])
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDraggingFile(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0]
-      setDroppedFile(file)
-      setUploadModalOpen(true)
-    }
-  }, [setDraggingFile, setDroppedFile, setUploadModalOpen])
+  // Extract all handlers to custom hook
+  const handlers = useStudioHandlers({
+    projectId,
+    tracks,
+    maxDuration,
+    audioEngine,
+    loadedAudioUrlsRef,
+    loadStudioData,
+    setUploadModalOpen,
+    setDroppedFile,
+    setDraggingFile,
+    setTrackDurations,
+    openContextMenu,
+    openCommentModal,
+    commentModal,
+    addCommentToStore,
+    openDeleteConfirmation,
+    closeDeleteConfirmation,
+    deleteConfirmation,
+    openDeleteRetakeConfirmation,
+    closeDeleteRetakeConfirmation,
+    deleteRetakeConfirmation,
+    contextMenu,
+  })
+
+  // Destructure handlers for easier access
+  const {
+    handleUploadSuccess,
+    handleAddTrack,
+    handleImport,
+    handleToggleTakes,
+    handleRetakeActivated,
+    handleTrackContextMenu,
+    handleMixerContextMenu,
+    handleRenameFromTrack,
+    handleRenameFromMixer,
+    handleTrackRename,
+    handleCancelRename,
+    handleTracksReorder,
+    handleColorChange,
+    handleDuplicate,
+    handleDeleteTrack,
+    confirmDeleteTrack,
+    cancelDeleteTrack,
+    handleDeleteRetake,
+    confirmDeleteRetake,
+    cancelDeleteRetake,
+    handleMasterVolumeChange,
+    handleMasterPanChange,
+    handleMasterMuteToggle,
+    handleWaveformReady,
+    handleWaveformClick,
+    handleCommentSubmit,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+  } = handlers
 
   if (isLoading) {
     return (
@@ -952,16 +580,13 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
                       // Check if original is active (for coloring)
                       const isOriginalActive = originalTake ? isTakeActive(track, originalTake.id) : false
 
-                      // Get comped sections for this track
-                      const compedSections = track.compedSections || []
-
                       // Create a unique key that changes when active state changes or on refresh
                       const trackKey = `${track.id}-${refreshKey}`
 
                       return (
                         <div key={trackKey} className="relative">
                           {/* Original track waveform (always on top) */}
-                          <CompableWaveformRow
+                          <WaveformTrackRow
                             trackId={track.id}
                             trackColor={track.color}
                             activeTake={originalTake}
@@ -971,7 +596,6 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
                             currentUserId={currentUserId}
                             isRetake={false}
                             isActive={isOriginalActive}
-                            compedSections={compedSections}
                             onWaveformReady={(duration) => handleWaveformReady(track.id, duration)}
                             waveformRef={(ref) => {
                               if (ref) {
@@ -981,18 +605,12 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
                               }
                             }}
                             onClick={handleWaveformClick}
-                            onSectionCreated={undefined} // Original track doesn't create sections
-                            onSectionDeleted={(sectionId) => handleSectionDeleted(track.id, sectionId)}
-                            readOnly={readOnly}
                           />
 
                           {/* Retake waveforms (if expanded) */}
                           {isExpanded && retakes.map((retake, idx) => {
-                            // Get sections for this retake
-                            const retakeSections = compedSections.filter(s => s.take_id === retake.id)
-
                             return (
-                              <CompableWaveformRow
+                              <WaveformTrackRow
                                 key={retake.id}
                                 trackId={track.id}
                                 trackColor={track.color}
@@ -1003,15 +621,9 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
                                 currentUserId={currentUserId}
                                 isRetake={true}
                                 isActive={isTakeActive(track, retake.id)}
-                                compedSections={retakeSections}
                                 onWaveformReady={() => {}} // Don't update duration for retakes
                                 waveformRef={() => {}} // Retakes don't need refs
                                 onClick={undefined} // Retakes don't open comment modal
-                                onSectionCreated={(startTime, endTime) =>
-                                  handleSectionCreated(track.id, retake.id, startTime, endTime)
-                                }
-                                onSectionDeleted={(sectionId) => handleSectionDeleted(track.id, sectionId)}
-                                readOnly={readOnly}
                               />
                             )
                           })}
@@ -1097,32 +709,11 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       {isMixerOpen && (
         <div className="fixed bottom-0 left-0 right-0 h-[60vh] bg-zinc-900 border-t border-zinc-800 shadow-2xl z-50">
           <MixerView
-            tracks={tracks}
-            selectedTrackId={selectedTrackId}
-            renamingTrackId={renamingMixerChannelId}
-            trackVolumes={trackControls.trackVolumes}
-            trackPans={trackControls.trackPans}
-            trackMutes={trackControls.trackMutes}
-            trackSolos={trackControls.trackSolos}
-            trackAudioLevels={trackAudioLevels}
-            masterVolume={masterVolume}
-            masterPan={masterPan}
-            masterMute={masterMute}
-            masterAudioLevel={masterAudioLevel}
-            onTrackSelect={setSelectedTrackId}
-            onVolumeChange={trackControls.handleVolumeChange}
-            onPanChange={trackControls.handlePanChange}
-            onMuteToggle={trackControls.handleMuteToggle}
-            onSoloToggle={trackControls.handleSoloToggle}
             onDeleteTrack={handleDeleteTrack}
             onImport={handleImport}
             onContextMenu={handleMixerContextMenu}
             onTrackRename={handleTrackRename}
-            onCancelRename={handleCancelRename}
             onTracksReorder={handleTracksReorder}
-            onMasterVolumeChange={handleMasterVolumeChange}
-            onMasterPanChange={handleMasterPanChange}
-            onMasterMuteToggle={handleMasterMuteToggle}
             onAddTrack={handleAddTrack}
             readOnly={readOnly}
           />
