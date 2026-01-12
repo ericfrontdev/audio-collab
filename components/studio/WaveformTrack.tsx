@@ -17,7 +17,6 @@ interface TakeWithUploader {
   waveform_data: number[] | null
   file_size: number | null
   file_format: string | null
-  is_active: boolean
   created_at: string
   updated_at: string
   uploader?: {
@@ -80,7 +79,7 @@ export function WaveformTrack({
 }: WaveformTrackProps) {
   const [isTakesModalOpen, setIsTakesModalOpen] = useState(false)
   const [isTogglingCollaborative, setIsTogglingCollaborative] = useState(false)
-  const activeTake = track.takes?.find((t) => t.is_active) || track.takes?.[0]
+  const activeTake = track.takes?.find((t) => t.id === track.active_take_id) || track.takes?.[0]
   const takesCount = track.takes?.length || 0
   const isTrackCreator = currentUserId === track.created_by
 

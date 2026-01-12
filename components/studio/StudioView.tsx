@@ -455,14 +455,8 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     const track = tracks.find(t => t.id === trackId)
     if (!track) return
 
-    // Get active take (original)
-    const activeTakes = track.takes?.filter(t => t.is_active).sort((a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    ) || []
-    const allTakes = [...(track.takes || [])].sort((a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-    const activeTake = activeTakes.length > 0 ? activeTakes[0] : allTakes[0]
+    // Get active take using active_take_id
+    const activeTake = track.takes?.find((t) => t.id === track.active_take_id)
 
     if (!activeTake?.audio_url) return
 

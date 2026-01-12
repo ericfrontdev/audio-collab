@@ -14,7 +14,6 @@ interface TakeWithUploader {
   waveform_data: number[] | null
   file_size: number | null
   file_format: string | null
-  is_active: boolean
   created_at: string
   updated_at: string
   uploader?: {

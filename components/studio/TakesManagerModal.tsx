@@ -14,7 +14,6 @@ interface TakeWithUploader {
   waveform_data: number[] | null
   file_size: number | null
   file_format: string | null
-  is_active: boolean
   created_at: string
   updated_at: string
   uploader?: {
@@ -56,7 +55,7 @@ export function TakesManagerModal({
   if (!isOpen) return null
 
   const takes = track.takes || []
-  const activeTake = takes.find(t => t.is_active)
+  const activeTake = takes.find(t => t.id === track.active_take_id)
   const isTrackCreator = currentUserId === track.created_by
   const canUpload = isTrackCreator || track.is_collaborative
 

@@ -12,7 +12,6 @@ interface TakeWithUploader {
   waveform_data: number[] | null
   file_size: number | null
   file_format: string | null
-  is_active: boolean
   created_at: string
   updated_at: string
   uploader?: {
@@ -100,7 +99,7 @@ export function TrackList({
                     </div>
                     {(() => {
                       const activeTake =
-                        track.takes?.find((t) => t.is_active) ||
+                        track.takes?.find((t) => t.id === track.active_take_id) ||
                         track.takes?.[0]
                       const uploader = activeTake?.uploader
                       if (uploader) {
