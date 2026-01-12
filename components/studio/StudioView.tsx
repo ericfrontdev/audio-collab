@@ -20,8 +20,8 @@ import {
   createCompedSection,
   deleteCompedSection,
   toggleRetakeFolder,
-  activateFullRetake,
 } from '@/app/actions/studio/compedSections'
+import { activateRetake, deactivateRetake } from '@/app/actions/studio/retakes'
 import { ProjectTrack, CompedSection } from '@/lib/types/studio'
 import { toast } from 'react-toastify'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -617,55 +617,30 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
   }, [tracks, playback])
 
   const handleRetakeActivated = useCallback(async (trackId: string, takeId: string, isCurrentlyActive: boolean) => {
-    // If clicking on an already active retake, deactivate it and reactivate the original
+    // If clicking on an already active retake, deactivate it and return to original
     if (isCurrentlyActive) {
       console.log('🔄 Deactivating retake and returning to original')
-      const track = tracks.find(t => t.id === trackId)
-      if (!track || !track.takes) return
-
-      // Find the original take (first created)
-      const originalTake = [...track.takes].sort((a: any, b: any) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      )[0]
-
-      if (!originalTake) return
-
-      try {
-        const result = await activateFullRetake(trackId, originalTake.id)
-        if (result.success) {
-          toast.success('Returned to original take')
-          await loadStudioData(true) // Silent reload
-        } else {
-          toast.error(result.error || 'Failed to deactivate retake')
-        }
-      } catch (error) {
-        console.error('❌ Exception in deactivating retake:', error)
-        toast.error('An error occurred')
+      const result = await deactivateRetake(trackId)
+      if (result.success) {
+        toast.success('Returned to original take')
+        await loadStudioData(true) // Silent reload
+      } else {
+        toast.error(result.error || 'Failed to deactivate retake')
       }
       return
     }
 
     // Normal activation
-    console.log('🎵 Activating full retake:', { trackId, takeId })
+    console.log('🎵 Activating retake:', { trackId, takeId })
+    const result = await activateRetake(trackId, takeId)
 
-    try {
-      const result = await activateFullRetake(trackId, takeId)
-      console.log('✅ Retake activation result:', result)
-
-      if (result.success) {
-        toast.success('Retake activated')
-        console.log('🔄 Reloading studio data...')
-        await loadStudioData(true) // Silent reload
-        console.log('✅ Studio data reloaded')
-      } else {
-        console.error('❌ Activation failed:', result.error)
-        toast.error(result.error || 'Failed to activate retake')
-      }
-    } catch (error) {
-      console.error('❌ Exception in handleRetakeActivated:', error)
-      toast.error('An error occurred while activating retake')
+    if (result.success) {
+      toast.success('Retake activated')
+      await loadStudioData(true) // Silent reload
+    } else {
+      toast.error(result.error || 'Failed to activate retake')
     }
-  }, [loadStudioData, tracks])
+  }, [loadStudioData])
 
   const handleTrackContextMenu = (e: React.MouseEvent, trackId: string) => {
     e.preventDefault()
