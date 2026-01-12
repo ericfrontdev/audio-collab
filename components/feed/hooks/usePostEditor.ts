@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { updatePost, deletePost } from '@/app/actions/feed'
+import { updatePost, deletePost } from '@/app/actions/feed/posts'
 import { uploadMediaToStorage, deleteMediaFromStorage } from '@/lib/storage/uploadMedia'
 import { toast } from 'react-toastify'
 import type { Post } from '@/lib/types/feed'

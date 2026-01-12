@@ -1,4 +1,4 @@
-import { getFeedPosts } from '@/app/actions/feed'
+import { getFeedPosts } from '@/app/actions/feed/posts'
 import { CreatePostCard } from '@/components/feed/CreatePostCard'
 import { FeedPostsList } from '@/components/feed/FeedPostsList'
 import { AppLayout } from '@/components/layouts/AppLayout'

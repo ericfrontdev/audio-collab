@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { CreatePostCard } from '@/components/feed/CreatePostCard'
 import { FeedPost } from '@/components/feed/FeedPost'
-import { getClubPosts } from '@/app/actions/feed'
+import { getClubPosts } from '@/app/actions/feed/posts'
 import type { Post } from '@/lib/types/feed'
 import { useTranslations } from 'next-intl'
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { addPostComment, getPostComments, toggleCommentLike } from '@/app/actions/feed'
+import { addPostComment, getPostComments } from '@/app/actions/feed/comments'
+import { toggleCommentLike } from '@/app/actions/feed/likes'
 import { toast } from 'react-toastify'
 import { createClient } from '@/lib/supabase/client'
 

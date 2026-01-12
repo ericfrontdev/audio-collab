@@ -9,7 +9,7 @@ import { Link } from '@/i18n/routing';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { ProfilePosts } from '@/components/profile/ProfilePosts';
 import { CreatePostCard } from '@/components/feed/CreatePostCard';
-import { getProfilePosts } from '@/app/actions/feed';
+import { getProfilePosts } from '@/app/actions/feed/posts';
 import { getTranslations } from 'next-intl/server';
 
 export default async function ProfilePage({
