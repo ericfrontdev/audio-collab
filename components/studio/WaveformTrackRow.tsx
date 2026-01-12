@@ -67,6 +67,8 @@ interface WaveformTrackRowProps {
   maxDuration: number
   comments?: CommentWithProfile[]
   currentUserId?: string
+  isRetake?: boolean
+  isActive?: boolean
   onWaveformReady: (duration: number) => void
   waveformRef: (ref: CanvasWaveformRef | null) => void
   onClick?: (e: React.MouseEvent<HTMLDivElement>, trackId: string) => void
@@ -80,6 +82,8 @@ export function WaveformTrackRow({
   maxDuration,
   comments,
   currentUserId,
+  isRetake = false,
+  isActive = true,
   onWaveformReady,
   waveformRef,
   onClick,
@@ -112,11 +116,20 @@ export function WaveformTrackRow({
     }
   }, [activeTake, loadedDuration]) // Remove onWaveformReady from dependencies
 
+  // Determine styling based on retake state
+  const backgroundColor = isRetake && !isActive
+    ? 'rgba(39, 39, 42, 0.4)' // bg-zinc-800/40 - darker for inactive retakes
+    : `${trackColor}40` // normal colored background
+
+  const waveformColor = isRetake && !isActive
+    ? lightenColor(trackColor, 0.95) // very pale for inactive retakes
+    : trackColor // normal color
+
   return (
     <div
       className="relative h-[70px] border-b border-zinc-800 py-2 cursor-pointer w-full"
       style={{
-        backgroundColor: `${trackColor}40`,
+        backgroundColor,
       }}
       onClick={(e) => onClick?.(e, trackId)}
     >
@@ -127,7 +140,7 @@ export function WaveformTrackRow({
           left: `${widthPercentage}%`,
           top: 'calc(50% - 1px)',
           height: '2px',
-          backgroundColor: trackColor,
+          backgroundColor: waveformColor,
         }}
       />
 
@@ -144,7 +157,7 @@ export function WaveformTrackRow({
             ref={waveformRef}
             key={activeTake.id}
             peaks={activeTake.waveform_data}
-            trackColor={trackColor}
+            trackColor={waveformColor}
             height={54}
             duration={loadedDuration || activeTake.waveform_data.length / 100}
           />
