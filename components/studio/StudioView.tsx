@@ -34,11 +34,11 @@ import { CompableWaveformRow } from './CompableWaveformRow'
 import { TrackContextMenu } from './TrackContextMenu'
 import { MixerView } from './MixerView'
 import { TimelineRuler } from './TimelineRuler'
-import { useTonePlayback } from './hooks/useTonePlayback'
 import { useStudioTracks } from './hooks/useStudioTracks'
 import { useStudioTimeline } from './hooks/useStudioTimeline'
 import { useTranslations } from 'next-intl'
 import { useStudioStore, usePlaybackStore, useMixerStore, useUIStore } from '@/lib/stores'
+import { useAudioEngine } from '@/hooks/useAudioEngine'
 
 interface StudioViewProps {
   projectId: string
@@ -167,17 +167,15 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     ? Math.max(...Array.from(trackDurations.values()))
     : 0
 
-  // Audio level callback for VU meters
-  const handleAudioLevel = useCallback((trackId: string, level: number, peak: number) => {
-    if (trackId === 'master') {
-      setMasterAudioLevel({ level, peak })
-    } else {
-      setTrackLevel(trackId, level, peak)
-    }
-  }, [setTrackLevel])
-
   // Custom hooks
-  const playback = useTonePlayback(handleAudioLevel)
+  const audioEngine = useAudioEngine()
+
+  // Get playback state from store
+  const isPlaying = usePlaybackStore((state) => state.isPlaying)
+  const currentTime = usePlaybackStore((state) => state.currentTime)
+
+  // Waveform refs (for seeking)
+  const waveformRefsRef = useRef<Map<string, any>>(new Map())
 
   // Callback to save mixer settings to database
   const handleMixerSettingsChange = useCallback(async (trackId: string, settings: {
@@ -211,9 +209,9 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
   ), [tracks])
 
   const trackControls = useStudioTracks({
-    setTrackVolume: playback.setTrackVolume,
-    setTrackPan: playback.setTrackPan,
-    setTrackMute: playback.setTrackMute,
+    setTrackVolume: audioEngine.setTrackVolume,
+    setTrackPan: audioEngine.setTrackPan,
+    setTrackMute: audioEngine.setTrackMute,
     trackIds: tracks.map(t => t.id),
     masterVolume,
     masterPan,
@@ -223,8 +221,8 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
   })
   const timeline = useStudioTimeline({
     maxDuration: maxDuration,
-    waveformRefs: playback.waveformRefs,
-    onSeek: playback.handleSeek,
+    waveformRefs: waveformRefsRef,
+    onSeek: audioEngine.handleSeek,
   })
 
   // Check orientation on mobile
@@ -310,7 +308,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     loadedAudioUrlsRef.current.forEach((url, trackId) => {
       if (!currentTrackIds.has(trackId)) {
         console.log('🗑️ Removing deleted track:', trackId)
-        playback.removeTrack(trackId)
+        audioEngine.removeTrack(trackId)
         loadedAudioUrlsRef.current.delete(trackId)
       }
     })
@@ -335,7 +333,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
           const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
 
           // Load simple (no comping - comping is disabled)
-          playback.loadTrack(track.id, activeTake.audio_url, volume, pan)
+          audioEngine.loadTrack(track.id, activeTake.audio_url, volume, pan)
 
           loadedAudioUrlsRef.current.set(track.id, activeTake.audio_url)
         } else {
@@ -344,7 +342,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       } else {
         // Remove track if no audio
         if (loadedAudioUrlsRef.current.has(track.id)) {
-          playback.removeTrack(track.id)
+          audioEngine.removeTrack(track.id)
           loadedAudioUrlsRef.current.delete(track.id)
         }
       }
@@ -434,34 +432,9 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
     const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
 
-    // Check if this track has comped sections
-    const compedSections = track.compedSections || []
-
-    if (compedSections.length > 0) {
-      // Build retakes with sections
-      const retakesWithSections = track.takes
-        ?.filter(t => t.id !== activeTake.id)
-        .map(take => ({
-          takeId: take.id,
-          audioUrl: take.audio_url,
-          sections: compedSections.filter(s => s.take_id === take.id)
-        }))
-        .filter(r => r.sections.length > 0) || []
-
-      // Load with comping
-      playback.loadTrackWithRetakes(
-        trackId,
-        activeTake.id,
-        activeTake.audio_url,
-        retakesWithSections,
-        volume,
-        pan
-      )
-    } else {
-      // Load simple (no comping)
-      playback.loadTrack(trackId, activeTake.audio_url, volume, pan)
-    }
-  }, [tracks, playback])
+    // Load track audio (simple, no comping)
+    audioEngine.loadTrack(trackId, activeTake.audio_url, volume, pan)
+  }, [tracks, audioEngine])
 
   const handleSectionCreated = useCallback(async (trackId: string, takeId: string, startTime: number, endTime: number) => {
     console.log('📝 Creating comped section:', { trackId, takeId, startTime, endTime })
@@ -488,29 +461,12 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
       const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
 
-      // Build retakes with sections using the updated sections list
-      const retakesWithSections = track.takes
-        ?.filter(t => t.id !== activeTake.id)
-        .map(take => ({
-          takeId: take.id,
-          audioUrl: take.audio_url,
-          sections: updatedSections.filter(s => s.take_id === take.id)
-        }))
-        .filter(r => r.sections.length > 0) || []
-
-      // Load with comping
-      playback.loadTrackWithRetakes(
-        trackId,
-        activeTake.id,
-        activeTake.audio_url,
-        retakesWithSections,
-        volume,
-        pan
-      )
+      // Reload audio (simple, no comping)
+      audioEngine.loadTrack(trackId, activeTake.audio_url, volume, pan)
     } else {
       toast.error(result.error || 'Failed to create section')
     }
-  }, [tracks, playback])
+  }, [tracks, audioEngine])
 
   const handleSectionDeleted = useCallback(async (trackId: string, sectionId: string) => {
     console.log('🗑️ Deleting comped section:', sectionId)
@@ -537,34 +493,12 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
       const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
 
-      if (updatedSections.length > 0) {
-        // Build retakes with sections using the updated sections list
-        const retakesWithSections = track.takes
-          ?.filter(t => t.id !== activeTake.id)
-          .map(take => ({
-            takeId: take.id,
-            audioUrl: take.audio_url,
-            sections: updatedSections.filter(s => s.take_id === take.id)
-          }))
-          .filter(r => r.sections.length > 0) || []
-
-        // Load with comping
-        playback.loadTrackWithRetakes(
-          trackId,
-          activeTake.id,
-          activeTake.audio_url,
-          retakesWithSections,
-          volume,
-          pan
-        )
-      } else {
-        // No more sections - load simple
-        playback.loadTrack(trackId, activeTake.audio_url, volume, pan)
-      }
+      // Reload audio (simple, no comping)
+      audioEngine.loadTrack(trackId, activeTake.audio_url, volume, pan)
     } else {
       toast.error(result.error || 'Failed to delete section')
     }
-  }, [tracks, playback])
+  }, [tracks, audioEngine])
 
   const handleRetakeActivated = useCallback(async (trackId: string, takeId: string, isCurrentlyActive: boolean) => {
     // If clicking on an already active retake, deactivate it and return to original
@@ -754,18 +688,18 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
   // Master channel handlers
   const handleMasterVolumeChange = (volume: number) => {
     setMasterVolume(volume)
-    playback.setMasterVolume(volume)
+    audioEngine.setMasterVolume(volume)
   }
 
   const handleMasterPanChange = (pan: number) => {
     setMasterPan(pan)
-    playback.setMasterPan(pan)
+    audioEngine.setMasterPan(pan)
   }
 
   const handleMasterMuteToggle = () => {
     const newMute = !masterMute
     setMasterMute(newMute)
-    playback.setMasterMute(newMute)
+    audioEngine.setMasterMute(newMute)
   }
 
   // Handle waveform ready - store the loaded duration
@@ -881,12 +815,12 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       {/* Header with Transport Controls */}
       <TransportControls
         projectName={projectTitle}
-        isPlaying={playback.isPlaying}
-        currentTime={playback.currentTime}
+        isPlaying={isPlaying}
+        currentTime={currentTime}
         hasTracksLoaded={tracks.length > 0}
         isMixerOpen={isMixerOpen}
-        onPlayPause={playback.handlePlayPause}
-        onStop={playback.handleStop}
+        onPlayPause={audioEngine.handlePlayPause}
+        onStop={audioEngine.handleStop}
         onToggleMixer={() => setMixerOpen(!isMixerOpen)}
         readOnly={readOnly}
       />
@@ -957,7 +891,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
                     <div
                       className="absolute top-0 bottom-0 w-0.5 bg-white"
                       style={{
-                        left: `${(playback.currentTime / maxDuration) * 100}%`,
+                        left: `${(currentTime / maxDuration) * 100}%`,
                       }}
                     />
                   )}
@@ -1014,9 +948,9 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
                             onWaveformReady={(duration) => handleWaveformReady(track.id, duration)}
                             waveformRef={(ref) => {
                               if (ref) {
-                                playback.waveformRefs.current.set(track.id, ref)
+                                waveformRefsRef.current.set(track.id, ref)
                               } else {
-                                playback.waveformRefs.current.delete(track.id)
+                                waveformRefsRef.current.delete(track.id)
                               }
                             }}
                             onClick={handleWaveformClick}
