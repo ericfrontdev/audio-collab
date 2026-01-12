@@ -85,7 +85,7 @@ export function VolumeControl({
     >
       {/* Fill below fader (purple pale) */}
       <div
-        className="absolute top-0 bottom-0 left-0 rounded-[1px] transition-all"
+        className="absolute top-0 bottom-0 left-0 rounded-[1px]"
         style={{
           width: `${value}%`,
           backgroundColor: purplePale,
@@ -94,7 +94,7 @@ export function VolumeControl({
 
       {/* Fader line (vertical, stays purple) */}
       <div
-        className="absolute top-0 bottom-0 transition-all"
+        className="absolute top-0 bottom-0"
         style={{
           left: `${value}%`,
           transform: 'translateX(-50%)',
