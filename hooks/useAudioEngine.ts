@@ -86,8 +86,8 @@ export function useAudioEngine() {
     }
 
     try {
-      // Create player
-      const player = new Tone.Player(audioUrl)
+      // Create player and load audio
+      const player = new Tone.Player()
       const volumeNode = new Tone.Volume(Tone.gainToDb(volume))
       const pannerNode = new Tone.Panner(pan)
 
