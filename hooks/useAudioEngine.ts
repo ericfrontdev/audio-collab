@@ -86,12 +86,22 @@ export function useAudioEngine() {
     }
 
     try {
-      // Create player
-      const player = new Tone.Player(audioUrl)
+      // Create player and load audio
+      const player = new Tone.Player()
       const volumeNode = new Tone.Volume(Tone.gainToDb(volume))
       const pannerNode = new Tone.Panner(pan)
 
-      await player.load(audioUrl)
+      // Try to load audio, fail gracefully if URL is invalid
+      try {
+        await player.load(audioUrl)
+      } catch (loadError) {
+        console.warn(`Failed to load audio for track ${trackId}:`, audioUrl, loadError)
+        // Clean up nodes
+        player.dispose()
+        volumeNode.dispose()
+        pannerNode.dispose()
+        return 0
+      }
 
       // Connect: player -> volume -> panner -> master
       player.connect(volumeNode)
@@ -126,7 +136,7 @@ export function useAudioEngine() {
 
       return duration
     } catch (error) {
-      console.error('Error loading track:', error)
+      console.error(`Error loading track ${trackId}:`, error)
       return 0
     }
   }, [setTrackDuration])
