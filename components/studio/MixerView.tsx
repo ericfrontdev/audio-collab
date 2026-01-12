@@ -6,6 +6,8 @@ import { MixerChannel } from './MixerChannel'
 import { MasterChannel } from './MasterChannel'
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { useStudioStore, useUIStore, useMixerStore } from '@/lib/stores'
+import { useAudioEngine } from '@/hooks/useAudioEngine'
 
 interface TakeWithUploader {
   id: string
@@ -44,66 +46,107 @@ interface TrackWithDetails {
 }
 
 interface MixerViewProps {
-  tracks: TrackWithDetails[]
-  selectedTrackId: string | null
-  renamingTrackId: string | null
-  trackVolumes: Map<string, number>
-  trackPans: Map<string, number>
-  trackMutes: Set<string>
-  trackSolos: Set<string>
-  trackAudioLevels: Map<string, { level: number; peak: number }>
-  masterVolume: number
-  masterPan: number
-  masterMute: boolean
-  masterAudioLevel: { level: number; peak: number }
-  onTrackSelect: (trackId: string) => void
-  onVolumeChange: (trackId: string, volume: number) => void
-  onPanChange: (trackId: string, pan: number) => void
-  onMuteToggle: (trackId: string) => void
-  onSoloToggle: (trackId: string) => void
   onDeleteTrack: (trackId: string, trackName: string) => void
   onImport: (trackId: string) => void
   onContextMenu: (e: React.MouseEvent, trackId: string) => void
   onTrackRename: (trackId: string, newName: string) => void
-  onCancelRename: () => void
   onTracksReorder: (trackIds: string[]) => void
-  onMasterVolumeChange: (volume: number) => void
-  onMasterPanChange: (pan: number) => void
-  onMasterMuteToggle: () => void
   onAddTrack: () => void
   readOnly?: boolean
 }
 
 export function MixerView({
-  tracks,
-  selectedTrackId,
-  renamingTrackId,
-  trackVolumes,
-  trackPans,
-  trackMutes,
-  trackSolos,
-  trackAudioLevels,
-  masterVolume,
-  masterPan,
-  masterMute,
-  masterAudioLevel,
-  onTrackSelect,
-  onVolumeChange,
-  onPanChange,
-  onMuteToggle,
-  onSoloToggle,
   onDeleteTrack,
   onImport,
   onContextMenu,
   onTrackRename,
-  onCancelRename,
   onTracksReorder,
-  onMasterVolumeChange,
-  onMasterPanChange,
-  onMasterMuteToggle,
   onAddTrack,
-  readOnly = false,
+  readOnly,
 }: MixerViewProps) {
+  // Get data from stores
+  const tracks = useStudioStore((state) => state.tracks)
+  const selectedTrackId = useUIStore((state) => state.selectedTrackId)
+  const setSelectedTrackId = useUIStore((state) => state.setSelectedTrackId)
+  const renamingTrackId = useUIStore((state) => state.renamingMixerChannelId)
+  const setRenamingMixerChannelId = useUIStore((state) => state.setRenamingMixerChannelId)
+
+  const trackMixerSettings = useMixerStore((state) => state.tracks)
+  const trackAudioLevels = useMixerStore((state) => state.trackLevels)
+  const masterVolume = useMixerStore((state) => state.masterVolume)
+  const masterPan = useMixerStore((state) => state.masterPan)
+  const masterMute = useMixerStore((state) => state.masterMute)
+  const masterLevel = useMixerStore((state) => state.masterLevel)
+  const setTrackVolume = useMixerStore((state) => state.setTrackVolume)
+  const setTrackPan = useMixerStore((state) => state.setTrackPan)
+  const setTrackMute = useMixerStore((state) => state.setTrackMute)
+  const setTrackSolo = useMixerStore((state) => state.setTrackSolo)
+  const setMasterVolume = useMixerStore((state) => state.setMasterVolume)
+  const setMasterPan = useMixerStore((state) => state.setMasterPan)
+  const setMasterMute = useMixerStore((state) => state.setMasterMute)
+  const getAllSoloedTracks = useMixerStore((state) => state.getAllSoloedTracks)
+
+  const audioEngine = useAudioEngine()
+
+  // Derived state
+  const trackVolumes = new Map(Array.from(trackMixerSettings.entries()).map(([id, settings]) => [id, settings.volume]))
+  const trackPans = new Map(Array.from(trackMixerSettings.entries()).map(([id, settings]) => [id, settings.pan]))
+  const trackMutes = new Set(Array.from(trackMixerSettings.entries()).filter(([_, settings]) => settings.mute).map(([id]) => id))
+  const trackSolos = new Set(Array.from(trackMixerSettings.entries()).filter(([_, settings]) => settings.solo).map(([id]) => id))
+  const masterAudioLevel = masterLevel
+
+  // Handlers
+  const handleVolumeChange = (trackId: string, volume: number) => {
+    setTrackVolume(trackId, volume)
+    audioEngine.setTrackVolume(trackId, volume / 100)
+  }
+
+  const handlePanChange = (trackId: string, pan: number) => {
+    setTrackPan(trackId, pan)
+    audioEngine.setTrackPan(trackId, pan / 100)
+  }
+
+  const handleMuteToggle = (trackId: string) => {
+    const currentSettings = trackMixerSettings.get(trackId)
+    const newMute = !currentSettings?.mute
+    setTrackMute(trackId, newMute)
+    audioEngine.setTrackMute(trackId, newMute)
+  }
+
+  const handleSoloToggle = (trackId: string) => {
+    const currentSettings = trackMixerSettings.get(trackId)
+    const newSolo = !currentSettings?.solo
+    setTrackSolo(trackId, newSolo)
+
+    // Apply solo logic to audio engine
+    const soloedTracks = getAllSoloedTracks()
+    tracks.forEach((track) => {
+      const settings = trackMixerSettings.get(track.id)
+      const shouldMute = soloedTracks.length > 0 && !soloedTracks.includes(track.id)
+      audioEngine.setTrackMute(track.id, settings?.mute || shouldMute)
+    })
+  }
+
+  const handleMasterVolumeChange = (volume: number) => {
+    setMasterVolume(volume)
+    audioEngine.setMasterVolume(volume)
+  }
+
+  const handleMasterPanChange = (pan: number) => {
+    setMasterPan(pan)
+    audioEngine.setMasterPan(pan)
+  }
+
+  const handleMasterMuteToggle = () => {
+    const newMute = !masterMute
+    setMasterMute(newMute)
+    audioEngine.setMasterMute(newMute)
+  }
+
+  const handleCancelRename = () => {
+    setRenamingMixerChannelId(null)
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
@@ -173,16 +216,16 @@ export function MixerView({
                         isRenaming={renamingTrackId === track.id}
                         audioLevel={trackAudioLevels.get(track.id)?.level ?? 0}
                         audioPeak={trackAudioLevels.get(track.id)?.peak ?? 0}
-                        onVolumeChange={onVolumeChange}
-                        onPanChange={onPanChange}
-                        onMuteToggle={onMuteToggle}
-                        onSoloToggle={onSoloToggle}
-                        onSelect={onTrackSelect}
+                        onVolumeChange={handleVolumeChange}
+                        onPanChange={handlePanChange}
+                        onMuteToggle={handleMuteToggle}
+                        onSoloToggle={handleSoloToggle}
+                        onSelect={setSelectedTrackId}
                         onDelete={onDeleteTrack}
                         onImport={onImport}
                         onContextMenu={onContextMenu}
                         onRename={onTrackRename}
-                        onCancelRename={onCancelRename}
+                        onCancelRename={handleCancelRename}
                         uploaderUsername={uploader?.username}
                       />
                     )
@@ -201,9 +244,9 @@ export function MixerView({
             isMuted={masterMute}
             audioLevel={masterAudioLevel.level}
             audioPeak={masterAudioLevel.peak}
-            onVolumeChange={onMasterVolumeChange}
-            onPanChange={onMasterPanChange}
-            onMuteToggle={onMasterMuteToggle}
+            onVolumeChange={handleMasterVolumeChange}
+            onPanChange={handleMasterPanChange}
+            onMuteToggle={handleMasterMuteToggle}
           />
         </div>
       </div>

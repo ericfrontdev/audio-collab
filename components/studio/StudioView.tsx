@@ -1097,32 +1097,11 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       {isMixerOpen && (
         <div className="fixed bottom-0 left-0 right-0 h-[60vh] bg-zinc-900 border-t border-zinc-800 shadow-2xl z-50">
           <MixerView
-            tracks={tracks}
-            selectedTrackId={selectedTrackId}
-            renamingTrackId={renamingMixerChannelId}
-            trackVolumes={trackControls.trackVolumes}
-            trackPans={trackControls.trackPans}
-            trackMutes={trackControls.trackMutes}
-            trackSolos={trackControls.trackSolos}
-            trackAudioLevels={trackAudioLevels}
-            masterVolume={masterVolume}
-            masterPan={masterPan}
-            masterMute={masterMute}
-            masterAudioLevel={masterAudioLevel}
-            onTrackSelect={setSelectedTrackId}
-            onVolumeChange={trackControls.handleVolumeChange}
-            onPanChange={trackControls.handlePanChange}
-            onMuteToggle={trackControls.handleMuteToggle}
-            onSoloToggle={trackControls.handleSoloToggle}
             onDeleteTrack={handleDeleteTrack}
             onImport={handleImport}
             onContextMenu={handleMixerContextMenu}
             onTrackRename={handleTrackRename}
-            onCancelRename={handleCancelRename}
             onTracksReorder={handleTracksReorder}
-            onMasterVolumeChange={handleMasterVolumeChange}
-            onMasterPanChange={handleMasterPanChange}
-            onMasterMuteToggle={handleMasterMuteToggle}
             onAddTrack={handleAddTrack}
             readOnly={readOnly}
           />
