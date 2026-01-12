@@ -212,7 +212,7 @@ export function MasterChannel({
           {/* Pan indicator line */}
           <div
             className={`
-              absolute top-0 bottom-0 bg-[#9363f7] transition-all
+              absolute top-0 bottom-0 bg-[#9363f7]
               ${isHoveringPan || isDraggingPan ? 'w-1' : 'w-0.5'}
             `}
             style={{
@@ -312,7 +312,7 @@ export function MasterChannel({
           >
             {/* Fill below fader */}
             <div
-              className="absolute bottom-0 left-0 right-0 bg-[#9363f733] transition-all rounded-[1px]"
+              className="absolute bottom-0 left-0 right-0 bg-[#9363f733] rounded-[1px]"
               style={{
                 height: `${faderPosition}%`,
               }}
@@ -321,7 +321,7 @@ export function MasterChannel({
             {/* Fader line (horizontal) */}
             <div
               className={`
-                absolute left-0 right-0 transition-all
+                absolute left-0 right-0
                 ${
                   isHoveringFader || isDraggingFader
                     ? 'bg-[#9363f7] h-1 shadow-lg shadow-[#9363f7]/50'
