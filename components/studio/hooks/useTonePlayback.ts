@@ -268,6 +268,10 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
 
   // Load or update a track's audio
   const loadTrack = useCallback(async (trackId: string, audioUrl: string, volume: number = 0.8, pan: number = 0) => {
+    // Check if playback is currently running
+    const wasPlaying = isPlayingRef.current
+    const currentTransportTime = wasPlaying ? Tone.Transport.seconds : 0
+
     // Remove existing player if any
     const existing = playersRef.current.get(trackId)
     if (existing) {
@@ -340,6 +344,17 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
       const duration = player.buffer.duration
       setMaxDuration((prev) => Math.max(prev, duration))
 
+      // CRITICAL FIX: If playback was running when we loaded this new track,
+      // start the player at the current transport position
+      if (wasPlaying && currentTransportTime < duration) {
+        console.log(`🎵 Starting new player for track ${trackId} at ${currentTransportTime}s`)
+        try {
+          player.start("+0", currentTransportTime)
+        } catch (e) {
+          console.error('Error starting new player:', e)
+        }
+      }
+
       return duration
     } catch (error) {
       console.error('Error loading track:', error)
@@ -356,6 +371,10 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
     volume: number = 0.8,
     pan: number = 0
   ) => {
+    // Check if playback is currently running
+    const wasPlaying = isPlayingRef.current
+    const currentTransportTime = wasPlaying ? Tone.Transport.seconds : 0
+
     // Remove existing player set if any
     const existing = trackPlayerSetsRef.current.get(trackId)
     if (existing) {
@@ -443,6 +462,20 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
       // Update max duration
       const duration = originalPlayer.player.buffer.duration
       setMaxDuration((prev) => Math.max(prev, duration))
+
+      // CRITICAL FIX: If playback was running when we loaded this new track,
+      // start all players at the current transport position
+      if (wasPlaying && currentTransportTime < duration) {
+        console.log(`🎵 Starting new player set for track ${trackId} at ${currentTransportTime}s`)
+        try {
+          originalPlayer.player.start("+0", currentTransportTime)
+          retakePlayers.forEach((retakePlayer) => {
+            retakePlayer.player.start("+0", currentTransportTime)
+          })
+        } catch (e) {
+          console.error('Error starting new player set:', e)
+        }
+      }
 
       return duration
     } catch (error) {
