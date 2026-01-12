@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from '@/i18n/routing'
 import { Heart, MoreHorizontal, Edit, Trash2, Send } from 'lucide-react'
-import { updateComment, deleteComment, toggleCommentLike, addCommentReply } from '@/app/actions/feed'
+import { updateComment, deleteComment, addCommentReply } from '@/app/actions/feed/comments'
+import { toggleCommentLike } from '@/app/actions/feed/likes'
 import { toast } from 'react-toastify'
 import { CommentReply } from './CommentReply'
 

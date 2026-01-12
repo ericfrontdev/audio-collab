@@ -6,7 +6,7 @@ import type { Post } from '@/lib/types/feed'
 import type { Conversation } from '@/lib/types/messaging'
 import type { ShareDestination } from '@/lib/types/share'
 import { getConversations, searchUsers } from '@/app/actions/messaging'
-import { sharePostToMessage, sharePostToFeed } from '@/app/actions/feed'
+import { sharePostToMessage, sharePostToFeed } from '@/app/actions/feed/shares'
 import { useRouter } from '@/i18n/routing'
 import { toast } from 'react-toastify'
 

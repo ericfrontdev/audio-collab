@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { toggleLikePost } from '@/app/actions/feed'
+import { toggleLikePost } from '@/app/actions/feed/likes'
 import { toast } from 'react-toastify'
 import { createClient } from '@/lib/supabase/client'
 
