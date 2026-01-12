@@ -514,9 +514,8 @@ export function useTonePlayback(onAudioLevel?: AudioLevelCallback) {
   const setTrackVolume = useCallback((trackId: string, volume: number) => {
     const track = playersRef.current.get(trackId)
     if (track) {
-      // Convert volume from 0-100 to gain 0-1, then to dB
-      const gain = volume / 100
-      track.volume.volume.value = Tone.gainToDb(gain)
+      // volume is already 0-1 (from useStudioTracks)
+      track.volume.volume.value = Tone.gainToDb(volume)
     }
   }, [])
 
