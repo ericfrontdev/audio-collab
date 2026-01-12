@@ -329,39 +329,22 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         // Only reload if the audio URL has changed
         const currentUrl = loadedAudioUrlsRef.current.get(track.id)
         if (currentUrl !== activeTake.audio_url) {
+          console.log(`🔄 Reloading audio for track ${track.name}:`, {
+            from: currentUrl,
+            to: activeTake.audio_url,
+            activeTakeId: track.active_take_id
+          })
+
           const mixerSettings = track.mixer_settings
           const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
           const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
 
-          // Check if this track has comped sections
-          const compedSections = track.compedSections || []
-
-          if (compedSections.length > 0) {
-            // Build retakes with sections
-            const retakesWithSections = track.takes
-              ?.filter(t => t.id !== activeTake.id)
-              .map(take => ({
-                takeId: take.id,
-                audioUrl: take.audio_url,
-                sections: compedSections.filter(s => s.take_id === take.id)
-              }))
-              .filter(r => r.sections.length > 0) || []
-
-            // Load with comping
-            playback.loadTrackWithRetakes(
-              track.id,
-              activeTake.id,
-              activeTake.audio_url,
-              retakesWithSections,
-              volume,
-              pan
-            )
-          } else {
-            // Load simple (no comping)
-            playback.loadTrack(track.id, activeTake.audio_url, volume, pan)
-          }
+          // Load simple (no comping - comping is disabled)
+          playback.loadTrack(track.id, activeTake.audio_url, volume, pan)
 
           loadedAudioUrlsRef.current.set(track.id, activeTake.audio_url)
+        } else {
+          console.log(`⏭️ Skipping reload for track ${track.name} (URL unchanged)`)
         }
       } else {
         // Remove track if no audio
@@ -623,6 +606,8 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       const result = await deactivateRetake(trackId)
       if (result.success) {
         toast.success('Returned to original take')
+        // Force reload by clearing the loaded URL cache
+        loadedAudioUrlsRef.current.delete(trackId)
         await loadStudioData(true) // Silent reload
       } else {
         toast.error(result.error || 'Failed to deactivate retake')
@@ -636,6 +621,8 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
 
     if (result.success) {
       toast.success('Retake activated')
+      // Force reload by clearing the loaded URL cache
+      loadedAudioUrlsRef.current.delete(trackId)
       await loadStudioData(true) // Silent reload
     } else {
       toast.error(result.error || 'Failed to activate retake')
