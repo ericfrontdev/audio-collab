@@ -368,7 +368,7 @@ export function MixerChannel({
           {/* Pan indicator line */}
           <div
             className={`
-              absolute top-0 bottom-0 bg-[#9363f7] transition-all
+              absolute top-0 bottom-0 bg-[#9363f7]
               ${isHoveringPan || isDraggingPan ? 'w-1' : 'w-0.5'}
             `}
             style={{
