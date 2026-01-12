@@ -296,6 +296,33 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     loadUserProfile()
   }, [projectId])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only trigger if not typing in input/textarea
+      if (
+        e.target instanceof HTMLElement &&
+        !['INPUT', 'TEXTAREA'].includes(e.target.tagName)
+      ) {
+        if (e.code === 'Space') {
+          e.preventDefault()
+          audioEngine.handlePlayPause()
+        }
+
+        if (e.code === 'Enter') {
+          e.preventDefault()
+          audioEngine.handleStop()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [audioEngine.handlePlayPause, audioEngine.handleStop])
+
   // Track the loaded audio URLs to avoid reloading unnecessarily
   const loadedAudioUrlsRef = useRef<Map<string, string>>(new Map())
 
