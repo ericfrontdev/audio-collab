@@ -53,6 +53,16 @@ export interface MixerSettings {
   updated_at: string
 }
 
+export interface CompedSection {
+  id: string
+  track_id: string
+  take_id: string
+  start_time: number
+  end_time: number
+  created_at: string
+  updated_at: string
+}
+
 export interface Track {
   id: string
   project_id: string
@@ -68,6 +78,7 @@ export interface Track {
   takes?: TakeWithUploader[]
   comments?: CommentWithProfile[]
   mixer_settings?: MixerSettings | null
+  compedSections?: CompedSection[]
 }
 
 // Store state interface

@@ -23,6 +23,7 @@ import {
 } from '@/app/actions/studio/compedSections'
 import { activateRetake, deactivateRetake } from '@/app/actions/studio/retakes'
 import { ProjectTrack, CompedSection } from '@/lib/types/studio'
+import type { Track } from '@/lib/stores/useStudioStore'
 import { toast } from 'react-toastify'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { AddCommentModal } from './AddCommentModal'
@@ -37,6 +38,7 @@ import { useTonePlayback } from './hooks/useTonePlayback'
 import { useStudioTracks } from './hooks/useStudioTracks'
 import { useStudioTimeline } from './hooks/useStudioTimeline'
 import { useTranslations } from 'next-intl'
+import { useStudioStore, usePlaybackStore, useMixerStore, useUIStore } from '@/lib/stores'
 
 interface StudioViewProps {
   projectId: string
@@ -92,71 +94,69 @@ interface MixerSettings {
   updated_at: string
 }
 
-interface TrackWithDetails extends ProjectTrack {
-  takes?: TakeWithUploader[]
-  comments?: CommentWithProfile[]
-  mixer_settings?: MixerSettings | null
-  compedSections?: CompedSection[]
-  isRetakeFolderOpen?: boolean
-}
-
 export function StudioView({ projectId, projectTitle, currentUserId, ownerId, locale, readOnly = false }: StudioViewProps) {
   const t = useTranslations('studio.confirmDialog')
 
   // Helper: Check if a take is the active take for its track
-  const isTakeActive = (track: TrackWithDetails, takeId: string) => {
+  const isTakeActive = (track: Track, takeId: string) => {
     return track.active_take_id === takeId
   }
 
-  const [tracks, setTracks] = useState<TrackWithDetails[]>([])
-  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  // Zustand stores
+  const tracks = useStudioStore((state) => state.tracks)
+  const setTracks = useStudioStore((state) => state.setTracks)
+  const updateTrackInStore = useStudioStore((state) => state.updateTrack)
+  const removeTrackFromStore = useStudioStore((state) => state.removeTrack)
+  const addCommentToStore = useStudioStore((state) => state.addComment)
+  const setProjectInfo = useStudioStore((state) => state.setProjectInfo)
+  const isStudioLoading = useStudioStore((state) => state.isLoading)
+  const setStudioLoading = useStudioStore((state) => state.setLoading)
+
+  const selectedTrackId = useUIStore((state) => state.selectedTrackId)
+  const setSelectedTrackId = useUIStore((state) => state.setSelectedTrackId)
+  const isUploadModalOpen = useUIStore((state) => state.isUploadModalOpen)
+  const setUploadModalOpen = useUIStore((state) => state.setUploadModalOpen)
+  const deleteConfirmation = useUIStore((state) => state.deleteConfirmation)
+  const openDeleteConfirmation = useUIStore((state) => state.openDeleteConfirmation)
+  const closeDeleteConfirmation = useUIStore((state) => state.closeDeleteConfirmation)
+  const deleteRetakeConfirmation = useUIStore((state) => state.deleteRetakeConfirmation)
+  const openDeleteRetakeConfirmation = useUIStore((state) => state.openDeleteRetakeConfirmation)
+  const closeDeleteRetakeConfirmation = useUIStore((state) => state.closeDeleteRetakeConfirmation)
+  const commentModal = useUIStore((state) => state.commentModal)
+  const openCommentModal = useUIStore((state) => state.openCommentModal)
+  const closeCommentModal = useUIStore((state) => state.closeCommentModal)
+  const contextMenu = useUIStore((state) => state.contextMenu)
+  const openContextMenu = useUIStore((state) => state.openContextMenu)
+  const closeContextMenu = useUIStore((state) => state.closeContextMenu)
+  const renamingTrackHeaderId = useUIStore((state) => state.renamingTrackHeaderId)
+  const setRenamingTrackHeaderId = useUIStore((state) => state.setRenamingTrackHeaderId)
+  const renamingMixerChannelId = useUIStore((state) => state.renamingMixerChannelId)
+  const setRenamingMixerChannelId = useUIStore((state) => state.setRenamingMixerChannelId)
+  const isMixerOpen = useUIStore((state) => state.isMixerOpen)
+  const setMixerOpen = useUIStore((state) => state.setMixerOpen)
+  const isDraggingFile = useUIStore((state) => state.isDraggingFile)
+  const setDraggingFile = useUIStore((state) => state.setDraggingFile)
+  const droppedFile = useUIStore((state) => state.droppedFile)
+  const setDroppedFile = useUIStore((state) => state.setDroppedFile)
+
+  const masterVolume = useMixerStore((state) => state.masterVolume)
+  const setMasterVolume = useMixerStore((state) => state.setMasterVolume)
+  const masterPan = useMixerStore((state) => state.masterPan)
+  const setMasterPan = useMixerStore((state) => state.setMasterPan)
+  const masterMute = useMixerStore((state) => state.masterMute)
+  const setMasterMute = useMixerStore((state) => state.setMasterMute)
+  const trackAudioLevels = useMixerStore((state) => state.trackLevels)
+  const setTrackLevel = useMixerStore((state) => state.setTrackLevel)
+
+  // Local state (not in stores)
   const [isLoading, setIsLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    isOpen: boolean
-    trackId: string
-    trackName: string
-  }>({ isOpen: false, trackId: '', trackName: '' })
-  const [deleteRetakeConfirmation, setDeleteRetakeConfirmation] = useState<{
-    isOpen: boolean
-    trackId: string
-    takeId: string
-    retakeNumber: number
-  }>({ isOpen: false, trackId: '', takeId: '', retakeNumber: 0 })
-  const [commentModal, setCommentModal] = useState<{
-    isOpen: boolean
-    trackId: string
-    timestamp: number
-    position: { x: number; y: number }
-  }>({ isOpen: false, trackId: '', timestamp: 0, position: { x: 0, y: 0 } })
   const [currentUser, setCurrentUser] = useState<{
     id?: string
     avatar_url?: string | null
   } | null>(null)
   const [isPortrait, setIsPortrait] = useState(false)
-  const [isDraggingFile, setIsDraggingFile] = useState(false)
-  const [droppedFile, setDroppedFile] = useState<File | null>(null)
-  const [contextMenu, setContextMenu] = useState<{
-    isOpen: boolean
-    trackId: string
-    trackName: string
-    trackColor: string
-    position: { x: number; y: number }
-    source: 'track' | 'mixer' | null
-  }>({ isOpen: false, trackId: '', trackName: '', trackColor: '', position: { x: 0, y: 0 }, source: null })
-  const [renamingTrackHeaderId, setRenamingTrackHeaderId] = useState<string | null>(null)
-  const [renamingMixerChannelId, setRenamingMixerChannelId] = useState<string | null>(null)
-  const [isMixerOpen, setIsMixerOpen] = useState(false)
   const primaryColor = '#9363f7'
-
-  // Master channel state
-  const [masterVolume, setMasterVolume] = useState(80)
-  const [masterPan, setMasterPan] = useState(0)
-  const [masterMute, setMasterMute] = useState(false)
-
-  // Audio levels for VU meters
-  const [trackAudioLevels, setTrackAudioLevels] = useState<Map<string, { level: number; peak: number }>>(new Map())
   const [masterAudioLevel, setMasterAudioLevel] = useState({ level: 0, peak: 0 })
 
   // Track loaded durations (from audio files, not database)
@@ -172,13 +172,9 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     if (trackId === 'master') {
       setMasterAudioLevel({ level, peak })
     } else {
-      setTrackAudioLevels((prev) => {
-        const newMap = new Map(prev)
-        newMap.set(trackId, { level, peak })
-        return newMap
-      })
+      setTrackLevel(trackId, level, peak)
     }
-  }, [])
+  }, [setTrackLevel])
 
   // Custom hooks
   const playback = useTonePlayback(handleAudioLevel)
@@ -265,19 +261,18 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         ...t,
         _refreshKey: Date.now()
       }))
-      setTracks(tracksWithTimestamp as TrackWithDetails[])
+      setTracks(tracksWithTimestamp as Track[])
+      // Set project info in store
+      setProjectInfo(projectId, projectTitle, ownerId, currentUserId)
       // Only set selectedTrackId on initial load if there's no track selected
-      setSelectedTrackId(prev => {
-        if (!prev && result.tracks && result.tracks.length > 0) {
-          return result.tracks[0].id
-        }
-        return prev
-      })
+      if (!selectedTrackId && result.tracks && result.tracks.length > 0) {
+        setSelectedTrackId(result.tracks[0].id)
+      }
       // Force complete UI refresh
       setRefreshKey(prev => prev + 1)
     }
     if (!silent) setIsLoading(false)
-  }, [projectId])
+  }, [projectId, projectTitle, ownerId, currentUserId, selectedTrackId, setTracks, setProjectInfo, setSelectedTrackId])
 
   useEffect(() => {
     loadStudioData()
@@ -363,28 +358,23 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     if (result.success && result.tracks) {
       const updatedTrack = result.tracks.find(t => t.id === trackId)
       if (updatedTrack) {
-        setTracks(prev => {
-          // Check if this is a new track or an existing one
-          const existingTrack = prev.find(track => track.id === trackId)
-          if (existingTrack) {
-            // Update existing track, but preserve local UI state
-            return prev.map(track =>
-              track.id === trackId
-                ? {
-                    ...(updatedTrack as TrackWithDetails),
-                    // Preserve folder open state (don't auto-open on upload)
-                    isRetakeFolderOpen: track.isRetakeFolderOpen || false
-                  }
-                : track
-            )
-          } else {
-            // Add new track (folder closed by default)
-            return [...prev, {
-              ...(updatedTrack as TrackWithDetails),
-              isRetakeFolderOpen: false
-            }]
-          }
-        })
+        // Check if this is a new track or an existing one
+        const existingTrack = tracks.find(track => track.id === trackId)
+        if (existingTrack) {
+          // Update existing track, but preserve local UI state
+          updateTrackInStore(trackId, {
+            ...(updatedTrack as Track),
+            // Preserve folder open state (don't auto-open on upload)
+            is_retake_folder_open: existingTrack.is_retake_folder_open || false
+          })
+        } else {
+          // Add new track (folder closed by default)
+          const addTrackToStore = useStudioStore.getState().addTrack
+          addTrackToStore({
+            ...(updatedTrack as Track),
+            is_retake_folder_open: false
+          })
+        }
       }
     }
   }
@@ -394,13 +384,14 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     if (result.success && result.track) {
       toast.success('Track created')
       // Add the new track to the state with proper structure
-      const newTrack: TrackWithDetails = {
+      const newTrack: Track = {
         ...result.track,
         takes: [],
         comments: [],
         mixer_settings: null,
+        is_retake_folder_open: false,
       }
-      setTracks(prev => [...prev, newTrack])
+      setTracks([...tracks, newTrack])
       setSelectedTrackId(result.track.id)
     } else {
       toast.error(result.error || 'Failed to create track')
@@ -409,21 +400,17 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
 
   const handleImport = (trackId: string) => {
     setSelectedTrackId(trackId)
-    setIsUploadModalOpen(true)
+    setUploadModalOpen(true)
   }
 
   const handleToggleTakes = async (trackId: string) => {
     const track = tracks.find(t => t.id === trackId)
     if (!track) return
 
-    const newState = !track.isRetakeFolderOpen
+    const newState = !track.is_retake_folder_open
 
     // Optimistic update
-    setTracks(prevTracks =>
-      prevTracks.map(t =>
-        t.id === trackId ? { ...t, isRetakeFolderOpen: newState } : t
-      )
-    )
+    updateTrackInStore(trackId, { is_retake_folder_open: newState })
 
     // Update server
     const result = await toggleRetakeFolder(trackId, newState)
@@ -491,17 +478,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       const updatedSections = [...(track.compedSections || []), result.section]
 
       // Optimistic update - add section to track
-      setTracks(prevTracks =>
-        prevTracks.map(t => {
-          if (t.id === trackId) {
-            return {
-              ...t,
-              compedSections: updatedSections
-            }
-          }
-          return t
-        })
-      )
+      updateTrackInStore(trackId, { compedSections: updatedSections })
 
       // Reload audio with the updated sections (don't wait for state update)
       const activeTake = track.takes?.find(t => t.id === track.active_take_id)
@@ -550,17 +527,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       const updatedSections = (track.compedSections || []).filter(s => s.id !== sectionId)
 
       // Optimistic update - remove section from track
-      setTracks(prevTracks =>
-        prevTracks.map(t => {
-          if (t.id === trackId) {
-            return {
-              ...t,
-              compedSections: updatedSections
-            }
-          }
-          return t
-        })
-      )
+      updateTrackInStore(trackId, { compedSections: updatedSections })
 
       // Reload audio without this section (don't wait for state update)
       const activeTake = track.takes?.find(t => t.id === track.active_take_id)
@@ -634,14 +601,13 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     const track = tracks.find(t => t.id === trackId)
     if (!track) return
 
-    setContextMenu({
-      isOpen: true,
+    openContextMenu(
       trackId,
-      trackName: track.name,
-      trackColor: track.color,
-      position: { x: e.clientX, y: e.clientY },
-      source: 'track',
-    })
+      track.name,
+      track.color,
+      { x: e.clientX, y: e.clientY },
+      'track'
+    )
   }
 
   const handleMixerContextMenu = (e: React.MouseEvent, trackId: string) => {
@@ -649,14 +615,13 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     const track = tracks.find(t => t.id === trackId)
     if (!track) return
 
-    setContextMenu({
-      isOpen: true,
+    openContextMenu(
       trackId,
-      trackName: track.name,
-      trackColor: track.color,
-      position: { x: e.clientX, y: e.clientY },
-      source: 'mixer',
-    })
+      track.name,
+      track.color,
+      { x: e.clientX, y: e.clientY },
+      'mixer'
+    )
   }
 
   const handleRenameFromTrack = (trackId: string) => {
@@ -675,11 +640,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     }
 
     // Optimistic update
-    setTracks((prevTracks) =>
-      prevTracks.map((track) =>
-        track.id === trackId ? { ...track, name: newName } : track
-      )
-    )
+    updateTrackInStore(trackId, { name: newName })
     setRenamingTrackHeaderId(null)
     setRenamingMixerChannelId(null)
 
@@ -698,10 +659,8 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
 
   const handleTracksReorder = async (trackIds: string[]) => {
     // Optimistic update - reorder tracks locally
-    setTracks((prevTracks) => {
-      const trackMap = new Map(prevTracks.map(track => [track.id, track]))
-      return trackIds.map(id => trackMap.get(id)!).filter(Boolean)
-    })
+    const reorderTracksInStore = useStudioStore.getState().reorderTracks
+    reorderTracksInStore(trackIds)
 
     // Update server in background
     const result = await reorderTracks(projectId, trackIds)
@@ -713,16 +672,18 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
 
   const handleColorChange = async (trackId: string, color: string) => {
     // Optimistic update - update local state immediately
-    setTracks((prevTracks) =>
-      prevTracks.map((track) =>
-        track.id === trackId ? { ...track, color } : track
-      )
-    )
+    updateTrackInStore(trackId, { color })
 
     // Update context menu color too
-    setContextMenu((prev) =>
-      prev.trackId === trackId ? { ...prev, trackColor: color } : prev
-    )
+    if (contextMenu.trackId === trackId) {
+      openContextMenu(
+        contextMenu.trackId,
+        contextMenu.trackName,
+        color, // Updated color
+        contextMenu.position,
+        contextMenu.source!
+      )
+    }
 
     // Update server in background
     const result = await updateTrackColor(trackId, color)
@@ -744,16 +705,16 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
   }
 
   const handleDeleteTrack = (trackId: string, trackName: string) => {
-    setDeleteConfirmation({ isOpen: true, trackId, trackName })
+    openDeleteConfirmation(trackId, trackName)
   }
 
   const confirmDeleteTrack = async () => {
     const { trackId, trackName } = deleteConfirmation
-    setDeleteConfirmation({ isOpen: false, trackId: '', trackName: '' })
+    closeDeleteConfirmation()
 
     const result = await deleteTrack(trackId)
     if (result.success) {
-      setTracks((prevTracks) => prevTracks.filter((t) => t.id !== trackId))
+      removeTrackFromStore(trackId)
       if (selectedTrackId === trackId) {
         setSelectedTrackId(null)
       }
@@ -764,31 +725,22 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
   }
 
   const cancelDeleteTrack = () => {
-    setDeleteConfirmation({ isOpen: false, trackId: '', trackName: '' })
+    closeDeleteConfirmation()
   }
 
   const handleDeleteRetake = (trackId: string, takeId: string, retakeNumber: number) => {
-    setDeleteRetakeConfirmation({ isOpen: true, trackId, takeId, retakeNumber })
+    openDeleteRetakeConfirmation(trackId, takeId, retakeNumber)
   }
 
   const confirmDeleteRetake = async () => {
     const { trackId, takeId, retakeNumber } = deleteRetakeConfirmation
-    setDeleteRetakeConfirmation({ isOpen: false, trackId: '', takeId: '', retakeNumber: 0 })
+    closeDeleteRetakeConfirmation()
 
     const result = await deleteTake(takeId)
     if (result.success) {
       // Update tracks state to remove the deleted take
-      setTracks((prevTracks) =>
-        prevTracks.map((track) => {
-          if (track.id === trackId) {
-            return {
-              ...track,
-              takes: track.takes?.filter((t) => t.id !== takeId) || []
-            }
-          }
-          return track
-        })
-      )
+      const removeTakeFromStore = useStudioStore.getState().removeTake
+      removeTakeFromStore(trackId, takeId)
       toast.success(`Retake #${retakeNumber} deleted successfully`)
     } else {
       toast.error(result.error || 'Failed to delete retake')
@@ -796,7 +748,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
   }
 
   const cancelDeleteRetake = () => {
-    setDeleteRetakeConfirmation({ isOpen: false, trackId: '', takeId: '', retakeNumber: 0 })
+    closeDeleteRetakeConfirmation()
   }
 
   // Master channel handlers
@@ -811,11 +763,9 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
   }
 
   const handleMasterMuteToggle = () => {
-    setMasterMute((prev) => {
-      const newMute = !prev
-      playback.setMasterMute(newMute)
-      return newMute
-    })
+    const newMute = !masterMute
+    setMasterMute(newMute)
+    playback.setMasterMute(newMute)
   }
 
   // Handle waveform ready - store the loaded duration
@@ -834,14 +784,13 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       const percentage = x / rect.width
       const timestamp = percentage * maxDuration
 
-      setCommentModal({
-        isOpen: true,
+      openCommentModal(
         trackId,
         timestamp,
-        position: { x: e.clientX, y: e.clientY },
-      })
+        { x: e.clientX, y: e.clientY }
+      )
     },
-    [maxDuration]
+    [maxDuration, openCommentModal]
   )
 
   const handleCommentSubmit = useCallback(
@@ -849,47 +798,37 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
       const result = await addTrackComment(commentModal.trackId, timestamp, text)
       if (result.success && result.comment) {
         toast.success('Comment added!')
-        setTracks((prevTracks) =>
-          prevTracks.map((track) => {
-            if (track.id === commentModal.trackId && result.comment) {
-              return {
-                ...track,
-                comments: [...(track.comments || []), result.comment],
-              }
-            }
-            return track
-          })
-        )
+        addCommentToStore(commentModal.trackId, result.comment)
       } else {
         toast.error(result.error || 'Failed to add comment')
       }
     },
-    [commentModal.trackId]
+    [commentModal.trackId, addCommentToStore]
   )
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDraggingFile(true)
-  }, [])
+    setDraggingFile(true)
+  }, [setDraggingFile])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDraggingFile(false)
-  }, [])
+    setDraggingFile(false)
+  }, [setDraggingFile])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDraggingFile(false)
+    setDraggingFile(false)
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0]
       setDroppedFile(file)
-      setIsUploadModalOpen(true)
+      setUploadModalOpen(true)
     }
-  }, [])
+  }, [setDraggingFile, setDroppedFile, setUploadModalOpen])
 
   if (isLoading) {
     return (
@@ -948,7 +887,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         isMixerOpen={isMixerOpen}
         onPlayPause={playback.handlePlayPause}
         onStop={playback.handleStop}
-        onToggleMixer={() => setIsMixerOpen(!isMixerOpen)}
+        onToggleMixer={() => setMixerOpen(!isMixerOpen)}
         readOnly={readOnly}
       />
 
@@ -1001,7 +940,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
                   {readOnly ? 'This project has no audio tracks yet' : 'Upload your first audio track to get started'}
                 </p>
                 {!readOnly && (
-                  <Button onClick={() => setIsUploadModalOpen(true)}>
+                  <Button onClick={() => setUploadModalOpen(true)}>
                     <UploadIcon className="w-4 h-4 mr-2" />
                     Upload Track
                   </Button>
@@ -1047,7 +986,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
 
                       // Retakes = all other takes (always below, sorted by creation)
                       const retakes = allTakesSorted.slice(1)
-                      const isExpanded = track.isRetakeFolderOpen || false
+                      const isExpanded = track.is_retake_folder_open || false
 
                       // Check if original is active (for coloring)
                       const isOriginalActive = originalTake ? isTakeActive(track, originalTake.id) : false
@@ -1131,7 +1070,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         existingTracks={tracks}
         isOpen={isUploadModalOpen}
         onClose={() => {
-          setIsUploadModalOpen(false)
+          setUploadModalOpen(false)
           setDroppedFile(null)
         }}
         onSuccess={handleUploadSuccess}
@@ -1170,7 +1109,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         timestamp={commentModal.timestamp}
         userAvatar={currentUser?.avatar_url}
         onSubmit={handleCommentSubmit}
-        onClose={() => setCommentModal({ ...commentModal, isOpen: false })}
+        onClose={closeCommentModal}
       />
 
       {/* Context Menu */}
@@ -1180,7 +1119,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
           trackName={contextMenu.trackName}
           trackColor={contextMenu.trackColor}
           position={contextMenu.position}
-          onClose={() => setContextMenu({ ...contextMenu, isOpen: false })}
+          onClose={closeContextMenu}
           onRename={contextMenu.source === 'mixer' ? handleRenameFromMixer : handleRenameFromTrack}
           onColorChange={handleColorChange}
           onDuplicate={handleDuplicate}
