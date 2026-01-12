@@ -28,6 +28,7 @@ interface TrackWithTakes {
   id: string
   name: string
   color: string
+  active_take_id: string | null
   created_by: string
   is_collaborative: boolean
   takes?: TakeWithUploader[]

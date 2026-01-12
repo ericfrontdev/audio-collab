@@ -38,6 +38,7 @@ interface TrackWithDetails {
   id: string
   name: string
   color: string
+  active_take_id: string | null
   takes?: TakeWithUploader[]
   mixer_settings?: MixerSettings | null
 }
