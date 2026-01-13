@@ -387,9 +387,13 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tracks])
 
+  // Store audioEngine ref to avoid re-subscription loops
+  const audioEngineRef = useRef(audioEngine)
+  audioEngineRef.current = audioEngine
+
   // Sync mixer store with audio engine (volume, pan, mute)
   useEffect(() => {
-    console.log('🎚️ Setting up mixer store subscription')
+    console.log('🎚️ Setting up mixer store subscription (ONE TIME)')
     const unsubscribe = useMixerStore.subscribe((state, prevState) => {
       console.log('🔔 Mixer store changed', {
         trackCount: state.tracks.size,
@@ -403,40 +407,40 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         // Volume changed
         if (prevTrackState?.volume !== trackState.volume) {
           console.log('🎚️ Volume changed:', { trackId, from: prevTrackState?.volume, to: trackState.volume, tonejs: trackState.volume / 100 })
-          audioEngine.setTrackVolume(trackId, trackState.volume / 100)
+          audioEngineRef.current.setTrackVolume(trackId, trackState.volume / 100)
         }
 
         // Pan changed
         if (prevTrackState?.pan !== trackState.pan) {
           console.log('🎛️ Pan changed:', { trackId, from: prevTrackState?.pan, to: trackState.pan })
-          audioEngine.setTrackPan(trackId, trackState.pan / 100)
+          audioEngineRef.current.setTrackPan(trackId, trackState.pan / 100)
         }
 
         // Mute changed
         if (prevTrackState?.mute !== trackState.mute) {
           console.log('🔇 Mute changed:', { trackId, from: prevTrackState?.mute, to: trackState.mute })
-          audioEngine.setTrackMute(trackId, trackState.mute)
+          audioEngineRef.current.setTrackMute(trackId, trackState.mute)
         }
       })
 
       // Master volume changed
       if (prevState.masterVolume !== state.masterVolume) {
-        audioEngine.setMasterVolume(state.masterVolume)
+        audioEngineRef.current.setMasterVolume(state.masterVolume)
       }
 
       // Master pan changed
       if (prevState.masterPan !== state.masterPan) {
-        audioEngine.setMasterPan(state.masterPan)
+        audioEngineRef.current.setMasterPan(state.masterPan)
       }
 
       // Master mute changed
       if (prevState.masterMute !== state.masterMute) {
-        audioEngine.setMasterMute(state.masterMute)
+        audioEngineRef.current.setMasterMute(state.masterMute)
       }
     })
 
     return unsubscribe
-  }, [audioEngine])
+  }, []) // Empty deps - subscribe ONCE only
 
   // Extract all handlers to custom hook
   const handlers = useStudioHandlers({
