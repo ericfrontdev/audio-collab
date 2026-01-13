@@ -346,6 +346,14 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
           const pan = panPercent / 100
 
           // Initialize track in mixer store with DB values
+          console.log('🎛️ Initializing track in mixer store:', {
+            trackId: track.id,
+            trackName: track.name,
+            volume: volumePercent,
+            pan: panPercent,
+            mute: mixerSettings?.mute || false,
+            solo: mixerSettings?.solo || false,
+          })
           const { initializeTrack } = useMixerStore.getState()
           initializeTrack(track.id, {
             volume: volumePercent,
@@ -355,9 +363,16 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
           })
 
           // Load simple (no comping - comping is disabled)
+          console.log('🎵 Loading audio into Tone.js:', {
+            trackId: track.id,
+            audioUrl: activeTake.audio_url,
+            volume,
+            pan
+          })
           audioEngine.loadTrack(track.id, activeTake.audio_url, volume, pan)
 
           loadedAudioUrlsRef.current.set(track.id, activeTake.audio_url)
+          console.log('✅ Track loaded and cached')
         } else {
           console.log(`⏭️ Skipping reload for track ${track.name} (URL unchanged)`)
         }
@@ -374,23 +389,32 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
 
   // Sync mixer store with audio engine (volume, pan, mute)
   useEffect(() => {
+    console.log('🎚️ Setting up mixer store subscription')
     const unsubscribe = useMixerStore.subscribe((state, prevState) => {
+      console.log('🔔 Mixer store changed', {
+        trackCount: state.tracks.size,
+        tracks: Array.from(state.tracks.keys())
+      })
+
       // Check for changes in track mixer settings
       state.tracks.forEach((trackState, trackId) => {
         const prevTrackState = prevState.tracks.get(trackId)
 
         // Volume changed
         if (prevTrackState?.volume !== trackState.volume) {
+          console.log('🎚️ Volume changed:', { trackId, from: prevTrackState?.volume, to: trackState.volume, tonejs: trackState.volume / 100 })
           audioEngine.setTrackVolume(trackId, trackState.volume / 100)
         }
 
         // Pan changed
         if (prevTrackState?.pan !== trackState.pan) {
+          console.log('🎛️ Pan changed:', { trackId, from: prevTrackState?.pan, to: trackState.pan })
           audioEngine.setTrackPan(trackId, trackState.pan / 100)
         }
 
         // Mute changed
         if (prevTrackState?.mute !== trackState.mute) {
+          console.log('🔇 Mute changed:', { trackId, from: prevTrackState?.mute, to: trackState.mute })
           audioEngine.setTrackMute(trackId, trackState.mute)
         }
       })

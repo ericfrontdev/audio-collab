@@ -173,8 +173,18 @@ export function useAudioEngine() {
   // Update track volume
   const setTrackVolume = useCallback((trackId: string, volume: number) => {
     const track = playersRef.current.get(trackId)
+    console.log('🔊 setTrackVolume called:', {
+      trackId,
+      volume,
+      volumeDb: Tone.gainToDb(volume),
+      trackExists: !!track,
+      allTracks: Array.from(playersRef.current.keys())
+    })
     if (track) {
       track.volume.volume.value = Tone.gainToDb(volume)
+      console.log('✅ Volume set successfully')
+    } else {
+      console.error('❌ Track not found in playersRef!')
     }
   }, [])
 
