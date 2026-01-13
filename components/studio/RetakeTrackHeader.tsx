@@ -6,6 +6,7 @@ import { VUMeter } from './VUMeter'
 import { VolumeControl } from './VolumeControl'
 import { RetakeActivateButton } from './RetakeActivateButton'
 import { useTranslations } from 'next-intl'
+import { useMixerStore, useUIStore } from '@/lib/stores'
 
 interface RetakeTrackHeaderProps {
   trackId: string
@@ -13,17 +14,7 @@ interface RetakeTrackHeaderProps {
   retakeNumber: number
   trackName: string
   trackColor: string
-  volume: number
-  isMuted: boolean
-  isSoloed: boolean
-  isSelected: boolean
   isActive: boolean
-  audioLevel?: number
-  audioPeak?: number
-  onVolumeChange: (trackId: string, volume: number) => void
-  onMuteToggle: (trackId: string) => void
-  onSoloToggle: (trackId: string) => void
-  onSelect: (trackId: string) => void
   onImport: (trackId: string) => void
   onActivate: () => void
   onDeleteRetake: (takeId: string) => void
@@ -37,17 +28,7 @@ export function RetakeTrackHeader({
   retakeNumber,
   trackName,
   trackColor,
-  volume,
-  isMuted,
-  isSoloed,
-  isSelected,
   isActive,
-  audioLevel,
-  audioPeak,
-  onVolumeChange,
-  onMuteToggle,
-  onSoloToggle,
-  onSelect,
   onImport,
   onActivate,
   onDeleteRetake,
@@ -55,6 +36,22 @@ export function RetakeTrackHeader({
   readOnly = false,
 }: RetakeTrackHeaderProps) {
   const t = useTranslations('studio.trackHeader')
+
+  // Zustand stores
+  const trackMixerState = useMixerStore((state) => state.tracks.get(trackId))
+  const trackLevels = useMixerStore((state) => state.trackLevels.get(trackId))
+  const { setTrackVolume, setTrackMute, setTrackSolo } = useMixerStore()
+
+  const selectedTrackId = useUIStore((state) => state.selectedTrackId)
+  const { setSelectedTrackId } = useUIStore()
+
+  // Derived state from stores
+  const volume = trackMixerState?.volume ?? 80
+  const isMuted = trackMixerState?.mute ?? false
+  const isSoloed = trackMixerState?.solo ?? false
+  const audioLevel = trackLevels?.level
+  const audioPeak = trackLevels?.peak
+  const isSelected = selectedTrackId === trackId
 
   // Determine background and text colors based on active state
   const bgColor = isActive
@@ -72,7 +69,7 @@ export function RetakeTrackHeader({
         ${bgColor} ${isSelected && !isActive ? 'hover:bg-zinc-800/40' : ''}
         ${isActive ? 'shadow-sm' : 'opacity-90'}
       `}
-      onClick={() => onSelect(trackId)}
+      onClick={() => setSelectedTrackId(trackId)}
       onContextMenu={(e) => {
         // Disable context menu for retakes to prevent accidental track deletion
         e.preventDefault()
@@ -124,7 +121,7 @@ export function RetakeTrackHeader({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              onSoloToggle(trackId)
+              setTrackSolo(trackId, !isSoloed)
             }}
             className={`
               w-6 h-6 flex items-center justify-center text-[11px] font-bold rounded-sm transition-all outline outline-1 outline-black
@@ -143,7 +140,7 @@ export function RetakeTrackHeader({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              onMuteToggle(trackId)
+              setTrackMute(trackId, !isMuted)
             }}
             className={`
               w-6 h-6 flex items-center justify-center text-[11px] font-bold rounded-sm transition-all outline outline-1 outline-black
@@ -185,7 +182,7 @@ export function RetakeTrackHeader({
           <div className="flex-1 max-w-[130px]">
             <VolumeControl
               value={volume}
-              onChange={(newVolume) => onVolumeChange(trackId, newVolume)}
+              onChange={(newVolume) => setTrackVolume(trackId, newVolume)}
               color={waveformColor}
               className="w-full"
             />

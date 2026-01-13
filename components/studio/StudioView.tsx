@@ -494,22 +494,11 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         {/* Left Sidebar: Track Headers */}
         <TrackHeaderList
           tracks={tracks}
-          selectedTrackId={selectedTrackId}
-          trackVolumes={trackControls.trackVolumes}
-          trackMutes={trackControls.trackMutes}
-          trackSolos={trackControls.trackSolos}
-          trackAudioLevels={trackAudioLevels}
-          renamingTrackId={renamingTrackHeaderId}
-          onTrackSelect={setSelectedTrackId}
-          onVolumeChange={trackControls.handleVolumeChange}
-          onMuteToggle={trackControls.handleMuteToggle}
-          onSoloToggle={trackControls.handleSoloToggle}
           onImport={handleImport}
           onToggleTakes={handleToggleTakes}
           onAddTrack={handleAddTrack}
           onContextMenu={handleTrackContextMenu}
           onTrackRename={handleTrackRename}
-          onCancelRename={handleCancelRename}
           onTracksReorder={handleTracksReorder}
           onRetakeActivated={handleRetakeActivated}
           onDeleteRetake={handleDeleteRetake}
