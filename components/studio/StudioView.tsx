@@ -340,8 +340,19 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
           })
 
           const mixerSettings = track.mixer_settings
-          const volume = mixerSettings?.volume !== undefined ? mixerSettings.volume / 100 : 0.8
-          const pan = mixerSettings?.pan !== undefined ? mixerSettings.pan / 100 : 0
+          const volumePercent = mixerSettings?.volume !== undefined ? mixerSettings.volume : 80
+          const panPercent = mixerSettings?.pan !== undefined ? mixerSettings.pan : 0
+          const volume = volumePercent / 100
+          const pan = panPercent / 100
+
+          // Initialize track in mixer store with DB values
+          const { initializeTrack } = useMixerStore.getState()
+          initializeTrack(track.id, {
+            volume: volumePercent,
+            pan: panPercent,
+            mute: mixerSettings?.mute || false,
+            solo: mixerSettings?.solo || false,
+          })
 
           // Load simple (no comping - comping is disabled)
           audioEngine.loadTrack(track.id, activeTake.audio_url, volume, pan)

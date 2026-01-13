@@ -29,6 +29,7 @@ export function useAudioEngine() {
   // Master channel nodes
   const masterVolumeRef = useRef<Tone.Volume | null>(null)
   const masterPannerRef = useRef<Tone.Panner | null>(null)
+  const masterAnalyserRef = useRef<AnalyserNode | null>(null)
 
   // Animation frame for visual sync
   const animationFrameRef = useRef<number | null>(null)
@@ -49,8 +50,17 @@ export function useAudioEngine() {
         masterVolume.connect(masterPanner)
         masterPanner.toDestination()
 
+        // Create master analyser for VU meter
+        const audioContext = Tone.getContext().rawContext as AudioContext
+        const masterAnalyser = audioContext.createAnalyser()
+        masterAnalyser.fftSize = 512
+        masterAnalyser.smoothingTimeConstant = 0.8
+
+        Tone.connect(masterPanner, masterAnalyser as any)
+
         masterVolumeRef.current = masterVolume
         masterPannerRef.current = masterPanner
+        masterAnalyserRef.current = masterAnalyser
       }
     }
 
@@ -229,9 +239,22 @@ export function useAudioEngine() {
       }
     })
 
-    // Master level (simple sum for now)
-    // TODO: Proper master level calculation
-    setMasterLevel(0, 0)
+    // Master level
+    if (masterAnalyserRef.current) {
+      const dataArray = new Uint8Array(masterAnalyserRef.current.frequencyBinCount)
+      masterAnalyserRef.current.getByteFrequencyData(dataArray)
+
+      let sum = 0
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i] * dataArray[i]
+      }
+      const rms = Math.sqrt(sum / dataArray.length)
+      const level = (rms / 255) * 100
+
+      setMasterLevel(level, level)
+    } else {
+      setMasterLevel(0, 0)
+    }
 
     animationFrameRef.current = requestAnimationFrame(updateVisuals)
   }, [setCurrentTime, setTrackLevel, setMasterLevel])
