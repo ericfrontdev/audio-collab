@@ -8,11 +8,8 @@ import { useCallback } from 'react'
 import { toast } from 'react-toastify'
 import type { Track } from '@/lib/stores/useStudioStore'
 import { useStudioStore } from '@/lib/stores'
-import {
-  toggleRetakeFolder,
-  activateRetake,
-  deactivateRetake,
-} from '@/app/actions/studio/retakes'
+import { toggleRetakeFolder } from '@/app/actions/studio/compedSections'
+import { activateRetake, deactivateRetake } from '@/app/actions/studio/retakes'
 import { deleteTake } from '@/app/actions/studio/takes'
 
 interface DeleteRetakeConfirmationState {
