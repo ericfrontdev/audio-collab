@@ -181,8 +181,17 @@ export function useAudioEngine() {
       allTracks: Array.from(playersRef.current.keys())
     })
     if (track) {
+      const oldValue = track.volume.volume.value
       track.volume.volume.value = Tone.gainToDb(volume)
-      console.log('✅ Volume set successfully')
+      const newValue = track.volume.volume.value
+      console.log('✅ Volume set:', {
+        oldValue,
+        newValue,
+        changed: oldValue !== newValue,
+        playerMuted: track.player.mute,
+        playerState: track.player.state,
+        volumeNodeConnected: track.volume.numberOfOutputs > 0
+      })
     } else {
       // Track not loaded yet - this is OK, will be set on load
       console.warn('⚠️ Track not loaded yet, skipping volume update:', trackId)
