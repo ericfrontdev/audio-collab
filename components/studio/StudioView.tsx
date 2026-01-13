@@ -369,10 +369,19 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
             volume,
             pan
           })
-          audioEngine.loadTrack(track.id, activeTake.audio_url, volume, pan)
+          audioEngine.loadTrack(track.id, activeTake.audio_url, volume, pan).then(() => {
+            // After load completes, apply current store settings
+            const storeSettings = useMixerStore.getState().tracks.get(track.id)
+            if (storeSettings) {
+              console.log('🔄 Applying store settings after load:', { trackId: track.id, storeSettings })
+              audioEngine.setTrackVolume(track.id, storeSettings.volume / 100)
+              audioEngine.setTrackPan(track.id, storeSettings.pan / 100)
+              audioEngine.setTrackMute(track.id, storeSettings.mute)
+            }
+          })
 
           loadedAudioUrlsRef.current.set(track.id, activeTake.audio_url)
-          console.log('✅ Track loaded and cached')
+          console.log('✅ Track load initiated')
         } else {
           console.log(`⏭️ Skipping reload for track ${track.name} (URL unchanged)`)
         }
