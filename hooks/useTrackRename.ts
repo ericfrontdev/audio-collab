@@ -18,7 +18,7 @@ export interface UseTrackRenameOptions {
 export interface UseTrackRenameReturn {
   editingName: string
   setEditingName: (name: string) => void
-  inputRef: React.RefObject<HTMLInputElement>
+  inputRef: React.RefObject<HTMLInputElement | null>
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
   handleBlur: () => void
 }

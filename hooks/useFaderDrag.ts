@@ -14,7 +14,7 @@ export interface UseFaderDragOptions {
 }
 
 export interface UseFaderDragReturn {
-  faderRef: React.RefObject<HTMLDivElement>
+  faderRef: React.RefObject<HTMLDivElement | null>
   isHovering: boolean
   isDragging: boolean
   setIsHovering: (hovering: boolean) => void

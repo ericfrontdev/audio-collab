@@ -11,7 +11,7 @@ export interface MixerChannelHeaderProps {
   trackName: string
   isRenaming: boolean
   editingName: string
-  inputRef: React.RefObject<HTMLInputElement>
+  inputRef: React.RefObject<HTMLInputElement | null>
   sortableProps: SortableProps
   onEditingNameChange: (name: string) => void
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void

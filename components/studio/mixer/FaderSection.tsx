@@ -12,7 +12,7 @@ export interface FaderSectionProps {
   volume: number
   audioLevel: number
   audioPeak: number
-  faderRef: React.RefObject<HTMLDivElement>
+  faderRef: React.RefObject<HTMLDivElement | null>
   isHovering: boolean
   isDragging: boolean
   onMouseDown: (e: React.MouseEvent) => void

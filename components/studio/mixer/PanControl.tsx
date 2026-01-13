@@ -7,7 +7,7 @@
 
 export interface PanControlProps {
   pan: number
-  panRef: React.RefObject<HTMLDivElement>
+  panRef: React.RefObject<HTMLDivElement | null>
   isHovering: boolean
   isDragging: boolean
   onMouseDown: (e: React.MouseEvent) => void

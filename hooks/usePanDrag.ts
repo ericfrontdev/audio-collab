@@ -14,7 +14,7 @@ export interface UsePanDragOptions {
 }
 
 export interface UsePanDragReturn {
-  panRef: React.RefObject<HTMLDivElement>
+  panRef: React.RefObject<HTMLDivElement | null>
   isHovering: boolean
   isDragging: boolean
   setIsHovering: (hovering: boolean) => void
