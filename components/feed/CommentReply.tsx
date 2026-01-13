@@ -6,26 +6,21 @@ import { Heart, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
 import { updateComment, deleteComment } from '@/app/actions/feed/comments'
 import { toggleCommentLike } from '@/app/actions/feed/likes'
 import { toast } from 'react-toastify'
-import { useCurrentUserStore } from '@/lib/stores'
+import { useCurrentUserStore, useFeedStore } from '@/lib/stores'
+import { formatTimeAgo } from '@/lib/utils/timeUtils'
 
 interface CommentReplyProps {
   reply: any
   parentCommentId: string
-  onUpdate: (replyId: string, content: string) => void
-  onDelete: (replyId: string) => void
-  onLike: (replyId: string) => void
-  formatTimeAgo: (date: string) => string
 }
 
-export function CommentReply({
-  reply,
-  parentCommentId,
-  onUpdate,
-  onDelete,
-  onLike,
-  formatTimeAgo,
-}: CommentReplyProps) {
+export function CommentReply({ reply, parentCommentId }: CommentReplyProps) {
   const currentUserId = useCurrentUserStore((state) => state.user?.id)
+  const currentPostId = useFeedStore((state) => state.currentPostId)
+  const updateReplyContent = useFeedStore((state) => state.updateReplyContent)
+  const removeReply = useFeedStore((state) => state.removeReply)
+  const toggleReplyLikeStore = useFeedStore((state) => state.toggleReplyLike)
+
   const [menuOpen, setMenuOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(reply.content)
@@ -68,13 +63,16 @@ export function CommentReply({
       return
     }
 
+    if (!currentPostId) return
+
     setIsUpdating(true)
 
     try {
       const result = await updateComment(reply.id, editText.trim())
 
       if (result.success) {
-        onUpdate(reply.id, editText.trim())
+        // Update store
+        updateReplyContent(currentPostId, parentCommentId, reply.id, editText.trim())
         setIsEditing(false)
         toast.success('Reply updated!')
       } else {
@@ -87,9 +85,42 @@ export function CommentReply({
     }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    if (!currentPostId) return
+
     setMenuOpen(false)
-    onDelete(reply.id)
+
+    try {
+      const result = await deleteComment(reply.id)
+
+      if (result.success) {
+        // Update store
+        removeReply(currentPostId, parentCommentId, reply.id)
+        toast.success('Reply deleted!')
+      } else {
+        toast.error(result.error || 'Failed to delete reply')
+      }
+    } catch (error) {
+      toast.error('Failed to delete reply')
+    }
+  }
+
+  const handleLike = async () => {
+    if (!currentPostId) return
+
+    try {
+      const result = await toggleCommentLike(reply.id)
+
+      if (result.success) {
+        const newCount = result.liked ? reply.likes_count + 1 : reply.likes_count - 1
+        // Update store
+        toggleReplyLikeStore(currentPostId, parentCommentId, reply.id, newCount, result.liked || false)
+      } else {
+        toast.error(result.error || 'Failed to like reply')
+      }
+    } catch (error) {
+      toast.error('Failed to like reply')
+    }
   }
 
   return (
@@ -194,7 +225,7 @@ export function CommentReply({
         <div className="flex items-center gap-3 ml-2 mt-1">
           <span className="text-xs text-gray-500">{formatTimeAgo(reply.created_at)}</span>
           <button
-            onClick={() => onLike(reply.id)}
+            onClick={handleLike}
             className={`flex items-center gap-1 text-xs transition-colors ${
               reply.is_liked_by_user ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
             }`}

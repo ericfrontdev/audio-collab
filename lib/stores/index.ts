@@ -22,3 +22,6 @@ export { useUIStore } from './useUIStore'
 export { useCurrentUserStore } from './useCurrentUserStore'
 
 export { useClubStore } from './useClubStore'
+
+export { useFeedStore } from './useFeedStore'
+export type { Comment, Reply } from './useFeedStore'

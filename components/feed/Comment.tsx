@@ -7,34 +7,21 @@ import { updateComment, deleteComment, addCommentReply } from '@/app/actions/fee
 import { toggleCommentLike } from '@/app/actions/feed/likes'
 import { toast } from 'react-toastify'
 import { CommentReply } from './CommentReply'
-import { useCurrentUserStore } from '@/lib/stores'
+import { useCurrentUserStore, useFeedStore } from '@/lib/stores'
+import { formatTimeAgo } from '@/lib/utils/timeUtils'
 
 interface CommentProps {
   comment: any
   postId: string
-  onUpdate: (commentId: string, content: string) => void
-  onDelete: (commentId: string) => void
-  onLike: (commentId: string) => void
-  onReplyUpdate: (commentId: string, replyId: string, content: string) => void
-  onReplyDelete: (commentId: string, replyId: string) => void
-  onReplyLike: (commentId: string, replyId: string) => void
-  onReplyAdd: (commentId: string, reply: any) => void
-  formatTimeAgo: (date: string) => string
 }
 
-export function Comment({
-  comment,
-  postId,
-  onUpdate,
-  onDelete,
-  onLike,
-  onReplyUpdate,
-  onReplyDelete,
-  onReplyLike,
-  onReplyAdd,
-  formatTimeAgo,
-}: CommentProps) {
+export function Comment({ comment, postId }: CommentProps) {
   const currentUserId = useCurrentUserStore((state) => state.user?.id)
+  const updateCommentContent = useFeedStore((state) => state.updateCommentContent)
+  const removeComment = useFeedStore((state) => state.removeComment)
+  const toggleCommentLikeStore = useFeedStore((state) => state.toggleCommentLike)
+  const addReply = useFeedStore((state) => state.addReply)
+
   const [menuOpen, setMenuOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(comment.content)
@@ -86,7 +73,8 @@ export function Comment({
       const result = await updateComment(comment.id, editText.trim())
 
       if (result.success) {
-        onUpdate(comment.id, editText.trim())
+        // Update store
+        updateCommentContent(postId, comment.id, editText.trim())
         setIsEditing(false)
         toast.success('Comment updated!')
       } else {
@@ -99,9 +87,38 @@ export function Comment({
     }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     setMenuOpen(false)
-    onDelete(comment.id)
+
+    try {
+      const result = await deleteComment(comment.id)
+
+      if (result.success) {
+        // Update store
+        removeComment(postId, comment.id)
+        toast.success('Comment deleted!')
+      } else {
+        toast.error(result.error || 'Failed to delete comment')
+      }
+    } catch (error) {
+      toast.error('Failed to delete comment')
+    }
+  }
+
+  const handleLike = async () => {
+    try {
+      const result = await toggleCommentLike(comment.id)
+
+      if (result.success) {
+        const newCount = result.liked ? comment.likes_count + 1 : comment.likes_count - 1
+        // Update store
+        toggleCommentLikeStore(postId, comment.id, newCount, result.liked || false)
+      } else {
+        toast.error(result.error || 'Failed to like comment')
+      }
+    } catch (error) {
+      toast.error('Failed to like comment')
+    }
   }
 
   const handleSubmitReply = async () => {
@@ -116,7 +133,8 @@ export function Comment({
       const result = await addCommentReply(postId, comment.id, replyText.trim())
 
       if (result.success && result.reply) {
-        onReplyAdd(comment.id, result.reply)
+        // Update store
+        addReply(postId, comment.id, result.reply)
         setReplyText('')
         setReplyingTo(false)
         toast.success('Reply added!')
@@ -232,7 +250,7 @@ export function Comment({
         <div className="flex items-center gap-3 ml-2 mt-1">
           <span className="text-xs text-gray-500">{formatTimeAgo(comment.created_at)}</span>
           <button
-            onClick={() => onLike(comment.id)}
+            onClick={handleLike}
             className={`flex items-center gap-1 text-xs transition-colors ${
               comment.is_liked_by_user ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
             }`}
@@ -296,10 +314,6 @@ export function Comment({
                 key={reply.id}
                 reply={reply}
                 parentCommentId={comment.id}
-                onUpdate={(replyId, content) => onReplyUpdate(comment.id, replyId, content)}
-                onDelete={(replyId) => onReplyDelete(comment.id, replyId)}
-                onLike={(replyId) => onReplyLike(comment.id, replyId)}
-                formatTimeAgo={formatTimeAgo}
               />
             ))}
           </div>
