@@ -184,7 +184,8 @@ export function useAudioEngine() {
       track.volume.volume.value = Tone.gainToDb(volume)
       console.log('✅ Volume set successfully')
     } else {
-      console.error('❌ Track not found in playersRef!')
+      // Track not loaded yet - this is OK, will be set on load
+      console.warn('⚠️ Track not loaded yet, skipping volume update:', trackId)
     }
   }, [])
 
@@ -193,6 +194,8 @@ export function useAudioEngine() {
     const track = playersRef.current.get(trackId)
     if (track) {
       track.panner.pan.value = pan
+    } else {
+      console.warn('⚠️ Track not loaded yet, skipping pan update:', trackId)
     }
   }, [])
 
@@ -201,6 +204,8 @@ export function useAudioEngine() {
     const track = playersRef.current.get(trackId)
     if (track) {
       track.player.mute = muted
+    } else {
+      console.warn('⚠️ Track not loaded yet, skipping mute update:', trackId)
     }
   }, [])
 
