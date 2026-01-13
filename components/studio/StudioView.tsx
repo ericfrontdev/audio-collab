@@ -361,6 +361,48 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tracks])
 
+  // Sync mixer store with audio engine (volume, pan, mute)
+  useEffect(() => {
+    const unsubscribe = useMixerStore.subscribe((state, prevState) => {
+      // Check for changes in track mixer settings
+      state.tracks.forEach((trackState, trackId) => {
+        const prevTrackState = prevState.tracks.get(trackId)
+
+        // Volume changed
+        if (prevTrackState?.volume !== trackState.volume) {
+          audioEngine.setTrackVolume(trackId, trackState.volume / 100)
+        }
+
+        // Pan changed
+        if (prevTrackState?.pan !== trackState.pan) {
+          audioEngine.setTrackPan(trackId, trackState.pan / 100)
+        }
+
+        // Mute changed
+        if (prevTrackState?.mute !== trackState.mute) {
+          audioEngine.setTrackMute(trackId, trackState.mute)
+        }
+      })
+
+      // Master volume changed
+      if (prevState.masterVolume !== state.masterVolume) {
+        audioEngine.setMasterVolume(state.masterVolume)
+      }
+
+      // Master pan changed
+      if (prevState.masterPan !== state.masterPan) {
+        audioEngine.setMasterPan(state.masterPan)
+      }
+
+      // Master mute changed
+      if (prevState.masterMute !== state.masterMute) {
+        audioEngine.setMasterMute(state.masterMute)
+      }
+    })
+
+    return unsubscribe
+  }, [audioEngine])
+
   // Extract all handlers to custom hook
   const handlers = useStudioHandlers({
     projectId,
