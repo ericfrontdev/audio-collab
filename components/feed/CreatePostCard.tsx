@@ -11,9 +11,9 @@ import { toast } from 'react-toastify'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslations } from 'next-intl'
 import { useParams } from 'next/navigation'
+import { useCurrentUserStore } from '@/lib/stores'
 
 interface CreatePostCardProps {
-  userAvatar?: string | null
   username?: string
   userId: string
   clubId?: string
@@ -21,7 +21,8 @@ interface CreatePostCardProps {
   onPostCreated?: () => void
 }
 
-export function CreatePostCard({ userAvatar, username, userId, clubId, clubName, onPostCreated }: CreatePostCardProps) {
+export function CreatePostCard({ username, userId, clubId, clubName, onPostCreated }: CreatePostCardProps) {
+  const userAvatar = useCurrentUserStore((state) => state.user?.avatarUrl)
   const t = useTranslations('feed.create')
   const tGenres = useTranslations('clubs.genres')
   const [content, setContent] = useState('')

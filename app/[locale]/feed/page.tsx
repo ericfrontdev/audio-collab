@@ -70,7 +70,6 @@ export default async function FeedPage({
             <div className="max-w-2xl mx-auto px-4 md:px-6 py-4 space-y-4">
               {/* Create post card */}
               <CreatePostCard
-                userAvatar={profile?.avatar_url}
                 username={profile?.username || undefined}
                 userId={user.id}
               />
@@ -78,8 +77,6 @@ export default async function FeedPage({
               {/* Feed */}
               <FeedPostsList
                 initialPosts={posts}
-                currentUserId={user.id}
-                currentUserAvatar={profile?.avatar_url}
               />
             </div>
           </div>

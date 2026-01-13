@@ -17,11 +17,10 @@ interface ClubFeedProps {
   club: Club
   isMember: boolean
   userId?: string
-  userAvatar?: string | null
   username?: string
 }
 
-export function ClubFeed({ club, isMember, userId, userAvatar, username }: ClubFeedProps) {
+export function ClubFeed({ club, isMember, userId, username }: ClubFeedProps) {
   const t = useTranslations('clubs.feed')
   const tGenres = useTranslations('clubs.genres')
   const [posts, setPosts] = useState<Post[]>([])
@@ -121,7 +120,6 @@ export function ClubFeed({ club, isMember, userId, userAvatar, username }: ClubF
       {userId && (
         <CreatePostCard
           userId={userId}
-          userAvatar={userAvatar}
           username={username}
           clubId={club.id}
           clubName={club.name}
@@ -162,8 +160,6 @@ export function ClubFeed({ club, isMember, userId, userAvatar, username }: ClubF
             <FeedPost
               key={post.id}
               post={post}
-              currentUserId={userId}
-              currentUserAvatar={userAvatar}
             />
           ))}
         </div>

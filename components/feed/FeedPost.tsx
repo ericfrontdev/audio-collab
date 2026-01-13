@@ -16,14 +16,15 @@ import { usePostLike } from './hooks/usePostLike'
 import { usePostEditor } from './hooks/usePostEditor'
 import { useComments } from './hooks/useComments'
 import { useTranslations } from 'next-intl'
+import { useCurrentUserStore } from '@/lib/stores'
 
 interface FeedPostProps {
   post: Post
-  currentUserId?: string
-  currentUserAvatar?: string | null
 }
 
-export function FeedPost({ post, currentUserId, currentUserAvatar }: FeedPostProps) {
+export function FeedPost({ post }: FeedPostProps) {
+  const currentUserId = useCurrentUserStore((state) => state.user?.id)
+  const currentUserAvatar = useCurrentUserStore((state) => state.user?.avatarUrl)
   const router = useRouter()
   const tTime = useTranslations('feed.timeAgo')
   const [showMenu, setShowMenu] = useState(false)
@@ -316,7 +317,6 @@ export function FeedPost({ post, currentUserId, currentUserAvatar }: FeedPostPro
                       key={comment.id}
                       comment={comment}
                       postId={post.id}
-                      currentUserId={currentUserId}
                       onUpdate={commentManager.handleCommentUpdate}
                       onDelete={commentManager.handleCommentDelete}
                       onLike={commentManager.handleCommentLike}

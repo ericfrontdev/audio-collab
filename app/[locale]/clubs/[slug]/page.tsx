@@ -182,7 +182,6 @@ export default async function ClubPage({
               members={formattedMembers}
               projects={projectsWithDetails}
               currentUserId={user?.id}
-              currentUserAvatar={userProfile?.avatar_url}
               currentUsername={userProfile?.username}
               locale={locale}
             />

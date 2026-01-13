@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/server';
 import { AuthProvider } from '@/components/providers/AuthProvider';
+import { CurrentUserProvider } from '@/components/providers/CurrentUserProvider';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "../globals.css";
@@ -58,16 +59,25 @@ export default async function LocaleLayout({ children, params }: Props) {
       <body>
         <NextIntlClientProvider messages={messages}>
           <AuthProvider initialUser={user} initialProfile={profile}>
-            {children}
-            <ToastContainer
-              position="bottom-right"
-              theme="dark"
-              hideProgressBar={true}
-              autoClose={3000}
-              closeOnClick
-              pauseOnHover
-              draggable
-            />
+            <CurrentUserProvider
+              userId={user?.id}
+              username={profile?.username}
+              email={user?.email}
+              displayName={profile?.display_name}
+              avatarUrl={profile?.avatar_url}
+              locale={locale}
+            >
+              {children}
+              <ToastContainer
+                position="bottom-right"
+                theme="dark"
+                hideProgressBar={true}
+                autoClose={3000}
+                closeOnClick
+                pauseOnHover
+                draggable
+              />
+            </CurrentUserProvider>
           </AuthProvider>
         </NextIntlClientProvider>
       </body>

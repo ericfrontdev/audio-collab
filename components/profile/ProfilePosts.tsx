@@ -5,14 +5,10 @@ import type { Post } from '@/lib/types/feed'
 
 interface ProfilePostsProps {
   initialPosts: Post[]
-  currentUserId?: string
-  currentUserAvatar?: string | null
 }
 
 export function ProfilePosts({
-  initialPosts,
-  currentUserId,
-  currentUserAvatar
+  initialPosts
 }: ProfilePostsProps) {
   if (initialPosts.length === 0) {
     return (
@@ -28,8 +24,6 @@ export function ProfilePosts({
         <FeedPost
           key={post.id}
           post={post}
-          currentUserId={currentUserId}
-          currentUserAvatar={currentUserAvatar}
         />
       ))}
     </div>
