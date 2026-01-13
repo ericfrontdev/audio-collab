@@ -48,5 +48,5 @@ export function getMaxFileSizeDisplay(): string {
  * @returns Comma-separated list of MIME types
  */
 export function getAcceptedAudioTypes(): string {
-  return AUDIO_CONSTRAINTS.ACCEPTED_FORMATS.map((ext) => `audio/${ext}`).join(',')
+  return AUDIO_CONSTRAINTS.SUPPORTED_FORMATS.join(',')
 }
