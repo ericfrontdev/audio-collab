@@ -116,6 +116,25 @@ export async function uploadTake(
     }
     console.log('Take record created successfully:', take);
 
+    // If this is the first take for this track, set it as active
+    // Check if track has an active_take_id
+    const { data: trackData } = await supabase
+      .from('project_tracks')
+      .select('active_take_id')
+      .eq('id', trackId)
+      .single();
+
+    if (trackData && !trackData.active_take_id) {
+      // This is the first take, make it active
+      await supabase
+        .from('project_tracks')
+        .update({ active_take_id: takeId })
+        .eq('id', trackId);
+      console.log('Set first take as active:', takeId);
+    } else {
+      console.log('Track already has active take, keeping it:', trackData?.active_take_id);
+    }
+
     revalidatePath(`/[locale]/projects/${track.project_id}/studio`, 'page');
     return { success: true, take };
   } catch (error: unknown) {
