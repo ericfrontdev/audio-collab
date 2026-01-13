@@ -13,7 +13,7 @@ interface TrackWithDetails {
   name: string
   color: string
   active_take_id?: string | null
-  isRetakeFolderOpen?: boolean
+  is_retake_folder_open?: boolean
   takes?: any[]
 }
 
@@ -105,7 +105,7 @@ export function TrackHeaderList({
 
                   // Retakes = all other takes (regardless of active state)
                   const retakes = allTakesSorted.slice(1)
-                  const isExpanded = track.isRetakeFolderOpen || false
+                  const isExpanded = track.is_retake_folder_open || false
 
                   // Check if original is active (for styling)
                   const isOriginalActive = originalTake ? track.active_take_id === originalTake.id : false
