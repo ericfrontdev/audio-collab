@@ -44,12 +44,11 @@ interface ClubTabsProps {
   members: Member[];
   projects: ProjectWithDetails[];
   currentUserId?: string;
-  currentUserAvatar?: string | null;
   currentUsername?: string;
   locale: string;
 }
 
-export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, currentUserId, currentUserAvatar, currentUsername, locale }: ClubTabsProps) {
+export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, currentUserId, currentUsername, locale }: ClubTabsProps) {
   const [activeTab, setActiveTab] = useState('feed');
   const tTabs = useTranslations('clubs.tabs');
   const tProjects = useTranslations('clubs.projectsTab');
@@ -96,7 +95,6 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
             club={{ id: clubId, name: club.name, slug: clubSlug }}
             isMember={isMember}
             userId={currentUserId}
-            userAvatar={currentUserAvatar}
             username={currentUsername}
           />
         )}

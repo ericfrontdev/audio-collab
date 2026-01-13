@@ -306,7 +306,6 @@ export default async function ProfilePage({
           {isOwner && user && (
             <div className="mb-4">
               <CreatePostCard
-                userAvatar={profile.avatar_url}
                 username={profile.username}
                 userId={user.id}
               />
@@ -315,8 +314,6 @@ export default async function ProfilePage({
 
           <ProfilePosts
             initialPosts={posts}
-            currentUserId={user?.id}
-            currentUserAvatar={currentUserProfile?.avatar_url}
           />
         </div>
 

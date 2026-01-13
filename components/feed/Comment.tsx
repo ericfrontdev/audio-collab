@@ -7,11 +7,11 @@ import { updateComment, deleteComment, addCommentReply } from '@/app/actions/fee
 import { toggleCommentLike } from '@/app/actions/feed/likes'
 import { toast } from 'react-toastify'
 import { CommentReply } from './CommentReply'
+import { useCurrentUserStore } from '@/lib/stores'
 
 interface CommentProps {
   comment: any
   postId: string
-  currentUserId?: string
   onUpdate: (commentId: string, content: string) => void
   onDelete: (commentId: string) => void
   onLike: (commentId: string) => void
@@ -25,7 +25,6 @@ interface CommentProps {
 export function Comment({
   comment,
   postId,
-  currentUserId,
   onUpdate,
   onDelete,
   onLike,
@@ -35,6 +34,7 @@ export function Comment({
   onReplyAdd,
   formatTimeAgo,
 }: CommentProps) {
+  const currentUserId = useCurrentUserStore((state) => state.user?.id)
   const [menuOpen, setMenuOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(comment.content)
@@ -296,7 +296,6 @@ export function Comment({
                 key={reply.id}
                 reply={reply}
                 parentCommentId={comment.id}
-                currentUserId={currentUserId}
                 onUpdate={(replyId, content) => onReplyUpdate(comment.id, replyId, content)}
                 onDelete={(replyId) => onReplyDelete(comment.id, replyId)}
                 onLike={(replyId) => onReplyLike(comment.id, replyId)}

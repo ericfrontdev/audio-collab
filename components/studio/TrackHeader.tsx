@@ -7,59 +7,54 @@ import { VolumeControl } from './VolumeControl'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useTranslations } from 'next-intl'
+import { useMixerStore, useUIStore } from '@/lib/stores'
 
 interface TrackHeaderProps {
   trackId: string
   trackName: string
   trackColor: string
-  volume: number
-  isMuted: boolean
-  isSoloed: boolean
-  isSelected: boolean
-  isRenaming: boolean
   isActive?: boolean // If false, header is grayed out (retake is active instead)
   takesCount: number
-  audioLevel?: number
-  audioPeak?: number
-  onVolumeChange: (trackId: string, volume: number) => void
-  onMuteToggle: (trackId: string) => void
-  onSoloToggle: (trackId: string) => void
-  onSelect: (trackId: string) => void
   onImport: (trackId: string) => void
   onToggleTakes: (trackId: string) => void
   onContextMenu: (e: React.MouseEvent, trackId: string) => void
   onRename: (trackId: string, newName: string) => void
-  onCancelRename: () => void
 }
 
 export function TrackHeader({
   trackId,
   trackName,
   trackColor,
-  volume,
-  isMuted,
-  isSoloed,
-  isSelected,
-  isRenaming,
   isActive = true, // Default to active (normal state)
   takesCount,
-  audioLevel,
-  audioPeak,
-  onVolumeChange,
-  onMuteToggle,
-  onSoloToggle,
-  onSelect,
   onImport,
   onToggleTakes,
   onContextMenu,
   onRename,
-  onCancelRename,
 }: TrackHeaderProps) {
   const t = useTranslations('studio.trackHeader')
   const [isHovering, setIsHovering] = useState(false)
   const [editingName, setEditingName] = useState(trackName)
   const inputRef = useRef<HTMLInputElement>(null)
   const allowBlur = useRef<boolean>(false)
+
+  // Zustand stores
+  const trackMixerState = useMixerStore((state) => state.tracks.get(trackId))
+  const trackLevels = useMixerStore((state) => state.trackLevels.get(trackId))
+  const { setTrackVolume, setTrackMute, setTrackSolo } = useMixerStore()
+
+  const selectedTrackId = useUIStore((state) => state.selectedTrackId)
+  const renamingTrackId = useUIStore((state) => state.renamingTrackHeaderId)
+  const { setSelectedTrackId, setRenamingTrackHeaderId } = useUIStore()
+
+  // Derived state from stores
+  const volume = trackMixerState?.volume ?? 80
+  const isMuted = trackMixerState?.mute ?? false
+  const isSoloed = trackMixerState?.solo ?? false
+  const audioLevel = trackLevels?.level
+  const audioPeak = trackLevels?.peak
+  const isSelected = selectedTrackId === trackId
+  const isRenaming = renamingTrackId === trackId
 
   // DnD hook
   const {
@@ -99,7 +94,7 @@ export function TrackHeader({
       onRename(trackId, editingName)
     } else if (e.key === 'Escape') {
       setEditingName(trackName)
-      onCancelRename()
+      setRenamingTrackHeaderId(null)
     }
   }
 
@@ -125,7 +120,7 @@ export function TrackHeader({
         ${bgColor}
         ${isActive ? 'shadow-sm' : 'opacity-90'}
       `}
-      onClick={() => onSelect(trackId)}
+      onClick={() => setSelectedTrackId(trackId)}
       onContextMenu={(e) => onContextMenu(e, trackId)}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
@@ -184,7 +179,7 @@ export function TrackHeader({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              onSoloToggle(trackId)
+              setTrackSolo(trackId, !isSoloed)
             }}
             className={`
               w-6 h-6 flex items-center justify-center text-[11px] font-bold rounded-sm transition-all outline outline-1 outline-black
@@ -202,7 +197,7 @@ export function TrackHeader({
           <button
             onClick={(e) => {
               e.stopPropagation()
-              onMuteToggle(trackId)
+              setTrackMute(trackId, !isMuted)
             }}
             className={`
               w-6 h-6 flex items-center justify-center text-[11px] font-bold rounded-sm transition-all outline outline-1 outline-black
@@ -243,7 +238,7 @@ export function TrackHeader({
           <div className="flex-1 max-w-[130px]">
             <VolumeControl
               value={volume}
-              onChange={(newVolume) => onVolumeChange(trackId, newVolume)}
+              onChange={(newVolume) => setTrackVolume(trackId, newVolume)}
               color={waveformColor}
               className="w-full"
             />

@@ -6,11 +6,11 @@ import { Heart, MoreHorizontal, Edit, Trash2 } from 'lucide-react'
 import { updateComment, deleteComment } from '@/app/actions/feed/comments'
 import { toggleCommentLike } from '@/app/actions/feed/likes'
 import { toast } from 'react-toastify'
+import { useCurrentUserStore } from '@/lib/stores'
 
 interface CommentReplyProps {
   reply: any
   parentCommentId: string
-  currentUserId?: string
   onUpdate: (replyId: string, content: string) => void
   onDelete: (replyId: string) => void
   onLike: (replyId: string) => void
@@ -20,12 +20,12 @@ interface CommentReplyProps {
 export function CommentReply({
   reply,
   parentCommentId,
-  currentUserId,
   onUpdate,
   onDelete,
   onLike,
   formatTimeAgo,
 }: CommentReplyProps) {
+  const currentUserId = useCurrentUserStore((state) => state.user?.id)
   const [menuOpen, setMenuOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(reply.content)

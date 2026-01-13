@@ -19,22 +19,11 @@ interface TrackWithDetails {
 
 interface TrackHeaderListProps {
   tracks: TrackWithDetails[]
-  selectedTrackId: string | null
-  trackVolumes: Map<string, number>
-  trackMutes: Set<string>
-  trackSolos: Set<string>
-  trackAudioLevels?: Map<string, { level: number; peak: number }>
-  renamingTrackId: string | null
-  onTrackSelect: (trackId: string) => void
-  onVolumeChange: (trackId: string, volume: number) => void
-  onMuteToggle: (trackId: string) => void
-  onSoloToggle: (trackId: string) => void
   onImport: (trackId: string) => void
   onToggleTakes: (trackId: string) => void
   onAddTrack: () => void
   onContextMenu: (e: React.MouseEvent, trackId: string) => void
   onTrackRename: (trackId: string, newName: string) => void
-  onCancelRename: () => void
   onTracksReorder: (trackIds: string[]) => void
   onRetakeActivated: (trackId: string, takeId: string, isCurrentlyActive: boolean) => void
   onDeleteRetake: (trackId: string, takeId: string, retakeNumber: number) => void
@@ -43,22 +32,11 @@ interface TrackHeaderListProps {
 
 export function TrackHeaderList({
   tracks,
-  selectedTrackId,
-  trackVolumes,
-  trackMutes,
-  trackSolos,
-  trackAudioLevels,
-  renamingTrackId,
-  onTrackSelect,
-  onVolumeChange,
-  onMuteToggle,
-  onSoloToggle,
   onImport,
   onToggleTakes,
   onAddTrack,
   onContextMenu,
   onTrackRename,
-  onCancelRename,
   onTracksReorder,
   onRetakeActivated,
   onDeleteRetake,
@@ -146,24 +124,12 @@ export function TrackHeaderList({
                         trackId={track.id}
                         trackName={track.name}
                         trackColor={track.color}
-                        volume={trackVolumes.get(track.id) ?? 80}
-                        isMuted={trackMutes.has(track.id)}
-                        isSoloed={trackSolos.has(track.id)}
-                        isSelected={selectedTrackId === track.id}
-                        isRenaming={renamingTrackId === track.id}
                         isActive={isOriginalActive}
                         takesCount={retakes.length}
-                        audioLevel={trackAudioLevels?.get(track.id)?.level}
-                        audioPeak={trackAudioLevels?.get(track.id)?.peak}
-                        onVolumeChange={onVolumeChange}
-                        onMuteToggle={onMuteToggle}
-                        onSoloToggle={onSoloToggle}
-                        onSelect={onTrackSelect}
                         onImport={onImport}
                         onToggleTakes={onToggleTakes}
                         onContextMenu={onContextMenu}
                         onRename={onTrackRename}
-                        onCancelRename={onCancelRename}
                       />
 
                       {/* Retakes (if expanded) */}
@@ -177,17 +143,7 @@ export function TrackHeaderList({
                             retakeNumber={idx + 1}
                             trackName={`${track.name} - Take ${idx + 1}`}
                             trackColor={track.color}
-                            volume={trackVolumes.get(track.id) ?? 80}
-                            isMuted={trackMutes.has(track.id)}
-                            isSoloed={trackSolos.has(track.id)}
-                            isSelected={selectedTrackId === track.id}
                             isActive={isRetakeActive}
-                            audioLevel={trackAudioLevels?.get(track.id)?.level}
-                            audioPeak={trackAudioLevels?.get(track.id)?.peak}
-                            onVolumeChange={onVolumeChange}
-                            onMuteToggle={onMuteToggle}
-                            onSoloToggle={onSoloToggle}
-                            onSelect={onTrackSelect}
                             onImport={onImport}
                             onActivate={() => onRetakeActivated(track.id, retake.id, isRetakeActive)}
                             onDeleteRetake={(takeId) => onDeleteRetake(track.id, takeId, idx + 1)}

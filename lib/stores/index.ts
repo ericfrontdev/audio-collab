@@ -18,3 +18,5 @@ export { usePlaybackStore } from './usePlaybackStore'
 export { useMixerStore } from './useMixerStore'
 
 export { useUIStore } from './useUIStore'
+
+export { useCurrentUserStore } from './useCurrentUserStore'
