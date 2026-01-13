@@ -4,29 +4,28 @@ import Image from 'next/image';
 import { Music, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { joinClub, leaveClub } from '@/app/actions/clubs';
-import type { Club } from '@/types/club';
 import { useTranslations } from 'next-intl';
+import { useClubStore, useCurrentUserStore } from '@/lib/stores';
 
-interface ClubHeaderProps {
-  club: Club;
-  memberCount: number;
-  isMember: boolean;
-  userId?: string;
-}
+export function ClubHeader() {
+  // Read from stores
+  const club = useClubStore((state) => state.club);
+  const memberCount = useClubStore((state) => state.memberCount);
+  const isMember = useClubStore((state) => state.isMember);
+  const locale = useClubStore((state) => state.locale);
+  const { updateMemberCount, setIsMember } = useClubStore();
+  const userId = useCurrentUserStore((state) => state.user?.id);
 
-export function ClubHeader({ club, memberCount, isMember, userId }: ClubHeaderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [currentIsMember, setCurrentIsMember] = useState(isMember);
   const router = useRouter();
-  const params = useParams();
-  const locale = params.locale as string || 'en';
   const t = useTranslations('clubs');
   const tGenres = useTranslations('clubs.genres');
 
   const handleJoinLeave = async () => {
-    if (!userId) {
+    if (!userId || !club) {
       router.push('/auth/login');
       return;
     }
@@ -42,6 +41,8 @@ export function ClubHeader({ club, memberCount, isMember, userId }: ClubHeaderPr
           alert(result.error);
         } else {
           setCurrentIsMember(false);
+          setIsMember(false);
+          updateMemberCount(-1);
         }
       } else {
         // Join club
@@ -51,6 +52,8 @@ export function ClubHeader({ club, memberCount, isMember, userId }: ClubHeaderPr
           alert(result.error);
         } else {
           setCurrentIsMember(true);
+          setIsMember(true);
+          updateMemberCount(1);
         }
       }
     } catch (error) {
@@ -60,6 +63,8 @@ export function ClubHeader({ club, memberCount, isMember, userId }: ClubHeaderPr
 
     setIsLoading(false);
   };
+
+  if (!club) return null;
 
   return (
     <div className="border-b border-zinc-800">

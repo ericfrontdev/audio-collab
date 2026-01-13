@@ -6,21 +6,14 @@ import { FeedPost } from '@/components/feed/FeedPost'
 import { getClubPosts } from '@/app/actions/feed/posts'
 import type { Post } from '@/lib/types/feed'
 import { useTranslations } from 'next-intl'
+import { useClubStore, useCurrentUserStore } from '@/lib/stores'
 
-interface Club {
-  id: string
-  name: string
-  slug: string
-}
-
-interface ClubFeedProps {
-  club: Club
-  isMember: boolean
-  userId?: string
-  username?: string
-}
-
-export function ClubFeed({ club, isMember, userId, username }: ClubFeedProps) {
+export function ClubFeed() {
+  // Read from stores
+  const club = useClubStore((state) => state.club)
+  const isMember = useClubStore((state) => state.isMember)
+  const userId = useCurrentUserStore((state) => state.user?.id)
+  const username = useCurrentUserStore((state) => state.user?.username)
   const t = useTranslations('clubs.feed')
   const tGenres = useTranslations('clubs.genres')
   const [posts, setPosts] = useState<Post[]>([])
@@ -28,14 +21,16 @@ export function ClubFeed({ club, isMember, userId, username }: ClubFeedProps) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (isMember) {
+    if (isMember && club) {
       loadPosts()
     } else {
       setIsLoading(false)
     }
-  }, [isMember, club.id])
+  }, [isMember, club?.id])
 
   const loadPosts = async () => {
+    if (!club) return
+
     setIsLoading(true)
     setError(null)
 
@@ -54,6 +49,9 @@ export function ClubFeed({ club, isMember, userId, username }: ClubFeedProps) {
     // Refresh posts after creating a new one
     loadPosts()
   }
+
+  // Guard: club must be loaded
+  if (!club) return null
 
   // Non-member view
   if (!isMember) {

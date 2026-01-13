@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { AppLayout } from '@/components/layouts/AppLayout';
 import { ClubHeader } from '@/components/clubs/ClubHeader';
 import { ClubTabs } from '@/components/clubs/ClubTabs';
+import { ClubProvider } from '@/components/clubs/ClubProvider';
 import { RightSidebar } from '@/components/navigation/RightSidebar';
 import { getTranslations } from 'next-intl/server';
 
@@ -163,29 +164,27 @@ export default async function ClubPage({
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-black">
-        {/* 3 Column Layout */}
-        <div className="flex">
-          {/* Main Content - Center */}
-          <div className="flex-1 min-w-0 xl:mr-96">
-            <ClubHeader
-              club={club}
-              memberCount={memberCount || 0}
-              isMember={isMember}
-              userId={user?.id}
-            />
-            <ClubTabs
-              clubId={club.id}
-              clubSlug={club.slug}
-              isMember={isMember}
-              club={club}
-              members={formattedMembers}
-              projects={projectsWithDetails}
-              currentUserId={user?.id}
-              currentUsername={userProfile?.username}
-              locale={locale}
-            />
-          </div>
+      <ClubProvider
+        clubId={club.id}
+        clubSlug={club.slug}
+        locale={locale}
+        club={club}
+        memberCount={memberCount || 0}
+        isMember={isMember}
+        currentUserId={user?.id}
+        currentUsername={userProfile?.username}
+      >
+        <div className="min-h-screen bg-black">
+          {/* 3 Column Layout */}
+          <div className="flex">
+            {/* Main Content - Center */}
+            <div className="flex-1 min-w-0 xl:mr-96">
+              <ClubHeader />
+              <ClubTabs
+                members={formattedMembers}
+                projects={projectsWithDetails}
+              />
+            </div>
 
           {/* Right Sidebar */}
           <RightSidebar
@@ -209,6 +208,7 @@ export default async function ClubPage({
           </RightSidebar>
         </div>
       </div>
+      </ClubProvider>
     </AppLayout>
   );
 }

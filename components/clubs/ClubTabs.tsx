@@ -4,12 +4,12 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Link } from '@/i18n/routing';
 import { MessageCircle, Music, Users as UsersIcon, Info, CheckCircle2, PlusCircle, Folder } from 'lucide-react';
-import type { Club } from '@/types/club';
 import type { Project } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { ClubFeed } from './ClubFeed';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { useTranslations } from 'next-intl';
+import { useClubStore, useCurrentUserStore } from '@/lib/stores';
 
 const tabsConfig = [
   { id: 'feed', labelKey: 'feed', icon: MessageCircle },
@@ -37,18 +37,18 @@ interface ProjectWithDetails extends Project {
 }
 
 interface ClubTabsProps {
-  clubId: string;
-  clubSlug: string;
-  isMember: boolean;
-  club: Club;
   members: Member[];
   projects: ProjectWithDetails[];
-  currentUserId?: string;
-  currentUsername?: string;
-  locale: string;
 }
 
-export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, currentUserId, currentUsername, locale }: ClubTabsProps) {
+export function ClubTabs({ members, projects }: ClubTabsProps) {
+  // Read from stores
+  const clubId = useClubStore((state) => state.clubId);
+  const clubSlug = useClubStore((state) => state.clubSlug);
+  const isMember = useClubStore((state) => state.isMember);
+  const club = useClubStore((state) => state.club);
+  const locale = useClubStore((state) => state.locale);
+  const currentUserId = useCurrentUserStore((state) => state.user?.id);
   const [activeTab, setActiveTab] = useState('feed');
   const tTabs = useTranslations('clubs.tabs');
   const tProjects = useTranslations('clubs.projectsTab');
@@ -60,6 +60,9 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
     const date = new Date(dateString);
     return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
   };
+
+  // Guard: club must be loaded
+  if (!club || !clubId || !clubSlug) return null;
 
   return (
     <div>
@@ -91,12 +94,7 @@ export function ClubTabs({ clubId, clubSlug, isMember, club, members, projects, 
       {/* Tab Content */}
       <div className="p-8">
         {activeTab === 'feed' && (
-          <ClubFeed
-            club={{ id: clubId, name: club.name, slug: clubSlug }}
-            isMember={isMember}
-            userId={currentUserId}
-            username={currentUsername}
-          />
+          <ClubFeed />
         )}
 
         {activeTab === 'projects' && (
