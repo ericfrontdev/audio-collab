@@ -16,7 +16,7 @@ import { usePostLike } from './hooks/usePostLike'
 import { usePostEditor } from './hooks/usePostEditor'
 import { useComments } from './hooks/useComments'
 import { useTranslations } from 'next-intl'
-import { useCurrentUserStore } from '@/lib/stores'
+import { useCurrentUserStore, useFeedStore } from '@/lib/stores'
 
 interface FeedPostProps {
   post: Post
@@ -25,6 +25,7 @@ interface FeedPostProps {
 export function FeedPost({ post }: FeedPostProps) {
   const currentUserId = useCurrentUserStore((state) => state.user?.id)
   const currentUserAvatar = useCurrentUserStore((state) => state.user?.avatarUrl)
+  const setCurrentPost = useFeedStore((state) => state.setCurrentPost)
   const router = useRouter()
   const tTime = useTranslations('feed.timeAgo')
   const [showMenu, setShowMenu] = useState(false)
@@ -32,6 +33,12 @@ export function FeedPost({ post }: FeedPostProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
   const editAudioInputRef = useRef<HTMLInputElement>(null)
+
+  // Set current post ID for comments/replies to access
+  useEffect(() => {
+    setCurrentPost(post.id)
+    return () => setCurrentPost(null)
+  }, [post.id, setCurrentPost])
 
   // Custom hooks for managing different aspects of the post
   const { isLiked, likesCount, isLiking, handleLike } = usePostLike(
@@ -317,14 +324,6 @@ export function FeedPost({ post }: FeedPostProps) {
                       key={comment.id}
                       comment={comment}
                       postId={post.id}
-                      onUpdate={commentManager.handleCommentUpdate}
-                      onDelete={commentManager.handleCommentDelete}
-                      onLike={commentManager.handleCommentLike}
-                      onReplyUpdate={commentManager.handleReplyUpdate}
-                      onReplyDelete={commentManager.handleReplyDelete}
-                      onReplyLike={commentManager.handleReplyLike}
-                      onReplyAdd={commentManager.handleReplyAdd}
-                      formatTimeAgo={formatTimeAgo}
                     />
                   ))}
                 </div>

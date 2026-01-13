@@ -17,7 +17,7 @@ export interface Reply {
     username: string
     display_name: string | null
     avatar_url: string | null
-  }
+  } | null
   created_at: string
   likes_count: number
   is_liked_by_user: boolean
@@ -33,7 +33,7 @@ export interface Comment {
     username: string
     display_name: string | null
     avatar_url: string | null
-  }
+  } | null
   created_at: string
   likes_count: number
   is_liked_by_user: boolean
