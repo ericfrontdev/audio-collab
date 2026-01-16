@@ -81,6 +81,9 @@ export function MixerView({
   const setTrackPan = useMixerStore((state) => state.setTrackPan)
   const setTrackMute = useMixerStore((state) => state.setTrackMute)
   const setTrackSolo = useMixerStore((state) => state.setTrackSolo)
+  const setTrackFX = useMixerStore((state) => state.setTrackFX)
+  const setTrackFXType = useMixerStore((state) => state.setTrackFXType)
+  const setTrackFXBypassed = useMixerStore((state) => state.setTrackFXBypassed)
   const setMasterVolume = useMixerStore((state) => state.setMasterVolume)
   const setMasterPan = useMixerStore((state) => state.setMasterPan)
   const setMasterMute = useMixerStore((state) => state.setMasterMute)
@@ -134,6 +137,23 @@ export function MixerView({
   const handleMasterMuteToggle = () => {
     const newMute = !masterMute
     setMasterMute(newMute)
+    // Audio engine sync happens automatically via useEffect in StudioView
+  }
+
+  const handleFXChange = (trackId: string, fx: any) => {
+    setTrackFX(trackId, fx)
+    // Audio engine sync happens automatically via useEffect in StudioView
+  }
+
+  const handleFXTypeChange = (trackId: string, type: any) => {
+    setTrackFXType(trackId, type)
+    // Audio engine sync happens automatically via useEffect in StudioView
+  }
+
+  const handleFXBypassToggle = (trackId: string) => {
+    const currentSettings = trackMixerSettings.get(trackId)
+    const newBypassed = !currentSettings?.fx.bypassed
+    setTrackFXBypassed(trackId, newBypassed)
     // Audio engine sync happens automatically via useEffect in StudioView
   }
 
@@ -195,6 +215,7 @@ export function MixerView({
                   {tracks.map((track) => {
                     const activeTake = track.takes?.find((t) => t.id === track.active_take_id) || track.takes?.[0]
                     const uploader = activeTake?.uploader
+                    const trackSettings = trackMixerSettings.get(track.id)
 
                     return (
                       <MixerChannel
@@ -210,10 +231,20 @@ export function MixerView({
                         isRenaming={renamingTrackId === track.id}
                         audioLevel={trackAudioLevels.get(track.id)?.level ?? 0}
                         audioPeak={trackAudioLevels.get(track.id)?.peak ?? 0}
+                        fxSettings={trackSettings?.fx ?? {
+                          type: 'none',
+                          bypassed: false,
+                          eq: { enabled: true, low: 0.5, mid: 0.5, high: 0.5 },
+                          compressor: { enabled: true, threshold: 0.5, ratio: 0.2, attack: 0.01, release: 0.25 },
+                          reverb: { enabled: true, decay: 0.15, wet: 0.3 }
+                        }}
                         onVolumeChange={handleVolumeChange}
                         onPanChange={handlePanChange}
                         onMuteToggle={handleMuteToggle}
                         onSoloToggle={handleSoloToggle}
+                        onFXChange={handleFXChange}
+                        onFXTypeChange={handleFXTypeChange}
+                        onFXBypassToggle={handleFXBypassToggle}
                         onSelect={setSelectedTrackId}
                         onDelete={onDeleteTrack}
                         onImport={onImport}

@@ -357,6 +357,13 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         pan: panPercent,
         mute: mixerSettings?.mute || false,
         solo: mixerSettings?.solo || false,
+        fx: {
+          type: 'none',
+          bypassed: false,
+          eq: { enabled: true, low: 0.5, mid: 0.5, high: 0.5 },
+          compressor: { enabled: true, threshold: 0.5, ratio: 0.2, attack: 0.01, release: 0.25 },
+          reverb: { enabled: true, decay: 0.15, wet: 0.3 }
+        }
       })
     })
   }, [tracks])
@@ -386,11 +393,13 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         pan: settings.pan,
         mute: settings.mute,
         solo: settings.solo,
-        effectiveMute: shouldMute
+        effectiveMute: shouldMute,
+        fx: settings.fx.type
       })
       audioEngine.executeVolumeChange(trackId, settings.volume / 100)
       audioEngine.executePanChange(trackId, settings.pan / 100)
       audioEngine.executeMuteChange(trackId, shouldMute)
+      audioEngine.executeFXChange(trackId, settings.fx)
     })
 
     // Sync master

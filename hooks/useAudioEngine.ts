@@ -1,6 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react'
 import * as Tone from 'tone'
 import { usePlaybackStore, useMixerStore } from '@/lib/stores'
+import { FXChain } from '@/lib/audio/FXChain'
+import type { FXSettings } from '@/lib/stores/useMixerStore'
 
 /**
  * Stateless Audio Engine Hook
@@ -14,6 +16,7 @@ import { usePlaybackStore, useMixerStore } from '@/lib/stores'
 
 interface TrackPlayer {
   player: Tone.Player
+  fxChain: FXChain
   volume: Tone.Volume
   panner: Tone.Panner
   analyser: AnalyserNode
@@ -93,6 +96,7 @@ export function useAudioEngine() {
       try {
         existing.player.stop()
         existing.player.disconnect()
+        existing.fxChain.dispose()
         existing.volume.disconnect()
         existing.panner.disconnect()
         existing.player.dispose()
@@ -107,6 +111,7 @@ export function useAudioEngine() {
     try {
       // Create player and load audio
       const player = new Tone.Player()
+      const fxChain = new FXChain()
       const volumeNode = new Tone.Volume(0) // Start at 0dB, store will set correct value
       const pannerNode = new Tone.Panner(0) // Start at center, store will set correct value
 
@@ -116,13 +121,15 @@ export function useAudioEngine() {
       } catch (loadError) {
         console.warn(`[AudioEngine] Failed to load audio for track ${trackId}:`, audioUrl, loadError)
         player.dispose()
+        fxChain.dispose()
         volumeNode.dispose()
         pannerNode.dispose()
         return 0
       }
 
-      // Connect: player -> volume -> panner -> master
-      player.connect(volumeNode)
+      // Connect: player -> fxChain -> volume -> panner -> master
+      fxChain.connectInput(player)
+      fxChain.connectOutput(volumeNode)
       volumeNode.connect(pannerNode)
 
       if (masterVolumeRef.current) {
@@ -143,6 +150,7 @@ export function useAudioEngine() {
 
       playersRef.current.set(trackId, {
         player,
+        fxChain,
         volume: volumeNode,
         panner: pannerNode,
         analyser,
@@ -170,6 +178,7 @@ export function useAudioEngine() {
       try {
         existing.player.stop()
         existing.player.disconnect()
+        existing.fxChain.dispose()
         existing.volume.disconnect()
         existing.panner.disconnect()
         existing.player.dispose()
@@ -199,6 +208,16 @@ export function useAudioEngine() {
     const track = playersRef.current.get(trackId)
     if (track) {
       track.panner.pan.value = pan
+    }
+  }, [])
+
+  /**
+   * STATELESS: Execute FX settings change (no state tracking)
+   */
+  const executeFXChange = useCallback((trackId: string, fxSettings: FXSettings) => {
+    const track = playersRef.current.get(trackId)
+    if (track) {
+      track.fxChain.applySettings(fxSettings)
     }
   }, [])
 
@@ -378,6 +397,7 @@ export function useAudioEngine() {
     // Stateless executors (no state tracking)
     executeVolumeChange,
     executePanChange,
+    executeFXChange,
     executeMuteChange,
     executeMasterVolumeChange,
     executeMasterPanChange,
