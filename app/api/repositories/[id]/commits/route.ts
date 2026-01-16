@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -22,7 +22,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const repositoryId = params.id
+    const { id: repositoryId } = await params
     const { searchParams } = new URL(request.url)
     const branchId = searchParams.get('branchId')
 

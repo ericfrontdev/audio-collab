@@ -17,7 +17,7 @@ export const maxDuration = 300 // 5 minutes for large projects
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -28,7 +28,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    const repositoryId = params.id
+    const { id: repositoryId } = await params
     const body = await request.json()
     const branchId = body.branchId
 
