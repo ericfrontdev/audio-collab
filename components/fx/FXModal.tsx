@@ -20,6 +20,7 @@ interface FXSettings {
     ratio: number
     attack: number
     release: number
+    makeupGain: number
   }
   reverb: {
     enabled: boolean

@@ -24,6 +24,7 @@ export interface FXSettings {
     ratio: number
     attack: number
     release: number
+    makeupGain: number // 0-1 normalized
   }
   reverb: {
     enabled: boolean
@@ -106,6 +107,7 @@ const defaultFXSettings: FXSettings = {
     ratio: 0.2, // 4:1 normalized
     attack: 0.01,
     release: 0.25,
+    makeupGain: 0.5, // 12dB normalized
   },
   reverb: {
     enabled: true,
