@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 export type FXType = 'eq' | 'compressor' | 'reverb' | 'none'
 
@@ -34,10 +35,10 @@ export function FXDropdown({ isOpen, onClose, onSelect, position }: FXDropdownPr
     onClose()
   }
 
-  return (
+  const dropdown = (
     <div
       ref={dropdownRef}
-      className="absolute z-50 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden"
+      className="fixed z-50 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden"
       style={position ? { left: position.x, top: position.y } : {}}
     >
       {/* No Effect */}
@@ -72,4 +73,6 @@ export function FXDropdown({ isOpen, onClose, onSelect, position }: FXDropdownPr
       </button>
     </div>
   )
+
+  return createPortal(dropdown, document.body)
 }
