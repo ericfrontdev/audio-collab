@@ -393,11 +393,13 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         pan: settings.pan,
         mute: settings.mute,
         solo: settings.solo,
-        effectiveMute: shouldMute
+        effectiveMute: shouldMute,
+        fx: settings.fx.type
       })
       audioEngine.executeVolumeChange(trackId, settings.volume / 100)
       audioEngine.executePanChange(trackId, settings.pan / 100)
       audioEngine.executeMuteChange(trackId, shouldMute)
+      audioEngine.executeFXChange(trackId, settings.fx)
     })
 
     // Sync master
