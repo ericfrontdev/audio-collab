@@ -44,6 +44,11 @@ export class FXChain {
     })
     this.dryWet = new Tone.CrossFade(0.3) // 30% wet by default
 
+    // Generate reverb impulse response
+    this.reverb.generate().then(() => {
+      console.log('Reverb ready')
+    })
+
     // Connect chain: Input → EQ → Comp → Makeup → (Dry/Reverb/Wet) → Output
     this.input.chain(this.eq3, this.compressor, this.compressorMakeup)
 
