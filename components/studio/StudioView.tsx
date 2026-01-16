@@ -361,7 +361,7 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
           type: 'none',
           bypassed: false,
           eq: { enabled: true, low: 0.5, mid: 0.5, high: 0.5 },
-          compressor: { enabled: true, threshold: 0.5, ratio: 0.2, attack: 0.01, release: 0.25 },
+          compressor: { enabled: true, threshold: 0.5, ratio: 0.2, attack: 0.01, release: 0.25, makeupGain: 0.5 },
           reverb: { enabled: true, decay: 0.15, wet: 0.3 }
         }
       })

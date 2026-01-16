@@ -8,6 +8,7 @@ import type { FXSettings } from '../stores/useMixerStore'
 export class FXChain {
   private eq3: Tone.EQ3
   private compressor: Tone.Compressor
+  private compressorMakeup: Tone.Volume
   private reverb: Tone.Reverb
   private dryWet: Tone.CrossFade
   private input: Tone.Volume
@@ -34,6 +35,7 @@ export class FXChain {
       release: 0.25,
       knee: 10
     })
+    this.compressorMakeup = new Tone.Volume(0)
 
     // Reverb with dry/wet control
     this.reverb = new Tone.Reverb({
@@ -42,12 +44,12 @@ export class FXChain {
     })
     this.dryWet = new Tone.CrossFade(0.3) // 30% wet by default
 
-    // Connect chain: Input → EQ → Comp → (Dry/Reverb/Wet) → Output
-    this.input.chain(this.eq3, this.compressor)
+    // Connect chain: Input → EQ → Comp → Makeup → (Dry/Reverb/Wet) → Output
+    this.input.chain(this.eq3, this.compressor, this.compressorMakeup)
 
     // Split for reverb dry/wet
-    this.compressor.connect(this.dryWet.a) // Dry signal
-    this.compressor.connect(this.reverb)
+    this.compressorMakeup.connect(this.dryWet.a) // Dry signal
+    this.compressorMakeup.connect(this.reverb)
     this.reverb.connect(this.dryWet.b) // Wet signal
 
     this.dryWet.connect(this.output)
@@ -100,9 +102,12 @@ export class FXChain {
       this.compressor.ratio.value = 1 + (compressor.ratio * 19)
       this.compressor.attack.value = compressor.attack
       this.compressor.release.value = compressor.release
+      // Makeup gain: 0-1 to 0dB to +24dB
+      this.compressorMakeup.volume.value = compressor.makeupGain * 24
     } else {
       this.compressor.threshold.value = 0
       this.compressor.ratio.value = 1
+      this.compressorMakeup.volume.value = 0
     }
 
     // Apply Reverb
@@ -117,6 +122,13 @@ export class FXChain {
   }
 
   /**
+   * Get gain reduction from compressor (for metering)
+   */
+  getGainReduction(): number {
+    return this.compressor.reduction
+  }
+
+  /**
    * Dispose all nodes
    */
   dispose() {
@@ -124,6 +136,7 @@ export class FXChain {
     this.output.dispose()
     this.eq3.dispose()
     this.compressor.dispose()
+    this.compressorMakeup.dispose()
     this.reverb.dispose()
     this.dryWet.dispose()
   }

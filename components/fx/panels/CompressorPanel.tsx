@@ -9,14 +9,16 @@ interface CompressorSettings {
   ratio: number
   attack: number
   release: number
+  makeupGain: number
 }
 
 interface CompressorPanelProps {
   settings: CompressorSettings
   onChange: (settings: CompressorSettings) => void
+  gainReduction?: number // Real-time GR in dB (0 to -20)
 }
 
-export function CompressorPanel({ settings, onChange }: CompressorPanelProps) {
+export function CompressorPanel({ settings, onChange, gainReduction = 0 }: CompressorPanelProps) {
   const updateSetting = (key: keyof CompressorSettings, value: number | boolean) => {
     onChange({
       ...settings,
@@ -72,6 +74,39 @@ export function CompressorPanel({ settings, onChange }: CompressorPanelProps) {
           max={1}
           unit="s"
         />
+      </div>
+
+      {/* Makeup Gain */}
+      <div className="flex justify-center mb-6">
+        <FXKnob
+          label="Makeup"
+          value={settings.makeupGain}
+          onChange={(v) => updateSetting('makeupGain', v)}
+          min={0}
+          max={24}
+          unit="dB"
+        />
+      </div>
+
+      {/* GR Meter */}
+      <div className="mb-6 px-4">
+        <div className="text-xs text-gray-400 uppercase tracking-wider text-center mb-2">
+          Gain Reduction
+        </div>
+        <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+          {/* GR Bar (fills from left based on compression amount) */}
+          <div
+            className="absolute left-0 top-0 h-full bg-gradient-to-r from-orange-600 to-orange-400 transition-all duration-75"
+            style={{
+              width: `${Math.min(100, Math.abs(gainReduction) * 5)}%` // -20dB = 100%
+            }}
+          />
+        </div>
+        <div className="flex justify-between text-[10px] text-gray-500 mt-1">
+          <span>0 dB</span>
+          <span className="font-mono">{gainReduction.toFixed(1)} dB</span>
+          <span>-20 dB</span>
+        </div>
       </div>
 
       {/* Toggle */}
