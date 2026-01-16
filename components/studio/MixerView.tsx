@@ -95,52 +95,46 @@ export function MixerView({
   const trackSolos = new Set(Array.from(trackMixerSettings.entries()).filter(([_, settings]) => settings.solo).map(([id]) => id))
   const masterAudioLevel = masterLevel
 
-  // Handlers
+  // Handlers - Only update store, sync to AudioEngine happens automatically
   const handleVolumeChange = (trackId: string, volume: number) => {
     setTrackVolume(trackId, volume)
-    audioEngine.setTrackVolume(trackId, volume / 100)
+    // Audio engine sync happens automatically via useEffect in StudioView
   }
 
   const handlePanChange = (trackId: string, pan: number) => {
     setTrackPan(trackId, pan)
-    audioEngine.setTrackPan(trackId, pan / 100)
+    // Audio engine sync happens automatically via useEffect in StudioView
   }
 
   const handleMuteToggle = (trackId: string) => {
     const currentSettings = trackMixerSettings.get(trackId)
     const newMute = !currentSettings?.mute
     setTrackMute(trackId, newMute)
-    audioEngine.setTrackMute(trackId, newMute)
+    // Audio engine sync happens automatically via useEffect in StudioView
   }
 
   const handleSoloToggle = (trackId: string) => {
     const currentSettings = trackMixerSettings.get(trackId)
     const newSolo = !currentSettings?.solo
     setTrackSolo(trackId, newSolo)
-
-    // Apply solo logic to audio engine
-    const soloedTracks = getAllSoloedTracks()
-    tracks.forEach((track) => {
-      const settings = trackMixerSettings.get(track.id)
-      const shouldMute = soloedTracks.length > 0 && !soloedTracks.includes(track.id)
-      audioEngine.setTrackMute(track.id, settings?.mute || shouldMute)
-    })
+    // Audio engine sync happens automatically via useEffect in StudioView
+    // Solo logic (muting non-soloed tracks) is handled there
   }
 
   const handleMasterVolumeChange = (volume: number) => {
     setMasterVolume(volume)
-    audioEngine.setMasterVolume(volume)
+    // Audio engine sync happens automatically via useEffect in StudioView
   }
 
   const handleMasterPanChange = (pan: number) => {
     setMasterPan(pan)
-    audioEngine.setMasterPan(pan)
+    // Audio engine sync happens automatically via useEffect in StudioView
   }
 
   const handleMasterMuteToggle = () => {
     const newMute = !masterMute
     setMasterMute(newMute)
-    audioEngine.setMasterMute(newMute)
+    // Audio engine sync happens automatically via useEffect in StudioView
   }
 
   const handleCancelRename = () => {

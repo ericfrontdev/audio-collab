@@ -1,12 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react'
 import * as Tone from 'tone'
-import { useStudioStore, usePlaybackStore, useMixerStore } from '@/lib/stores'
+import { usePlaybackStore, useMixerStore } from '@/lib/stores'
 
 /**
- * Simple Audio Engine Hook
+ * Stateless Audio Engine Hook
  *
- * Manages Tone.js audio playback using Zustand stores.
- * One player per track - no comping, no multi-player complexity.
+ * ARCHITECTURE: Single Source of Truth Pattern
+ * - useMixerStore = ONLY source of truth for all audio settings
+ * - This hook = stateless executor that just applies commands
+ * - No internal state, no subscriptions, no race conditions
+ * - Simple useEffect synchronization from store to Tone.js
  */
 
 interface TrackPlayer {
@@ -17,9 +20,7 @@ interface TrackPlayer {
 }
 
 export function useAudioEngine() {
-  // Store subscriptions
-  const tracks = useStudioStore((state) => state.tracks)
-  const isPlaying = usePlaybackStore((state) => state.isPlaying)
+  // Store subscriptions (read-only, no writes)
   const { setCurrentTime, setTrackDuration } = usePlaybackStore()
   const { setTrackLevel, setMasterLevel } = useMixerStore()
 
@@ -76,8 +77,16 @@ export function useAudioEngine() {
     }
   }, [])
 
-  // Load a track
-  const loadTrack = useCallback(async (trackId: string, audioUrl: string, volume: number, pan: number) => {
+  // ============================================================================
+  // STATELESS EXECUTORS - Just apply commands, no state tracking
+  // ============================================================================
+
+  /**
+   * Load a track - returns duration for store to save
+   */
+  const loadTrack = useCallback(async (trackId: string, audioUrl: string): Promise<number> => {
+    console.log('🎵 [AudioEngine] Loading track:', trackId)
+
     // Remove existing player if any
     const existing = playersRef.current.get(trackId)
     if (existing) {
@@ -98,15 +107,14 @@ export function useAudioEngine() {
     try {
       // Create player and load audio
       const player = new Tone.Player()
-      const volumeNode = new Tone.Volume(Tone.gainToDb(volume))
-      const pannerNode = new Tone.Panner(pan)
+      const volumeNode = new Tone.Volume(0) // Start at 0dB, store will set correct value
+      const pannerNode = new Tone.Panner(0) // Start at center, store will set correct value
 
       // Try to load audio, fail gracefully if URL is invalid
       try {
         await player.load(audioUrl)
       } catch (loadError) {
-        console.warn(`Failed to load audio for track ${trackId}:`, audioUrl, loadError)
-        // Clean up nodes
+        console.warn(`[AudioEngine] Failed to load audio for track ${trackId}:`, audioUrl, loadError)
         player.dispose()
         volumeNode.dispose()
         pannerNode.dispose()
@@ -144,15 +152,19 @@ export function useAudioEngine() {
       const duration = player.buffer.duration
       setTrackDuration(trackId, duration)
 
+      console.log('✅ [AudioEngine] Track loaded:', trackId, 'duration:', duration)
       return duration
     } catch (error) {
-      console.error(`Error loading track ${trackId}:`, error)
+      console.error(`[AudioEngine] Error loading track ${trackId}:`, error)
       return 0
     }
   }, [setTrackDuration])
 
-  // Remove a track
+  /**
+   * Remove a track
+   */
   const removeTrack = useCallback((trackId: string) => {
+    console.log('🗑️ [AudioEngine] Removing track:', trackId)
     const existing = playersRef.current.get(trackId)
     if (existing) {
       try {
@@ -170,70 +182,58 @@ export function useAudioEngine() {
     }
   }, [])
 
-  // Update track volume
-  const setTrackVolume = useCallback((trackId: string, volume: number) => {
+  /**
+   * STATELESS: Execute volume change (no state tracking)
+   */
+  const executeVolumeChange = useCallback((trackId: string, volume: number) => {
     const track = playersRef.current.get(trackId)
-    console.log('🔊 setTrackVolume called:', {
-      trackId,
-      volume,
-      volumeDb: Tone.gainToDb(volume),
-      trackExists: !!track,
-      allTracks: Array.from(playersRef.current.keys())
-    })
     if (track) {
-      const oldValue = track.volume.volume.value
       track.volume.volume.value = Tone.gainToDb(volume)
-      const newValue = track.volume.volume.value
-      console.log('✅ Volume set:', {
-        oldValue,
-        newValue,
-        changed: oldValue !== newValue,
-        playerMuted: track.player.mute,
-        playerState: track.player.state,
-        volumeNodeConnected: track.volume.numberOfOutputs > 0
-      })
-    } else {
-      // Track not loaded yet - this is OK, will be set on load
-      console.warn('⚠️ Track not loaded yet, skipping volume update:', trackId)
     }
   }, [])
 
-  // Update track pan
-  const setTrackPan = useCallback((trackId: string, pan: number) => {
+  /**
+   * STATELESS: Execute pan change (no state tracking)
+   */
+  const executePanChange = useCallback((trackId: string, pan: number) => {
     const track = playersRef.current.get(trackId)
     if (track) {
       track.panner.pan.value = pan
-    } else {
-      console.warn('⚠️ Track not loaded yet, skipping pan update:', trackId)
     }
   }, [])
 
-  // Update track mute
-  const setTrackMute = useCallback((trackId: string, muted: boolean) => {
+  /**
+   * STATELESS: Execute mute change (no state tracking)
+   */
+  const executeMuteChange = useCallback((trackId: string, muted: boolean) => {
     const track = playersRef.current.get(trackId)
     if (track) {
       track.player.mute = muted
-    } else {
-      console.warn('⚠️ Track not loaded yet, skipping mute update:', trackId)
     }
   }, [])
 
-  // Update master volume
-  const setMasterVolume = useCallback((volume: number) => {
+  /**
+   * STATELESS: Execute master volume change (no state tracking)
+   */
+  const executeMasterVolumeChange = useCallback((volume: number) => {
     if (masterVolumeRef.current) {
       masterVolumeRef.current.volume.value = Tone.gainToDb(volume / 100)
     }
   }, [])
 
-  // Update master pan
-  const setMasterPan = useCallback((pan: number) => {
+  /**
+   * STATELESS: Execute master pan change (no state tracking)
+   */
+  const executeMasterPanChange = useCallback((pan: number) => {
     if (masterPannerRef.current) {
       masterPannerRef.current.pan.value = pan / 100
     }
   }, [])
 
-  // Update master mute
-  const setMasterMute = useCallback((muted: boolean) => {
+  /**
+   * STATELESS: Execute master mute change (no state tracking)
+   */
+  const executeMasterMuteChange = useCallback((muted: boolean) => {
     if (masterVolumeRef.current) {
       masterVolumeRef.current.mute = muted
     }
@@ -308,7 +308,7 @@ export function useAudioEngine() {
         try {
           track.player.start("+0", startTime)
         } catch (e) {
-          console.error('Error starting player:', e)
+          console.error('[AudioEngine] Error starting player:', e)
         }
       })
 
@@ -360,13 +360,14 @@ export function useAudioEngine() {
         try {
           track.player.start("+0", time)
         } catch (e) {
-          console.error('Error restarting player after seek:', e)
+          console.error('[AudioEngine] Error restarting player after seek:', e)
         }
       })
     }
   }, [setCurrentTime])
 
   // Sync isPlaying with ref
+  const isPlaying = usePlaybackStore((state) => state.isPlaying)
   useEffect(() => {
     isPlayingRef.current = isPlaying
   }, [isPlaying])
@@ -374,12 +375,14 @@ export function useAudioEngine() {
   return {
     loadTrack,
     removeTrack,
-    setTrackVolume,
-    setTrackPan,
-    setTrackMute,
-    setMasterVolume,
-    setMasterPan,
-    setMasterMute,
+    // Stateless executors (no state tracking)
+    executeVolumeChange,
+    executePanChange,
+    executeMuteChange,
+    executeMasterVolumeChange,
+    executeMasterPanChange,
+    executeMasterMuteChange,
+    // Playback controls
     handlePlayPause,
     handleStop,
     handleSeek,

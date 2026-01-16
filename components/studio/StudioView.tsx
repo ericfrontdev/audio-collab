@@ -179,30 +179,6 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     }
   }, [])
 
-  // Create initial mixer settings map from database (memoized to prevent infinite loops)
-  const initialMixerSettings = useMemo(() => new Map(
-    tracks.map(track => [
-      track.id,
-      {
-        volume: track.mixer_settings?.volume ?? 0.8,
-        pan: track.mixer_settings?.pan ?? 0,
-        solo: track.mixer_settings?.solo ?? false,
-        mute: track.mixer_settings?.mute ?? false,
-      }
-    ])
-  ), [tracks])
-
-  const trackControls = useStudioTracks({
-    setTrackVolume: audioEngine.setTrackVolume,
-    setTrackPan: audioEngine.setTrackPan,
-    setTrackMute: audioEngine.setTrackMute,
-    trackIds: tracks.map(t => t.id),
-    masterVolume,
-    masterPan,
-    masterMute,
-    initialSettings: initialMixerSettings,
-    onMixerSettingsChange: handleMixerSettingsChange,
-  })
   const timeline = useStudioTimeline({
     maxDuration: maxDuration,
     waveformRefs: waveformRefsRef,
@@ -339,46 +315,12 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
             activeTakeId: track.active_take_id
           })
 
-          const mixerSettings = track.mixer_settings
-          const volumePercent = mixerSettings?.volume !== undefined ? mixerSettings.volume : 80
-          const panPercent = mixerSettings?.pan !== undefined ? mixerSettings.pan : 0
-          const volume = volumePercent / 100
-          const pan = panPercent / 100
-
-          // Initialize track in mixer store with DB values
-          console.log('🎛️ Initializing track in mixer store:', {
-            trackId: track.id,
-            trackName: track.name,
-            volume: volumePercent,
-            pan: panPercent,
-            mute: mixerSettings?.mute || false,
-            solo: mixerSettings?.solo || false,
-          })
-          const { initializeTrack } = useMixerStore.getState()
-          initializeTrack(track.id, {
-            volume: volumePercent,
-            pan: panPercent,
-            mute: mixerSettings?.mute || false,
-            solo: mixerSettings?.solo || false,
-          })
-
-          // Load simple (no comping - comping is disabled)
-          console.log('🎵 Loading audio into Tone.js:', {
+          // Load audio (starts at neutral values, will be synced from store)
+          console.log('🎵 [StudioView] Loading audio:', {
             trackId: track.id,
             audioUrl: activeTake.audio_url,
-            volume,
-            pan
           })
-          audioEngine.loadTrack(track.id, activeTake.audio_url, volume, pan).then(() => {
-            // After load completes, apply current store settings
-            const storeSettings = useMixerStore.getState().tracks.get(track.id)
-            if (storeSettings) {
-              console.log('🔄 Applying store settings after load:', { trackId: track.id, storeSettings })
-              audioEngine.setTrackVolume(track.id, storeSettings.volume / 100)
-              audioEngine.setTrackPan(track.id, storeSettings.pan / 100)
-              audioEngine.setTrackMute(track.id, storeSettings.mute)
-            }
-          })
+          audioEngine.loadTrack(track.id, activeTake.audio_url)
 
           loadedAudioUrlsRef.current.set(track.id, activeTake.audio_url)
           console.log('✅ Track load initiated')
@@ -396,60 +338,67 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tracks])
 
-  // Store audioEngine ref to avoid re-subscription loops
-  const audioEngineRef = useRef(audioEngine)
-  audioEngineRef.current = audioEngine
+  // ============================================================================
+  // SINGLE SOURCE OF TRUTH: Initialize mixer store from DB, sync to AudioEngine
+  // ============================================================================
 
-  // Sync mixer store with audio engine (volume, pan, mute)
+  // Step 1: Initialize mixer store from database values when tracks change
   useEffect(() => {
-    console.log('🎚️ Setting up mixer store subscription (ONE TIME)')
-    const unsubscribe = useMixerStore.subscribe((state, prevState) => {
-      console.log('🔔 Mixer store changed', {
-        trackCount: state.tracks.size,
-        tracks: Array.from(state.tracks.keys())
+    console.log('📊 [StudioView] Initializing mixer store from DB')
+    const { initializeTrack } = useMixerStore.getState()
+
+    tracks.forEach(track => {
+      const mixerSettings = track.mixer_settings
+      const volumePercent = mixerSettings?.volume !== undefined ? mixerSettings.volume : 80
+      const panPercent = mixerSettings?.pan !== undefined ? mixerSettings.pan : 0
+
+      initializeTrack(track.id, {
+        volume: volumePercent,
+        pan: panPercent,
+        mute: mixerSettings?.mute || false,
+        solo: mixerSettings?.solo || false,
       })
+    })
+  }, [tracks])
 
-      // Check for changes in track mixer settings
-      state.tracks.forEach((trackState, trackId) => {
-        const prevTrackState = prevState.tracks.get(trackId)
+  // Step 2: Sync mixer store to AudioEngine (store -> Tone.js)
+  const mixerTracks = useMixerStore((state) => state.tracks)
 
-        // Volume changed
-        if (prevTrackState?.volume !== trackState.volume) {
-          console.log('🎚️ Volume changed:', { trackId, from: prevTrackState?.volume, to: trackState.volume, tonejs: trackState.volume / 100 })
-          audioEngineRef.current.setTrackVolume(trackId, trackState.volume / 100)
-        }
+  useEffect(() => {
+    console.log('🔄 [StudioView] Syncing mixer store to AudioEngine')
 
-        // Pan changed
-        if (prevTrackState?.pan !== trackState.pan) {
-          console.log('🎛️ Pan changed:', { trackId, from: prevTrackState?.pan, to: trackState.pan })
-          audioEngineRef.current.setTrackPan(trackId, trackState.pan / 100)
-        }
+    // Check if any tracks are soloed
+    const soloedTracks: string[] = []
+    mixerTracks.forEach((settings, trackId) => {
+      if (settings.solo) soloedTracks.push(trackId)
+    })
+    const hasSolos = soloedTracks.length > 0
 
-        // Mute changed
-        if (prevTrackState?.mute !== trackState.mute) {
-          console.log('🔇 Mute changed:', { trackId, from: prevTrackState?.mute, to: trackState.mute })
-          audioEngineRef.current.setTrackMute(trackId, trackState.mute)
-        }
+    // Sync each track
+    mixerTracks.forEach((settings, trackId) => {
+      // Apply solo logic: if any track is soloed, mute non-soloed tracks
+      const shouldMute = hasSolos
+        ? !soloedTracks.includes(trackId) || settings.mute
+        : settings.mute
+
+      console.log(`  🎛️ Track ${trackId}:`, {
+        volume: settings.volume,
+        pan: settings.pan,
+        mute: settings.mute,
+        solo: settings.solo,
+        effectiveMute: shouldMute
       })
-
-      // Master volume changed
-      if (prevState.masterVolume !== state.masterVolume) {
-        audioEngineRef.current.setMasterVolume(state.masterVolume)
-      }
-
-      // Master pan changed
-      if (prevState.masterPan !== state.masterPan) {
-        audioEngineRef.current.setMasterPan(state.masterPan)
-      }
-
-      // Master mute changed
-      if (prevState.masterMute !== state.masterMute) {
-        audioEngineRef.current.setMasterMute(state.masterMute)
-      }
+      audioEngine.executeVolumeChange(trackId, settings.volume / 100)
+      audioEngine.executePanChange(trackId, settings.pan / 100)
+      audioEngine.executeMuteChange(trackId, shouldMute)
     })
 
-    return unsubscribe
-  }, []) // Empty deps - subscribe ONCE only
+    // Sync master
+    console.log('  🎚️ Master:', { volume: masterVolume, pan: masterPan, mute: masterMute })
+    audioEngine.executeMasterVolumeChange(masterVolume)
+    audioEngine.executeMasterPanChange(masterPan)
+    audioEngine.executeMasterMuteChange(masterMute)
+  }, [mixerTracks, masterVolume, masterPan, masterMute, audioEngine])
 
   // Extract all handlers to custom hook
   const handlers = useStudioHandlers({
