@@ -129,7 +129,7 @@ export async function POST(
         message: c.message,
         author: c.author?.username || 'unknown',
         created_at: c.created_at,
-        stems: c.stems?.map(s => ({
+        stems: c.stems?.map((s: any) => ({
           track_name: s.track_name,
           track_index: s.track_index,
           stem_type: s.stem_type,
