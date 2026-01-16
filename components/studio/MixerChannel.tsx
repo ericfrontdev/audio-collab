@@ -9,6 +9,7 @@
  * Refactored to use modular hooks and sub-components for better maintainability.
  */
 
+import { useState } from 'react'
 import { useFaderDrag } from '@/hooks/useFaderDrag'
 import { usePanDrag } from '@/hooks/usePanDrag'
 import { useTrackRename } from '@/hooks/useTrackRename'
@@ -20,6 +21,9 @@ import {
   VolumeDisplay,
   FaderSection,
 } from './mixer'
+import { FXZone } from '@/components/fx/FXZone'
+import { FXModal } from '@/components/fx/FXModal'
+import type { FXType, FXSettings } from '@/lib/stores/useMixerStore'
 
 interface MixerChannelProps {
   trackId: string
@@ -33,10 +37,14 @@ interface MixerChannelProps {
   isRenaming: boolean
   audioLevel?: number
   audioPeak?: number
+  fxSettings: FXSettings
   onVolumeChange: (trackId: string, volume: number) => void
   onPanChange: (trackId: string, pan: number) => void
   onMuteToggle: (trackId: string) => void
   onSoloToggle: (trackId: string) => void
+  onFXChange: (trackId: string, fx: FXSettings) => void
+  onFXTypeChange: (trackId: string, type: FXType) => void
+  onFXBypassToggle: (trackId: string) => void
   onSelect: (trackId: string) => void
   onDelete: (trackId: string, trackName: string) => void
   onImport: (trackId: string) => void
@@ -58,10 +66,14 @@ export function MixerChannel({
   isRenaming,
   audioLevel = 0,
   audioPeak = 0,
+  fxSettings,
   onVolumeChange,
   onPanChange,
   onMuteToggle,
   onSoloToggle,
+  onFXChange,
+  onFXTypeChange,
+  onFXBypassToggle,
   onSelect,
   onDelete,
   onImport,
@@ -69,6 +81,7 @@ export function MixerChannel({
   onRename,
   onCancelRename,
 }: MixerChannelProps) {
+  const [isFXModalOpen, setIsFXModalOpen] = useState(false)
   // Custom hooks for stateful logic
   const fader = useFaderDrag({ volume, trackId, onVolumeChange })
   const panControl = usePanDrag({ pan, trackId, onPanChange })
@@ -84,7 +97,15 @@ export function MixerChannel({
   // Event handler helpers
   const handleStopPropagation = (e: React.MouseEvent) => e.stopPropagation()
 
+  const handleFXTypeChange = (type: FXType) => {
+    onFXTypeChange(trackId, type)
+    if (type !== 'none') {
+      setIsFXModalOpen(true)
+    }
+  }
+
   return (
+    <>
     <div
       ref={sortable.sortableProps.setNodeRef}
       className={`
@@ -124,6 +145,17 @@ export function MixerChannel({
         onStopPropagation={handleStopPropagation}
       />
 
+      {/* FX Zone */}
+      <div className="px-2 py-2" onClick={handleStopPropagation}>
+        <FXZone
+          currentEffect={fxSettings.type}
+          bypassed={fxSettings.bypassed}
+          onEffectChange={handleFXTypeChange}
+          onBypassToggle={() => onFXBypassToggle(trackId)}
+          onOpenSettings={() => setIsFXModalOpen(true)}
+        />
+      </div>
+
       {/* Pan Control */}
       <PanControl
         pan={pan}
@@ -154,5 +186,26 @@ export function MixerChannel({
       {/* Track color strip at bottom */}
       <div className="h-1 w-full" style={{ backgroundColor: trackColor }} />
     </div>
+
+    {/* FX Modal */}
+    <FXModal
+      isOpen={isFXModalOpen}
+      onClose={() => setIsFXModalOpen(false)}
+      effectType={fxSettings.type}
+      settings={{
+        eq: fxSettings.eq,
+        compressor: fxSettings.compressor,
+        reverb: fxSettings.reverb
+      }}
+      onSettingsChange={(newSettings) => {
+        onFXChange(trackId, {
+          ...fxSettings,
+          eq: newSettings.eq,
+          compressor: newSettings.compressor,
+          reverb: newSettings.reverb
+        })
+      }}
+    />
+    </>
   )
 }

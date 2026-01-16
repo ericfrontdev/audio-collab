@@ -7,11 +7,37 @@ import { create } from 'zustand'
  * Separate from audio engine - this is pure UI state.
  */
 
+export type FXType = 'eq' | 'compressor' | 'reverb' | 'none'
+
+export interface FXSettings {
+  type: FXType
+  bypassed: boolean
+  eq: {
+    enabled: boolean
+    low: number // 0-1 normalized
+    mid: number
+    high: number
+  }
+  compressor: {
+    enabled: boolean
+    threshold: number // 0-1 normalized
+    ratio: number
+    attack: number
+    release: number
+  }
+  reverb: {
+    enabled: boolean
+    decay: number // 0-1 normalized
+    wet: number
+  }
+}
+
 interface TrackMixerState {
   volume: number // 0-100 (UI range)
   pan: number // -100 to 100 (UI range)
   mute: boolean
   solo: boolean
+  fx: FXSettings
 }
 
 interface MixerState {
@@ -32,6 +58,9 @@ interface MixerState {
   setTrackPan: (trackId: string, pan: number) => void
   setTrackMute: (trackId: string, mute: boolean) => void
   setTrackSolo: (trackId: string, solo: boolean) => void
+  setTrackFX: (trackId: string, fx: FXSettings) => void
+  setTrackFXType: (trackId: string, type: FXType) => void
+  setTrackFXBypassed: (trackId: string, bypassed: boolean) => void
   initializeTrack: (trackId: string, state: TrackMixerState) => void
   removeTrack: (trackId: string) => void
 
@@ -62,11 +91,35 @@ const initialState = {
   masterLevel: { level: 0, peak: 0 },
 }
 
+const defaultFXSettings: FXSettings = {
+  type: 'none',
+  bypassed: false,
+  eq: {
+    enabled: true,
+    low: 0.5, // 0dB normalized
+    mid: 0.5,
+    high: 0.5,
+  },
+  compressor: {
+    enabled: true,
+    threshold: 0.5, // -30dB normalized
+    ratio: 0.2, // 4:1 normalized
+    attack: 0.01,
+    release: 0.25,
+  },
+  reverb: {
+    enabled: true,
+    decay: 0.15, // 1.5s normalized
+    wet: 0.3,
+  },
+}
+
 const defaultTrackState: TrackMixerState = {
   volume: 80,
   pan: 0,
   mute: false,
   solo: false,
+  fx: defaultFXSettings,
 }
 
 export const useMixerStore = create<MixerState>((set, get) => ({
@@ -102,6 +155,36 @@ export const useMixerStore = create<MixerState>((set, get) => ({
       const tracks = new Map(state.tracks)
       const trackState = tracks.get(trackId) || { ...defaultTrackState }
       tracks.set(trackId, { ...trackState, solo })
+      return { tracks }
+    }),
+
+  setTrackFX: (trackId, fx) =>
+    set((state) => {
+      const tracks = new Map(state.tracks)
+      const trackState = tracks.get(trackId) || { ...defaultTrackState }
+      tracks.set(trackId, { ...trackState, fx })
+      return { tracks }
+    }),
+
+  setTrackFXType: (trackId, type) =>
+    set((state) => {
+      const tracks = new Map(state.tracks)
+      const trackState = tracks.get(trackId) || { ...defaultTrackState }
+      tracks.set(trackId, {
+        ...trackState,
+        fx: { ...trackState.fx, type, bypassed: false }
+      })
+      return { tracks }
+    }),
+
+  setTrackFXBypassed: (trackId, bypassed) =>
+    set((state) => {
+      const tracks = new Map(state.tracks)
+      const trackState = tracks.get(trackId) || { ...defaultTrackState }
+      tracks.set(trackId, {
+        ...trackState,
+        fx: { ...trackState.fx, bypassed }
+      })
       return { tracks }
     }),
 
