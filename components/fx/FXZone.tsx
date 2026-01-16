@@ -25,6 +25,7 @@ export function FXZone({
   const zoneRef = useRef<HTMLDivElement>(null)
 
   const handleZoneClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
     if (currentEffect === 'none') {
       const rect = zoneRef.current?.getBoundingClientRect()
       if (rect) {
