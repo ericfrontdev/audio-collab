@@ -89,39 +89,59 @@ export class DynamicFXChain {
    * Reconnect all effects in series based on slot order
    */
   private reconnectChain(slots: FXSlot[]) {
-    // Disconnect everything first
-    this.input.disconnect()
-    this.output.disconnect()
-
     if (slots.length === 0) {
-      // No effects: direct connection
-      this.input.connect(this.output)
+      // No effects: ensure direct connection
+      try {
+        this.input.disconnect()
+        this.input.connect(this.output)
+      } catch (e) {
+        // Already connected
+      }
       return
     }
 
     // Sort by order
     const sortedSlots = [...slots].sort((a, b) => a.order - b.order)
 
-    // Connect: input → slot0 → slot1 → slot2 → output
+    // Build the new chain connections
+    const newConnections: Array<{ from: Tone.ToneAudioNode; to: Tone.ToneAudioNode }> = []
+
     let previousNode: Tone.ToneAudioNode = this.input
 
     for (const slot of sortedSlots) {
       const effect = this.activeEffects.get(slot.id)
       if (!effect) continue
 
-      // Connect previous to this effect's input
-      previousNode.connect(effect.input)
+      newConnections.push({ from: previousNode, to: effect.input })
 
-      // If bypassed, also connect directly (parallel path)
-      if (slot.bypassed) {
-        previousNode.connect(effect.output)
-      }
+      // If bypassed, the effect should pass through without processing
+      // (individual effects handle their own bypass internally)
 
       previousNode = effect.output
     }
 
     // Connect last effect to output
-    previousNode.connect(this.output)
+    newConnections.push({ from: previousNode, to: this.output })
+
+    // Apply all new connections atomically
+    // First disconnect all
+    this.input.disconnect()
+    sortedSlots.forEach(slot => {
+      const effect = this.activeEffects.get(slot.id)
+      if (effect) {
+        try {
+          effect.input.disconnect()
+          effect.output.disconnect()
+        } catch (e) {
+          // Ignore if not connected
+        }
+      }
+    })
+
+    // Then reconnect all
+    newConnections.forEach(({ from, to }) => {
+      from.connect(to)
+    })
   }
 
   /**
