@@ -142,27 +142,22 @@ export class DynamicFXChain {
       label: `${sortedSlots[sortedSlots.length - 1]?.type}.output -> output`
     })
 
-    // Apply all new connections atomically
-    // First disconnect all
-    console.log('[DynamicFXChain] Disconnecting all nodes...')
+    // Apply all new connections
+    // NOTE: We DON'T disconnect internal effect nodes because they have
+    // internal routing (e.g. reverb dry/wet) that must stay connected.
+    // We only disconnect the main input to rebuild the chain.
+    console.log('[DynamicFXChain] Disconnecting main input...')
     this.input.disconnect()
-    sortedSlots.forEach(slot => {
-      const effect = this.activeEffects.get(slot.id)
-      if (effect) {
-        try {
-          effect.input.disconnect()
-          effect.output.disconnect()
-        } catch (e) {
-          // Ignore if not connected
-        }
-      }
-    })
 
     // Then reconnect all
     console.log('[DynamicFXChain] Reconnecting chain...')
     newConnections.forEach(({ from, to, label }) => {
       console.log('[DynamicFXChain]  ', label)
-      from.connect(to)
+      try {
+        from.connect(to)
+      } catch (e) {
+        console.error('[DynamicFXChain] Failed to connect:', label, e)
+      }
     })
     console.log('[DynamicFXChain] Chain reconnection complete')
   }
