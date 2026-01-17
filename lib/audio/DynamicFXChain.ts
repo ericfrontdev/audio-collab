@@ -224,22 +224,25 @@ export class DynamicFXChain {
       preDelay: 0.01,
     })
     const dryWet = new Tone.CrossFade(0.3)
+    const inputGain = new Tone.Gain(1)
 
     // Generate reverb impulse response
     reverb.generate().then(() => {
       console.log('Reverb ready')
     })
 
-    // Setup dry/wet routing
-    dryWet.connect(dryWet.a) // Dry input also goes to output
-    reverb.connect(dryWet.b) // Wet signal
+    // Setup dry/wet routing properly
+    // Input splits to both dry (a) and reverb
+    inputGain.connect(dryWet.a) // Dry signal
+    inputGain.connect(reverb)   // To reverb processing
+    reverb.connect(dryWet.b)    // Wet signal from reverb
 
     this.applyReverbSettings(reverb, dryWet, slot.settings.reverb)
 
     return {
       type: 'reverb',
-      nodes: [reverb, dryWet],
-      input: new Tone.Gain(1), // Use a gain node as input splitter
+      nodes: [reverb, dryWet, inputGain],
+      input: inputGain,
       output: dryWet,
     }
   }
