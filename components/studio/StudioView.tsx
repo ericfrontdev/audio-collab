@@ -363,7 +363,8 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
           eq: { enabled: true, low: 0.5, mid: 0.5, high: 0.5 },
           compressor: { enabled: true, threshold: 0.5, ratio: 0.2, attack: 0.01, release: 0.25, makeupGain: 0.5 },
           reverb: { enabled: true, decay: 0.15, wet: 0.3 }
-        }
+        },
+        fxChain: [] // New multi-effect chain (empty by default)
       })
     })
   }, [tracks])
@@ -394,12 +395,18 @@ export function StudioView({ projectId, projectTitle, currentUserId, ownerId, lo
         mute: settings.mute,
         solo: settings.solo,
         effectiveMute: shouldMute,
-        fx: settings.fx.type
+        fx: settings.fx.type,
+        fxChain: settings.fxChain?.length ?? 0
       })
       audioEngine.executeVolumeChange(trackId, settings.volume / 100)
       audioEngine.executePanChange(trackId, settings.pan / 100)
       audioEngine.executeMuteChange(trackId, shouldMute)
-      audioEngine.executeFXChange(trackId, settings.fx)
+      // Sync FX - use new chain if available, fallback to legacy
+      if (settings.fxChain && settings.fxChain.length > 0) {
+        audioEngine.executeFXChainUpdate(trackId, settings.fxChain)
+      } else {
+        audioEngine.executeFXChange(trackId, settings.fx)
+      }
     })
 
     // Sync master

@@ -2,7 +2,8 @@ import { useEffect, useRef, useCallback } from 'react'
 import * as Tone from 'tone'
 import { usePlaybackStore, useMixerStore } from '@/lib/stores'
 import { FXChain } from '@/lib/audio/FXChain'
-import type { FXSettings } from '@/lib/stores/useMixerStore'
+import { DynamicFXChain } from '@/lib/audio/DynamicFXChain'
+import type { FXSettings, FXSlot } from '@/lib/stores/useMixerStore'
 
 /**
  * Stateless Audio Engine Hook
@@ -16,7 +17,8 @@ import type { FXSettings } from '@/lib/stores/useMixerStore'
 
 interface TrackPlayer {
   player: Tone.Player
-  fxChain: FXChain
+  fxChain: FXChain // Legacy - kept for backward compatibility
+  dynamicFXChain: DynamicFXChain // New multi-effect chain
   volume: Tone.Volume
   panner: Tone.Panner
   analyser: AnalyserNode
@@ -111,7 +113,8 @@ export function useAudioEngine() {
     try {
       // Create player and load audio
       const player = new Tone.Player()
-      const fxChain = new FXChain()
+      const fxChain = new FXChain() // Legacy - kept for backward compatibility
+      const dynamicFXChain = new DynamicFXChain() // New multi-effect chain
       const volumeNode = new Tone.Volume(0) // Start at 0dB, store will set correct value
       const pannerNode = new Tone.Panner(0) // Start at center, store will set correct value
 
@@ -122,14 +125,15 @@ export function useAudioEngine() {
         console.warn(`[AudioEngine] Failed to load audio for track ${trackId}:`, audioUrl, loadError)
         player.dispose()
         fxChain.dispose()
+        dynamicFXChain.dispose()
         volumeNode.dispose()
         pannerNode.dispose()
         return 0
       }
 
-      // Connect: player -> fxChain -> volume -> panner -> master
-      fxChain.connectInput(player)
-      fxChain.connectOutput(volumeNode)
+      // Connect: player -> dynamicFXChain -> volume -> panner -> master
+      dynamicFXChain.connectInput(player)
+      dynamicFXChain.connectOutput(volumeNode)
       volumeNode.connect(pannerNode)
 
       if (masterVolumeRef.current) {
@@ -151,6 +155,7 @@ export function useAudioEngine() {
       playersRef.current.set(trackId, {
         player,
         fxChain,
+        dynamicFXChain,
         volume: volumeNode,
         panner: pannerNode,
         analyser,
@@ -179,6 +184,7 @@ export function useAudioEngine() {
         existing.player.stop()
         existing.player.disconnect()
         existing.fxChain.dispose()
+        existing.dynamicFXChain.dispose()
         existing.volume.disconnect()
         existing.panner.disconnect()
         existing.player.dispose()
@@ -213,11 +219,22 @@ export function useAudioEngine() {
 
   /**
    * STATELESS: Execute FX settings change (no state tracking)
+   * Legacy - for backward compatibility
    */
   const executeFXChange = useCallback((trackId: string, fxSettings: FXSettings) => {
     const track = playersRef.current.get(trackId)
     if (track) {
       track.fxChain.applySettings(fxSettings)
+    }
+  }, [])
+
+  /**
+   * STATELESS: Execute FX chain update (new multi-effect chain)
+   */
+  const executeFXChainUpdate = useCallback((trackId: string, fxChain: FXSlot[]) => {
+    const track = playersRef.current.get(trackId)
+    if (track) {
+      track.dynamicFXChain.updateChain(fxChain)
     }
   }, [])
 
@@ -398,6 +415,7 @@ export function useAudioEngine() {
     executeVolumeChange,
     executePanChange,
     executeFXChange,
+    executeFXChainUpdate, // New multi-effect chain executor
     executeMuteChange,
     executeMasterVolumeChange,
     executeMasterPanChange,

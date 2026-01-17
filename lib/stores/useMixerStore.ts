@@ -33,12 +33,42 @@ export interface FXSettings {
   }
 }
 
+// New FXSlot interface for multi-effect chains
+export interface FXSlot {
+  id: string // UUID for unique identification
+  order: number // 0, 1, or 2 (chain position)
+  type: FXType // 'eq' | 'compressor' | 'reverb'
+  bypassed: boolean // Individual bypass per slot
+  settings: {
+    eq: {
+      enabled: boolean
+      low: number
+      mid: number
+      high: number
+    }
+    compressor: {
+      enabled: boolean
+      threshold: number
+      ratio: number
+      attack: number
+      release: number
+      makeupGain: number
+    }
+    reverb: {
+      enabled: boolean
+      decay: number
+      wet: number
+    }
+  }
+}
+
 interface TrackMixerState {
   volume: number // 0-100 (UI range)
   pan: number // -100 to 100 (UI range)
   mute: boolean
   solo: boolean
-  fx: FXSettings
+  fx: FXSettings // Legacy - kept for backward compatibility
+  fxChain: FXSlot[] // New multi-effect chain
 }
 
 interface MixerState {
@@ -64,6 +94,13 @@ interface MixerState {
   setTrackFXBypassed: (trackId: string, bypassed: boolean) => void
   initializeTrack: (trackId: string, state: TrackMixerState) => void
   removeTrack: (trackId: string) => void
+
+  // Actions - FX Chain Management (new)
+  addFXSlot: (trackId: string, slotType: FXType) => void
+  removeFXSlot: (trackId: string, slotId: string) => void
+  updateFXSlotSettings: (trackId: string, slotId: string, settings: Partial<FXSlot['settings']>) => void
+  setFXSlotType: (trackId: string, slotId: string, type: FXType) => void
+  setFXSlotBypassed: (trackId: string, slotId: string, bypassed: boolean) => void
 
   // Actions - Master controls
   setMasterVolume: (volume: number) => void
@@ -122,6 +159,7 @@ const defaultTrackState: TrackMixerState = {
   mute: false,
   solo: false,
   fx: defaultFXSettings,
+  fxChain: [], // New: empty FX chain by default
 }
 
 export const useMixerStore = create<MixerState>((set, get) => ({
@@ -249,6 +287,110 @@ export const useMixerStore = create<MixerState>((set, get) => ({
     }
     return false
   },
+
+  // FX Chain Management
+  addFXSlot: (trackId, slotType) =>
+    set((state) => {
+      const tracks = new Map(state.tracks)
+      const trackState = tracks.get(trackId) || { ...defaultTrackState }
+      const currentChain = trackState.fxChain || []
+
+      // Limit to 3 slots
+      if (currentChain.length >= 3) return { tracks }
+
+      // Don't add 'none' type to chain
+      if (slotType === 'none') return { tracks }
+
+      const newSlot: FXSlot = {
+        id: crypto.randomUUID(),
+        order: currentChain.length,
+        type: slotType,
+        bypassed: false,
+        settings: {
+          eq: { ...defaultFXSettings.eq },
+          compressor: { ...defaultFXSettings.compressor },
+          reverb: { ...defaultFXSettings.reverb },
+        },
+      }
+
+      tracks.set(trackId, {
+        ...trackState,
+        fxChain: [...currentChain, newSlot],
+      })
+      return { tracks }
+    }),
+
+  removeFXSlot: (trackId, slotId) =>
+    set((state) => {
+      const tracks = new Map(state.tracks)
+      const trackState = tracks.get(trackId)
+      if (!trackState) return { tracks }
+
+      const updatedChain = trackState.fxChain
+        .filter((slot) => slot.id !== slotId)
+        .map((slot, index) => ({ ...slot, order: index })) // Reorder remaining slots
+
+      tracks.set(trackId, {
+        ...trackState,
+        fxChain: updatedChain,
+      })
+      return { tracks }
+    }),
+
+  updateFXSlotSettings: (trackId, slotId, settings) =>
+    set((state) => {
+      const tracks = new Map(state.tracks)
+      const trackState = tracks.get(trackId)
+      if (!trackState) return { tracks }
+
+      const updatedChain = trackState.fxChain.map((slot) =>
+        slot.id === slotId
+          ? { ...slot, settings: { ...slot.settings, ...settings } }
+          : slot
+      )
+
+      tracks.set(trackId, {
+        ...trackState,
+        fxChain: updatedChain,
+      })
+      return { tracks }
+    }),
+
+  setFXSlotType: (trackId, slotId, type) =>
+    set((state) => {
+      const tracks = new Map(state.tracks)
+      const trackState = tracks.get(trackId)
+      if (!trackState) return { tracks }
+
+      const updatedChain = trackState.fxChain.map((slot) =>
+        slot.id === slotId
+          ? { ...slot, type, bypassed: false } // Reset bypass when changing type
+          : slot
+      )
+
+      tracks.set(trackId, {
+        ...trackState,
+        fxChain: updatedChain,
+      })
+      return { tracks }
+    }),
+
+  setFXSlotBypassed: (trackId, slotId, bypassed) =>
+    set((state) => {
+      const tracks = new Map(state.tracks)
+      const trackState = tracks.get(trackId)
+      if (!trackState) return { tracks }
+
+      const updatedChain = trackState.fxChain.map((slot) =>
+        slot.id === slotId ? { ...slot, bypassed } : slot
+      )
+
+      tracks.set(trackId, {
+        ...trackState,
+        fxChain: updatedChain,
+      })
+      return { tracks }
+    }),
 
   reset: () =>
     set(initialState),
