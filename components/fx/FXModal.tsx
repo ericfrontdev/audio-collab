@@ -81,24 +81,22 @@ export function FXModal({
   }
 
   const modal = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-      <div className="relative pointer-events-auto">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="
-            absolute -top-3 -right-3 z-10
-            w-8 h-8 rounded-full bg-gray-800 border border-gray-700
-            flex items-center justify-center
-            hover:bg-gray-700 transition-colors
-          "
-        >
-          <X className="w-4 h-4 text-gray-400" />
-        </button>
+    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="
+          absolute -top-3 -right-3 z-10
+          w-8 h-8 rounded-full bg-gray-800 border border-gray-700
+          flex items-center justify-center
+          hover:bg-gray-700 transition-colors
+        "
+      >
+        <X className="w-4 h-4 text-gray-400" />
+      </button>
 
-        {/* Panel */}
-        {renderPanel()}
-      </div>
+      {/* Panel */}
+      {renderPanel()}
     </div>
   )
 
