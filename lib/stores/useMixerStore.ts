@@ -134,22 +134,22 @@ const defaultFXSettings: FXSettings = {
   bypassed: false,
   eq: {
     enabled: true,
-    low: 0.5, // 0dB normalized
+    low: 0.5, // 0dB (flat)
     mid: 0.5,
     high: 0.5,
   },
   compressor: {
     enabled: true,
-    threshold: 0.5, // -30dB normalized
-    ratio: 0.2, // 4:1 normalized
-    attack: 0.01,
-    release: 0.25,
-    makeupGain: 0.5, // 12dB normalized
+    threshold: 0.75, // -15dB (gentle, only catches peaks)
+    ratio: 0.15, // 3.85:1 (moderate compression)
+    attack: 0.003,
+    release: 0.1,
+    makeupGain: 0.25, // 6dB (subtle makeup)
   },
   reverb: {
     enabled: true,
-    decay: 0.15, // 1.5s normalized
-    wet: 0.3,
+    decay: 0.05, // 0.6s (short, tight reverb for clarity)
+    wet: 0.15, // 15% wet (subtle, not drowning)
   },
 }
 
