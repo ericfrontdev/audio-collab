@@ -55,6 +55,10 @@ export function FXChainZone({
 
   const handleDropdownSelect = (type: FXType) => {
     if (type === 'none') {
+      // "No Effect" in multi-effect chain means remove the slot
+      if (currentSlotId) {
+        onRemoveSlot(currentSlotId)
+      }
       setIsDropdownOpen(false)
       return
     }
@@ -82,7 +86,6 @@ export function FXChainZone({
             onBypass={() => onToggleBypass(slot.id)}
             onSettings={() => onOpenSettings(slot.id)}
             onSwap={() => handleSwap(slot.id)}
-            onRemove={() => onRemoveSlot(slot.id)}
           />
         ))}
 
