@@ -84,6 +84,12 @@ export function MixerView({
   const setTrackFX = useMixerStore((state) => state.setTrackFX)
   const setTrackFXType = useMixerStore((state) => state.setTrackFXType)
   const setTrackFXBypassed = useMixerStore((state) => state.setTrackFXBypassed)
+  // New FX chain actions
+  const addFXSlot = useMixerStore((state) => state.addFXSlot)
+  const removeFXSlot = useMixerStore((state) => state.removeFXSlot)
+  const updateFXSlotSettings = useMixerStore((state) => state.updateFXSlotSettings)
+  const setFXSlotType = useMixerStore((state) => state.setFXSlotType)
+  const setFXSlotBypassed = useMixerStore((state) => state.setFXSlotBypassed)
   const setMasterVolume = useMixerStore((state) => state.setMasterVolume)
   const setMasterPan = useMixerStore((state) => state.setMasterPan)
   const setMasterMute = useMixerStore((state) => state.setMasterMute)
@@ -154,6 +160,36 @@ export function MixerView({
     const currentSettings = trackMixerSettings.get(trackId)
     const newBypassed = !currentSettings?.fx.bypassed
     setTrackFXBypassed(trackId, newBypassed)
+    // Audio engine sync happens automatically via useEffect in StudioView
+  }
+
+  // New FX chain handlers
+  const handleAddFXSlot = (trackId: string, type: any) => {
+    addFXSlot(trackId, type)
+    // Audio engine sync happens automatically via useEffect in StudioView
+  }
+
+  const handleRemoveFXSlot = (trackId: string, slotId: string) => {
+    removeFXSlot(trackId, slotId)
+    // Audio engine sync happens automatically via useEffect in StudioView
+  }
+
+  const handleToggleFXSlotBypass = (trackId: string, slotId: string) => {
+    const currentSettings = trackMixerSettings.get(trackId)
+    const slot = currentSettings?.fxChain?.find(s => s.id === slotId)
+    if (slot) {
+      setFXSlotBypassed(trackId, slotId, !slot.bypassed)
+    }
+    // Audio engine sync happens automatically via useEffect in StudioView
+  }
+
+  const handleChangeFXSlotType = (trackId: string, slotId: string, type: any) => {
+    setFXSlotType(trackId, slotId, type)
+    // Audio engine sync happens automatically via useEffect in StudioView
+  }
+
+  const handleUpdateFXSlotSettings = (trackId: string, slotId: string, settings: any) => {
+    updateFXSlotSettings(trackId, slotId, settings)
     // Audio engine sync happens automatically via useEffect in StudioView
   }
 
@@ -238,6 +274,7 @@ export function MixerView({
                           compressor: { enabled: true, threshold: 0.5, ratio: 0.2, attack: 0.01, release: 0.25, makeupGain: 0.5 },
                           reverb: { enabled: true, decay: 0.15, wet: 0.3 }
                         }}
+                        fxChain={trackSettings?.fxChain}
                         onVolumeChange={handleVolumeChange}
                         onPanChange={handlePanChange}
                         onMuteToggle={handleMuteToggle}
@@ -245,6 +282,11 @@ export function MixerView({
                         onFXChange={handleFXChange}
                         onFXTypeChange={handleFXTypeChange}
                         onFXBypassToggle={handleFXBypassToggle}
+                        onAddFXSlot={handleAddFXSlot}
+                        onRemoveFXSlot={handleRemoveFXSlot}
+                        onToggleFXSlotBypass={handleToggleFXSlotBypass}
+                        onChangeFXSlotType={handleChangeFXSlotType}
+                        onUpdateFXSlotSettings={handleUpdateFXSlotSettings}
                         onSelect={setSelectedTrackId}
                         onDelete={onDeleteTrack}
                         onImport={onImport}
