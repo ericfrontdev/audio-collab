@@ -165,8 +165,9 @@ export function MixerView({
 
   // New FX chain handlers
   const handleAddFXSlot = (trackId: string, type: any) => {
-    addFXSlot(trackId, type)
+    const slotId = addFXSlot(trackId, type)
     // Audio engine sync happens automatically via useEffect in StudioView
+    return slotId
   }
 
   const handleRemoveFXSlot = (trackId: string, slotId: string) => {

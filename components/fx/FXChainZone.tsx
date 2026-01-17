@@ -8,7 +8,7 @@ import type { FXSlot as FXSlotType } from '@/lib/stores/useMixerStore'
 
 interface FXChainZoneProps {
   fxChain: FXSlotType[]
-  onAddSlot: (type: FXType) => void
+  onAddSlot: (type: FXType) => string // Returns the created slot ID
   onRemoveSlot: (slotId: string) => void
   onToggleBypass: (slotId: string) => void
   onOpenSettings: (slotId: string) => void
@@ -66,9 +66,11 @@ export function FXChainZone({
     if (currentSlotId) {
       // Swapping existing slot type
       onChangeType(currentSlotId, type)
+      onOpenSettings(currentSlotId) // Open settings after changing type
     } else {
       // Adding new slot
-      onAddSlot(type)
+      const newSlotId = onAddSlot(type)
+      onOpenSettings(newSlotId) // Open settings for newly created slot
     }
     setIsDropdownOpen(false)
   }

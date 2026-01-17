@@ -48,7 +48,7 @@ interface MixerChannelProps {
   onFXTypeChange: (trackId: string, type: FXType) => void
   onFXBypassToggle: (trackId: string) => void
   // New FX chain callbacks
-  onAddFXSlot?: (trackId: string, type: FXType) => void
+  onAddFXSlot?: (trackId: string, type: FXType) => string // Returns created slot ID
   onRemoveFXSlot?: (trackId: string, slotId: string) => void
   onToggleFXSlotBypass?: (trackId: string, slotId: string) => void
   onChangeFXSlotType?: (trackId: string, slotId: string, type: FXType) => void
@@ -166,7 +166,10 @@ export function MixerChannel({
           // New multi-effect chain
           <FXChainZone
             fxChain={fxChain}
-            onAddSlot={(type) => onAddFXSlot(trackId, type)}
+            onAddSlot={(type) => {
+              const slotId = onAddFXSlot(trackId, type)
+              return slotId
+            }}
             onRemoveSlot={(slotId) => onRemoveFXSlot?.(trackId, slotId)}
             onToggleBypass={(slotId) => onToggleFXSlotBypass?.(trackId, slotId)}
             onOpenSettings={(slotId) => {

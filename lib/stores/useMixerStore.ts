@@ -96,7 +96,7 @@ interface MixerState {
   removeTrack: (trackId: string) => void
 
   // Actions - FX Chain Management (new)
-  addFXSlot: (trackId: string, slotType: FXType) => void
+  addFXSlot: (trackId: string, slotType: FXType) => string // Returns created slot ID
   removeFXSlot: (trackId: string, slotId: string) => void
   updateFXSlotSettings: (trackId: string, slotId: string, settings: Partial<FXSlot['settings']>) => void
   setFXSlotType: (trackId: string, slotId: string, type: FXType) => void
@@ -289,7 +289,9 @@ export const useMixerStore = create<MixerState>((set, get) => ({
   },
 
   // FX Chain Management
-  addFXSlot: (trackId, slotType) =>
+  addFXSlot: (trackId, slotType) => {
+    const newSlotId = crypto.randomUUID()
+
     set((state) => {
       const tracks = new Map(state.tracks)
       const trackState = tracks.get(trackId) || { ...defaultTrackState }
@@ -302,7 +304,7 @@ export const useMixerStore = create<MixerState>((set, get) => ({
       if (slotType === 'none') return { tracks }
 
       const newSlot: FXSlot = {
-        id: crypto.randomUUID(),
+        id: newSlotId,
         order: currentChain.length,
         type: slotType,
         bypassed: false,
@@ -318,7 +320,10 @@ export const useMixerStore = create<MixerState>((set, get) => ({
         fxChain: [...currentChain, newSlot],
       })
       return { tracks }
-    }),
+    })
+
+    return newSlotId
+  },
 
   removeFXSlot: (trackId, slotId) =>
     set((state) => {
