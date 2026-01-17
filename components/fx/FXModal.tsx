@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import { EQPanel } from './panels/EQPanel'
 import { CompressorPanel } from './panels/CompressorPanel'
@@ -44,19 +43,6 @@ export function FXModal({
   settings,
   onSettingsChange
 }: FXModalProps) {
-  useEffect(() => {
-    if (!isOpen) return
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [isOpen, onClose])
-
   if (!isOpen || effectType === 'none') return null
 
   const renderPanel = () => {
@@ -94,8 +80,8 @@ export function FXModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="relative pointer-events-auto">
         {/* Close button */}
         <button
           onClick={onClose}
