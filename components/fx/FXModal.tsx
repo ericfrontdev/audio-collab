@@ -1,5 +1,6 @@
 'use client'
 
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { EQPanel } from './panels/EQPanel'
 import { CompressorPanel } from './panels/CompressorPanel'
@@ -79,7 +80,7 @@ export function FXModal({
     }
   }
 
-  return (
+  const modal = (
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
       <div className="relative pointer-events-auto">
         {/* Close button */}
@@ -100,4 +101,6 @@ export function FXModal({
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
