@@ -226,16 +226,19 @@ export class DynamicFXChain {
     const dryWet = new Tone.CrossFade(0.3)
     const inputGain = new Tone.Gain(1)
 
-    // Generate reverb impulse response
-    reverb.generate().then(() => {
-      console.log('Reverb ready')
-    })
-
-    // Setup dry/wet routing properly
+    // Setup dry/wet routing properly BEFORE generating impulse
     // Input splits to both dry (a) and reverb
-    inputGain.connect(dryWet.a) // Dry signal
+    inputGain.connect(dryWet.a) // Dry signal (always works)
     inputGain.connect(reverb)   // To reverb processing
     reverb.connect(dryWet.b)    // Wet signal from reverb
+
+    // Generate reverb impulse response asynchronously
+    // Audio still passes through dry path while generating
+    reverb.generate().then(() => {
+      console.log('Reverb impulse response ready')
+    }).catch((err) => {
+      console.error('Failed to generate reverb impulse:', err)
+    })
 
     this.applyReverbSettings(reverb, dryWet, slot.settings.reverb)
 
@@ -296,6 +299,7 @@ export class DynamicFXChain {
     settings: FXSlot['settings']['compressor']
   ) {
     if (!settings.enabled) {
+      // Passthrough mode: high threshold, low ratio
       compressor.threshold.value = 0
       compressor.ratio.value = 1
       makeup.volume.value = 0
@@ -303,9 +307,9 @@ export class DynamicFXChain {
     }
 
     // Convert 0-1 to -60dB to 0dB
-    compressor.threshold.value = settings.threshold * 60 - 60
+    compressor.threshold.value = (settings.threshold * 60) - 60
     // Convert 0-1 to 1:1 to 20:1
-    compressor.ratio.value = 1 + settings.ratio * 19
+    compressor.ratio.value = 1 + (settings.ratio * 19)
     compressor.attack.value = settings.attack
     compressor.release.value = settings.release
     // Makeup gain: 0-1 to 0dB to +24dB
