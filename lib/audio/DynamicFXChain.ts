@@ -49,6 +49,8 @@ export class DynamicFXChain {
    * Update the entire FX chain based on new slots
    */
   updateChain(slots: FXSlot[]) {
+    console.log('[DynamicFXChain] updateChain called with', slots.length, 'slots:', slots.map(s => s.type))
+
     // Store for comparison
     const oldSlotIds = new Set(this.currentChain.map(s => s.id))
     const newSlotIds = new Set(slots.map(s => s.id))
@@ -56,6 +58,7 @@ export class DynamicFXChain {
     // 1. Remove effects that are no longer in the chain
     for (const [slotId, effect] of this.activeEffects.entries()) {
       if (!newSlotIds.has(slotId)) {
+        console.log('[DynamicFXChain] Removing effect:', effect.type)
         this.disposeEffect(effect)
         this.activeEffects.delete(slotId)
       }
@@ -68,12 +71,16 @@ export class DynamicFXChain {
       if (!existingEffect || existingEffect.type !== slot.type) {
         // Need to create new effect (either new slot or type changed)
         if (existingEffect) {
+          console.log('[DynamicFXChain] Replacing effect:', existingEffect.type, '->', slot.type)
           this.disposeEffect(existingEffect)
+        } else {
+          console.log('[DynamicFXChain] Creating new effect:', slot.type)
         }
         const newEffect = this.createEffect(slot)
         this.activeEffects.set(slot.id, newEffect)
       } else {
         // Update existing effect settings
+        console.log('[DynamicFXChain] Updating effect settings:', slot.type)
         this.applyEffectSettings(existingEffect, slot)
       }
     }
@@ -83,19 +90,23 @@ export class DynamicFXChain {
 
     // Store current chain
     this.currentChain = [...slots]
+    console.log('[DynamicFXChain] Chain updated. Active effects:', this.activeEffects.size)
   }
 
   /**
    * Reconnect all effects in series based on slot order
    */
   private reconnectChain(slots: FXSlot[]) {
+    console.log('[DynamicFXChain] reconnectChain with', slots.length, 'slots')
+
     if (slots.length === 0) {
       // No effects: ensure direct connection
       try {
         this.input.disconnect()
         this.input.connect(this.output)
+        console.log('[DynamicFXChain] Direct connection: input -> output')
       } catch (e) {
-        // Already connected
+        console.log('[DynamicFXChain] Already connected directly')
       }
       return
     }
@@ -104,27 +115,36 @@ export class DynamicFXChain {
     const sortedSlots = [...slots].sort((a, b) => a.order - b.order)
 
     // Build the new chain connections
-    const newConnections: Array<{ from: Tone.ToneAudioNode; to: Tone.ToneAudioNode }> = []
+    const newConnections: Array<{ from: Tone.ToneAudioNode; to: Tone.ToneAudioNode; label: string }> = []
 
     let previousNode: Tone.ToneAudioNode = this.input
 
     for (const slot of sortedSlots) {
       const effect = this.activeEffects.get(slot.id)
-      if (!effect) continue
+      if (!effect) {
+        console.warn('[DynamicFXChain] Effect not found for slot:', slot.id, slot.type)
+        continue
+      }
 
-      newConnections.push({ from: previousNode, to: effect.input })
-
-      // If bypassed, the effect should pass through without processing
-      // (individual effects handle their own bypass internally)
+      newConnections.push({
+        from: previousNode,
+        to: effect.input,
+        label: `${previousNode === this.input ? 'input' : 'effect'} -> ${effect.type}.input`
+      })
 
       previousNode = effect.output
     }
 
     // Connect last effect to output
-    newConnections.push({ from: previousNode, to: this.output })
+    newConnections.push({
+      from: previousNode,
+      to: this.output,
+      label: `${sortedSlots[sortedSlots.length - 1]?.type}.output -> output`
+    })
 
     // Apply all new connections atomically
     // First disconnect all
+    console.log('[DynamicFXChain] Disconnecting all nodes...')
     this.input.disconnect()
     sortedSlots.forEach(slot => {
       const effect = this.activeEffects.get(slot.id)
@@ -139,9 +159,12 @@ export class DynamicFXChain {
     })
 
     // Then reconnect all
-    newConnections.forEach(({ from, to }) => {
+    console.log('[DynamicFXChain] Reconnecting chain...')
+    newConnections.forEach(({ from, to, label }) => {
+      console.log('[DynamicFXChain]  ', label)
       from.connect(to)
     })
+    console.log('[DynamicFXChain] Chain reconnection complete')
   }
 
   /**
